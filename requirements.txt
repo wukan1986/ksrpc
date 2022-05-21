@@ -1,0 +1,11 @@
+aioredis
+fakeredis
+fastapi
+httpx
+loguru
+nest-asyncio
+pandas
+pydantic
+python-multipart
+requests
+websockets

@@ -1,5 +1,5 @@
 # ksrpc
-Keep Simple RPC
+Keep Simple RPC。免注册远程过程调用
 
 ## 项目背景
 团队里常常需要通过平台下载各数据，但只有一套账号。通常的方案如下：
@@ -38,17 +38,17 @@ Keep Simple RPC
 4. 出于数据版权保护，默认添加了IP地址校验开关，限制只在内网使用
 
 ## 服务端安装
-1. 安装ksrpc库
+1. 安装`ksrpc`库
 > pip install ksrpc[server] -i https://mirrors.aliyun.com/pypi/simple --upgrade
-2. 编辑config.py文件，进行ksrpy的功能管理
-3. 编辑run_app.py文件，进行FastAPI服务器设置
-4. 运行python run_app.py
+2. 编辑`config.py`文件，进行`ksrpy`的功能管理。如权限配置
+3. 编辑`run_app.py`文件，进行`FastAPI`服务器设置。如端口号等
+4. 运行`python run_app.py`
 
 ## 客户端安装
-1. 安装ksrpc库
+1. 安装`ksrpc`库
 > pip install ksrpc -i https://mirrors.aliyun.com/pypi/simple --upgrade
-2. 编辑examples目录下的demo_http.py和demo_websocket.py中对应的服务地址
-3. 运行demo_http.py和demo_websocket.py，检查是否运行正常
+2. 编辑`examples`目录下的`demo_http.py`和`demo_websocket.py`中对应的服务地址
+3. 运行`demo_http.py`和`demo_websocket.py`，检查是否运行正常
 
 ## 示例
 1. 直接可替代的。如`tests`目录下的：os、numpy、pandas、akshare等
@@ -100,14 +100,17 @@ print(df)
 ```
 
 ## 部分支持转发的库
-1. AkShare(已测)
-2. TuShare(已测)
-3. rqdatc(已测)
-4. jqdatasdk(缺账号，未测)
-5. Wind(缺账号，未测)
+1. [AkShare](tests/akshare_.py)(已测)
+2. [TuShare](examples/akshare_.py)(已测)
+3. [rqdatac](examples/rqdatac_hack.py)(已测)
+4. [jqdatasdk](examples/jqdatasdk_hack.py)(缺账号，未测)
+5. [Wind](examples/wind_hack.py)(缺账号，未测)
 6. 其它...
 
+## 声明
+此库仅供学习交流，请在数据提供方的授权范围内使用。请勿向第三方转发数据
+
 ## 参考项目
-开发到一定阶段后才发现与rpyc这个免注册暴露函数的功能类似，大家也可以去学习一下
+开发到一定阶段后才发现与`rpyc`这个免注册暴露函数的功能类似，大家也可以去学习一下
 https://github.com/tomerfiliba-org/rpyc
 

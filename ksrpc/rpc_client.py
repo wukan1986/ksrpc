@@ -17,7 +17,7 @@ class RpcClient:
                  connection,
                  is_async=False
                  ):
-        """
+        """初始化
 
         Parameters
         ----------
@@ -26,7 +26,7 @@ class RpcClient:
         connection: Connection
             连接对象
         is_async: bool
-            
+            是否暴露为异步调用，async def函数中才能启用
         """
         self._connection = connection
         self._module = module

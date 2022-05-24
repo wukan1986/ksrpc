@@ -16,7 +16,7 @@ from io import BytesIO
 
 import pandas as pd
 
-from ..model import ReqFmt, RspFmt
+from ..model import ReqFmt, Format
 from ..serializer.json_ import dict_to_obj
 from ..serializer.pkl_gzip import deserialize, serialize
 from ..utils.async_ import to_sync
@@ -93,7 +93,7 @@ class RequestsConnection:
         pass
 
     def call(self, func, args, kwargs,
-             req_fmt: ReqFmt = ReqFmt.PKL_GZIP, rsp_fmt: RspFmt = RspFmt.PKL_GZIP,
+             fmt: Format = Format.PKL_GZIP,
              cache_get: bool = True, cache_expire: int = 3600):
         """调用函数
 
@@ -105,9 +105,7 @@ class RequestsConnection:
             函数位置参数
         kwargs: dict
             函数命名参数
-        req_fmt: ReqFmt
-            明示请求格式
-        rsp_fmt: RspFmt
+        fmt: Format
             指定响应格式
         cache_get: bool
             是否优先从缓存中获取
@@ -115,15 +113,15 @@ class RequestsConnection:
             指定缓存超时。超时此时间将过期，指定0表示不进行缓存
 
         """
-        params = dict(func=func, rsp_fmt=rsp_fmt, cache_get=cache_get, cache_expire=cache_expire)
+        params = dict(func=func, fmt=fmt, cache_get=cache_get, cache_expire=cache_expire)
         data = {'args': args, 'kwargs': kwargs}
         headers = None if self._token is None else {"Authorization": f"Bearer {self._token}"}
 
-        if req_fmt == ReqFmt.PKL_GZIP:
+        if fmt == Format.PKL_GZIP:
             files = {"file": serialize(data).read()}
             r = self._session.post(self._url + '/file',
                                    headers=headers, params=params, timeout=self.timeout, files=files)
-        elif req_fmt == ReqFmt.JSON:
+        else:
             r = self._session.post(self._url + '/post',
                                    headers=headers, params=params, timeout=self.timeout, json=data)
 
@@ -161,7 +159,7 @@ class HttpxConnection:
         to_sync(self._client.__aexit__)()
 
     async def call(self, func, args, kwargs,
-                   req_fmt: ReqFmt = ReqFmt.PKL_GZIP, rsp_fmt: RspFmt = RspFmt.PKL_GZIP,
+                   fmt: Format = Format.PKL_GZIP,
                    cache_get: bool = True, cache_expire: int = 3600):
         """调用函数
 
@@ -173,9 +171,7 @@ class HttpxConnection:
             函数位置参数
         kwargs: dict
             函数命名参数
-        req_fmt: ReqFmt
-            明示请求格式
-        rsp_fmt: RspFmt
+        fmt: Format
             指定响应格式
         cache_get: bool
             是否优先从缓存中获取
@@ -184,15 +180,15 @@ class HttpxConnection:
 
         """
         # httpx解析枚举有问题，只能提前转成value，而requests没有此问题
-        params = dict(func=func, rsp_fmt=rsp_fmt.value, cache_get=cache_get, cache_expire=cache_expire)
+        params = dict(func=func, fmt=fmt.value, cache_get=cache_get, cache_expire=cache_expire)
         data = {'args': args, 'kwargs': kwargs}
         headers = None if self._token is None else {"Authorization": f"Bearer {self._token}"}
 
-        if req_fmt == ReqFmt.PKL_GZIP:
+        if fmt == Format.PKL_GZIP:
             files = {"file": serialize(data).read()}
             r = await self._client.post(self._url + '/file',
                                         headers=headers, params=params, timeout=self.timeout, files=files)
-        elif req_fmt == ReqFmt.JSON:
+        elif fmt == Format.JSON:
             r = await self._client.post(self._url + '/post',
                                         headers=headers, params=params, timeout=self.timeout, json=data)
 

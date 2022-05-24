@@ -18,7 +18,7 @@ from loguru import logger
 from .app_ import app
 from ..caller import call
 from ..config import AUTH_CHECK, AUTH_TOKENS
-from ..model import RspFmt
+from ..model import Format
 from ..serializer.json_ import obj_to_dict, dict_to_json
 from ..serializer.pkl_gzip import deserialize
 
@@ -62,7 +62,7 @@ async def _do(ws: WebSocket,
 
               args: List[Any] = [],
               kwargs: Dict[str, Any] = {},
-              rsp_fmt: RspFmt = RspFmt.JSON,
+              fmt: Format = Format.JSON,
               cache_get: bool = True, cache_expire: int = 86400,
               user: str = None,  # 没有用到，用于token认证
               ):
@@ -70,7 +70,7 @@ async def _do(ws: WebSocket,
     # 分解调用方法
     key, buf, data = await call(ws.client.host, user, func, args, kwargs, cache_get, cache_expire)
 
-    if rsp_fmt == RspFmt.PKL_GZIP:
+    if fmt == Format.PKL_GZIP:
         return buf
 
     if data is None:
@@ -90,7 +90,7 @@ async def websocket_endpoint_json(websocket: WebSocket, user=Depends(get_current
         while True:
             req = await websocket.receive_json(mode="text")
             logger.info(req)
-            rsp = await _do(websocket, **req, user=user, rsp_fmt=RspFmt.JSON)
+            rsp = await _do(websocket, **req, user=user, fmt=Format.JSON)
             # 部分类型换转json有问题，所以使用特殊的转换函数
             await websocket.send_text(dict_to_json(rsp))
 
@@ -108,7 +108,7 @@ async def websocket_endpoint_bytes(websocket: WebSocket,
             req = await websocket.receive_bytes()
             req = deserialize(req)
             logger.info(req)
-            rsp = await _do(websocket, **req, user=user, rsp_fmt=RspFmt.PKL_GZIP)
+            rsp = await _do(websocket, **req, user=user, fmt=Format.PKL_GZIP)
             # 部分类型换转json有问题，所以使用特殊的转换函数
             await websocket.send_bytes(rsp)
 

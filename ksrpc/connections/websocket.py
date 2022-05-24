@@ -12,7 +12,7 @@
 
 """
 
-from ..model import ReqFmt, RspFmt
+from ..model import ReqFmt, Format
 from ..serializer.json_ import dict_to_json, json_to_dict, dict_to_obj
 from ..serializer.pkl_gzip import serialize, deserialize
 from ..utils.async_ import to_sync
@@ -55,7 +55,7 @@ class WebSocketConnection:
         self._url = url
         self._token = token
         self._with = False  # 记录是否用了with
-        self._is_json = False  # 默认通讯格式设置
+        self._is_json = False  # 默认通讯格式设置，默认使用二进制通讯，减少类型等信息丢失
 
     async def __aenter__(self):
         """异步async with"""
@@ -68,9 +68,6 @@ class WebSocketConnection:
         else:
             # 浏览器不支持headers，但写在query区又不安全 ?token={self._token}
             self._client = connect(self._url + f'/bytes', extra_headers=headers)
-        # json通讯方式
-        # self._client = connect(self._url + '/json')
-        # 默认使用二进制通讯，减少类型等信息丢失
 
         self._ws = await self._client.__aenter__()
         self._with = True
@@ -93,7 +90,7 @@ class WebSocketConnection:
         to_sync(self.__aexit__)()
 
     async def call(self, func, args, kwargs,
-                   req_fmt: ReqFmt = ReqFmt.PKL_GZIP, rsp_fmt: RspFmt = RspFmt.PKL_GZIP,
+                   fmt: Format = Format.PKL_GZIP,
                    cache_get: bool = True, cache_expire: int = 3600):
         # 还没有执行过with就内部主动执行一次
         if not self._with:
@@ -102,15 +99,15 @@ class WebSocketConnection:
         d = dict(func=func, args=args, kwargs=kwargs,
                  cache_get=cache_get, cache_expire=cache_expire)
 
-        req_fmt = ReqFmt.JSON if self._is_json else ReqFmt.PKL_GZIP
+        fmt = Format.JSON if self._is_json else Format.PKL_GZIP
 
-        if req_fmt == ReqFmt.PKL_GZIP:
+        if fmt == Format.PKL_GZIP:
             # 二进制格式
             buf = serialize(d).read()
             await self._ws.send(buf)
             rsp = await self._ws.recv()
             return process_response(rsp)
-        elif req_fmt == ReqFmt.JSON:
+        else:
             # json格式
             await self._ws.send(dict_to_json(d))
             rsp = await self._ws.recv()

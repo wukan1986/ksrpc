@@ -19,7 +19,7 @@ from fastapi.security import OAuth2PasswordBearer
 from .app_ import app
 from ..caller import call
 from ..config import AUTH_TOKENS, AUTH_CHECK
-from ..model import RspFmt
+from ..model import Format
 from ..serializer.json_ import obj_to_dict
 from ..serializer.pkl_gzip import deserialize
 
@@ -36,7 +36,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
 async def api_get(request: Request,
                   func: str = Query(..., min_length=1),
 
-                  rsp_fmt: RspFmt = Query(RspFmt.CSV),
+                  fmt: Format = Query(Format.CSV),
                   cache_get: bool = Query(True), cache_expire: int = Query(86400, lt=86400 * 15),
                   user: str = Depends(get_current_user),
                   ):
@@ -51,7 +51,7 @@ async def api_post(request: Request,
 
                    func: str = Query(..., min_length=1),
 
-                   rsp_fmt: RspFmt = Query(RspFmt.CSV),
+                   fmt: Format = Query(Format.CSV),
                    cache_get: bool = Query(True), cache_expire: int = Query(86400, lt=86400 * 15),
                    user: str = Depends(get_current_user),
                    ):
@@ -65,7 +65,7 @@ async def api_file(request: Request,
 
                    func: str = Query(..., min_length=1),
 
-                   rsp_fmt: RspFmt = Query(RspFmt.CSV),
+                   fmt: Format = Query(Format.CSV),
                    cache_get: bool = Query(True), cache_expire: int = Query(86400, lt=86400 * 15),
                    user: str = Depends(get_current_user),
                    ):
@@ -79,7 +79,7 @@ async def _do(request: Request,
               args: List[Any] = [],
               kwargs: Dict[str, Any] = {},
 
-              rsp_fmt: RspFmt = RspFmt.CSV,
+              fmt: Format = Format.CSV,
               cache_get: bool = True, cache_expire: int = 86400,
               file: bytes = None,  # 用于兼容文件上传模式，但实际没有使用
               user: str = None,  # 没有用到，用于token认证
@@ -90,9 +90,9 @@ async def _do(request: Request,
     key, buf, data = await call(request.client.host, user, func, args, kwargs, cache_get, cache_expire)
 
     # 直接二进制返回
-    if rsp_fmt == RspFmt.PKL_GZIP:
+    if fmt == Format.PKL_GZIP:
         r = StreamingResponse(iter([buf]), media_type="application/octet-stream")
-        content_disposition = f'attachment; filename="{key}.{RspFmt.PKL_GZIP}"'
+        content_disposition = f'attachment; filename="{key}.{Format.PKL_GZIP}"'
         r.headers.setdefault("content-disposition", content_disposition)
         return r
 
@@ -101,7 +101,7 @@ async def _do(request: Request,
         data = deserialize(buf)
 
     # DataFrame需要csv格式时走此路径
-    if rsp_fmt == RspFmt.CSV and data.type in ('DataFrame', 'Series'):
+    if fmt == Format.CSV and data['type'] in ('DataFrame', 'Series'):
         return PlainTextResponse(data['data'].to_csv())
 
     # JSON格式时，为了方便DataFrame的显示，做一下转换

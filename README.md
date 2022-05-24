@@ -52,10 +52,10 @@ Keep Simple RPC。免注册远程过程调用
 
 ## 示例
 1. 直接可替代的。如`tests`目录下的：os、numpy、pandas、akshare等
-    1. 没有在客户端安装相应包的情况下无IDE自动补全功能
+    1. 客户端没有安装相应包的情况下，IDE无法自动补全
 2. 需要服务端进行登录等一类处理的。如`server`目录下的，jqdatasdk、tushare、WindPy等
 3. 客户端参数无法序列化，需要特殊处理的。如`hack`目录下的jqdatasdk、WindPy等
-    1. 需要客户端安装了第三方库，IDE的自动补全功能能用了
+    1. 需要客户端安装第三方库，IDE的自动补全功能正常
 
 ```python
 from ksrpc import RpcClient
@@ -101,7 +101,7 @@ print(df)
 
 ## 部分支持转发的库
 1. [AkShare](tests/akshare_.py)(已测)
-2. [TuShare](examples/akshare_.py)(已测)
+2. TuShare [方法一](examples/tushare_hack.py) [方法二](examples/tushare_client.py)(已测)
 3. [rqdatac](examples/rqdatac_hack.py)(已测)
 4. [jqdatasdk](examples/jqdatasdk_hack.py)(缺账号，未测)
 5. [Wind](examples/wind_hack.py)(缺账号，未测)

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ksrpc</title>
+</head>
+<body>
+<h1>WebSocket ksrpc</h1>
+<p>示例：
+<table border="1">
+    <tr>
+        <th>func</th>
+        <th>args</th>
+        <th>kwargs</th>
+    </tr>
+    <tr>
+        <td>demo.div</td>
+        <td>[]</td>
+        <td>{"a":1, "b":2}</td>
+    </tr>
+    <tr>
+        <td>demo.div</td>
+        <td>[1,5]</td>
+        <td>{}</td>
+    </tr>
+    <tr>
+        <td>demo.test</td>
+        <td>[]</td>
+        <td>{}</td>
+    </tr>
+    <tr>
+        <td>random.random</td>
+        <td>[]</td>
+        <td>{}</td>
+    </tr>
+</table>
+</p>
+<p>
+<form action="" onsubmit="sendMessage(event)">
+    <label>func</label><input type="text" id="func" value="demo.test"/>
+    <label>args</label><input type="text" id="args" value="[]"/>
+    <label>kwargs</label><input type="text" id="kwargs" value='{}'/><br/>
+    <label>cache_get</label><input type="checkbox" id="cache_get" checked="checked"/>
+    <label>cache_expire</label><input type="text" id="cache_expire" value="86400"/>
+    <label>fmt</label><select id="fmt">
+    <option>csv</option>
+    <option>json</option>
+</select><br/>
+    <button>Send</button>
+</form>
+</p>
+<ul id='messages'>
+</ul>
+<script>
+            var ws = new WebSocket("ws://127.0.0.1:8000/ws/json");
+            ws.onmessage = function(event) {
+                var messages = document.getElementById('messages')
+                var message = document.createElement('li')
+                var content = document.createTextNode(event.data)
+                message.appendChild(content)
+                // messages.appendChild(message)
+                messages.insertBefore(message, messages.firstChild)
+            };
+            function sendMessage(event) {
+                var func = document.getElementById("func")
+                var args = document.getElementById("args")
+                var cache_get = document.getElementById("cache_get")
+                var cache_expire = document.getElementById("cache_expire")
+                var fmt = document.getElementById("fmt")
+                var d = {
+                    "func":func.value,
+                    "args":eval("("+args.value+")"),
+                    "kwargs":eval("("+kwargs.value+")"),
+                    "cache_get":cache_get.checked,
+                    "cache_expire":eval("("+cache_expire.value+")"),
+                    "fmt":fmt.options[fmt.selectedIndex].text,
+                }
+                ws.send(JSON.stringify(d))
+                event.preventDefault()
+            }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</script>
+</body>
+</html>

@@ -12,7 +12,7 @@
 
 """
 
-from ..model import ReqFmt, Format
+from ..model import Format
 from ..serializer.json_ import dict_to_json, json_to_dict, dict_to_obj
 from ..serializer.pkl_gzip import serialize, deserialize
 from ..utils.async_ import to_sync
@@ -96,19 +96,21 @@ class WebSocketConnection:
         if not self._with:
             await self.__aenter__()
 
-        d = dict(func=func, args=args, kwargs=kwargs,
-                 cache_get=cache_get, cache_expire=cache_expire)
+        if self._is_json:
+            fmt = Format.JSON
+        else:
+            fmt = Format.PKL_GZIP
 
-        fmt = Format.JSON if self._is_json else Format.PKL_GZIP
+        d = dict(func=func, args=args, kwargs=kwargs,
+                 fmt=fmt,
+                 cache_get=cache_get, cache_expire=cache_expire)
 
         if fmt == Format.PKL_GZIP:
             # 二进制格式
-            buf = serialize(d).read()
-            await self._ws.send(buf)
-            rsp = await self._ws.recv()
-            return process_response(rsp)
+            await self._ws.send(serialize(d).read())
         else:
             # json格式
             await self._ws.send(dict_to_json(d))
-            rsp = await self._ws.recv()
-            return process_response(rsp)
+
+        rsp = await self._ws.recv()
+        return process_response(rsp)

@@ -76,6 +76,10 @@ async def _do(ws: WebSocket,
     if data is None:
         data = deserialize(buf)
 
+    # DataFrame需要csv格式时走此路径
+    if fmt == Format.CSV and data['type'] in ('DataFrame', 'Series'):
+        return data['data'].to_csv()
+
     # JSON格式时，为了方便DataFrame的显示，做一下转换
     data['data'] = obj_to_dict(data['data'])
 
@@ -90,7 +94,7 @@ async def websocket_endpoint_json(websocket: WebSocket, user=Depends(get_current
         while True:
             req = await websocket.receive_json(mode="text")
             logger.info(req)
-            rsp = await _do(websocket, **req, user=user, fmt=Format.JSON)
+            rsp = await _do(websocket, **req, user=user)
             # 部分类型换转json有问题，所以使用特殊的转换函数
             await websocket.send_text(dict_to_json(rsp))
 
@@ -108,7 +112,8 @@ async def websocket_endpoint_bytes(websocket: WebSocket,
             req = await websocket.receive_bytes()
             req = deserialize(req)
             logger.info(req)
-            rsp = await _do(websocket, **req, user=user, fmt=Format.PKL_GZIP)
+            req['fmt'] = Format.PKL_GZIP
+            rsp = await _do(websocket, **req, user=user)
             # 部分类型换转json有问题，所以使用特殊的转换函数
             await websocket.send_bytes(rsp)
 

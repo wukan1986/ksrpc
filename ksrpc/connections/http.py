@@ -16,7 +16,7 @@ from io import BytesIO
 
 import pandas as pd
 
-from ..model import ReqFmt, Format
+from ..model import Format
 from ..serializer.json_ import dict_to_obj
 from ..serializer.pkl_gzip import deserialize, serialize
 from ..utils.async_ import to_sync

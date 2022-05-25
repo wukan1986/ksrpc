@@ -51,46 +51,31 @@
 <ul id='messages'>
 </ul>
 <script>
-            var ws = new WebSocket("ws://127.0.0.1:8000/ws/json");
-            ws.onmessage = function(event) {
-                var messages = document.getElementById('messages')
-                var message = document.createElement('li')
-                var content = document.createTextNode(event.data)
-                message.appendChild(content)
-                // messages.appendChild(message)
-                messages.insertBefore(message, messages.firstChild)
-            };
-            function sendMessage(event) {
-                var func = document.getElementById("func")
-                var args = document.getElementById("args")
-                var cache_get = document.getElementById("cache_get")
-                var cache_expire = document.getElementById("cache_expire")
-                var fmt = document.getElementById("fmt")
-                var d = {
-                    "func":func.value,
-                    "args":eval("("+args.value+")"),
-                    "kwargs":eval("("+kwargs.value+")"),
-                    "cache_get":cache_get.checked,
-                    "cache_expire":eval("("+cache_expire.value+")"),
-                    "fmt":fmt.options[fmt.selectedIndex].text,
-                }
-                ws.send(JSON.stringify(d))
-                event.preventDefault()
-            }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+var ws = new WebSocket("ws://127.0.0.1:8000/ws/json?token=secret-token-1");
+ws.onmessage = function(event) {
+    var messages = document.getElementById('messages')
+    var message = document.createElement('li')
+    var content = document.createTextNode(event.data)
+    message.appendChild(content)
+    messages.insertBefore(message, messages.firstChild)
+};
+function sendMessage(event) {
+    var func = document.getElementById("func")
+    var args = document.getElementById("args")
+    var cache_get = document.getElementById("cache_get")
+    var cache_expire = document.getElementById("cache_expire")
+    var fmt = document.getElementById("fmt")
+    var d = {
+        "func":func.value,
+        "args":eval("("+args.value+")"),
+        "kwargs":eval("("+kwargs.value+")"),
+        "cache_get":cache_get.checked,
+        "cache_expire":eval("("+cache_expire.value+")"),
+        "fmt":fmt.options[fmt.selectedIndex].text,
+    }
+    ws.send(JSON.stringify(d))
+    event.preventDefault()
+}
 
 </script>
 </body>

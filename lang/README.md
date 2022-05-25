@@ -22,10 +22,15 @@
     2. WebSocket，如果所用语言的库支持添加Header，进行Bearer认证，否则使用QUERY区
     
 ## 总结
-1. 使用POST请求，地址为http://127.0.0.1:8000/api/post
-2. args与kwargs走BODY区，以JSON格式提交
-3. token优先使用Header方式提供
-4. 其它参数都走QUERY区
+1. HTTP
+    1. 使用POST请求，地址为http://127.0.0.1:8000/api/post
+    2. args与kwargs走BODY区，以JSON格式提交
+    3. token使用Header方式提供
+    4. 其它参数都走QUERY区
+2. WebSocket
+    1. 地址为ws://127.0.0.1:8000/ws/json
+    2. token优先使用Header，然后是QUERY区
+    3. 除token外的其它参数都打包成json统一发送，包括func、args、fmt、cache_get等
 
 ## 文档+测试
 http://127.0.0.1:8000/docs

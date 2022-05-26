@@ -13,6 +13,7 @@ HTTP客户端
 
 """
 from io import BytesIO
+from urllib.parse import urlparse
 
 import pandas as pd
 
@@ -56,78 +57,6 @@ def process_response(r):
         return pd.read_csv(BytesIO(r.content), index_col=0)
 
 
-class RequestsConnection:
-    """使用requests实现的客户端连接"""
-
-    # 超时，请求超求和响应超时，秒
-    timeout = (5, 30)
-
-    def __init__(self, url, token=None):
-        """
-
-        Parameters
-        ----------
-        url
-
-        """
-        import requests
-
-        self._url = url
-        self._token = token
-        self._session = requests.Session()
-
-    async def __aenter__(self):
-        """异步async with"""
-        return self
-
-    async def __aexit__(self, exc_type=None, exc_value=None, traceback=None):
-        """异步async with"""
-        pass
-
-    def __enter__(self):
-        """同步with"""
-        return self
-
-    def __exit__(self, exc_type=None, exc_val=None, exc_tb=None):
-        """同步with"""
-        pass
-
-    def call(self, func, args, kwargs,
-             fmt: Format = Format.PKL_GZIP,
-             cache_get: bool = True, cache_expire: int = 3600):
-        """调用函数
-
-        Parameters
-        ----------
-        func: str
-            函数全名
-        args: tuple
-            函数位置参数
-        kwargs: dict
-            函数命名参数
-        fmt: Format
-            指定响应格式
-        cache_get: bool
-            是否优先从缓存中获取
-        cache_expire: int
-            指定缓存超时。超时此时间将过期，指定0表示不进行缓存
-
-        """
-        params = dict(func=func, fmt=fmt, cache_get=cache_get, cache_expire=cache_expire)
-        data = {'args': args, 'kwargs': kwargs}
-        headers = None if self._token is None else {"Authorization": f"Bearer {self._token}"}
-
-        if fmt == Format.PKL_GZIP:
-            files = {"file": serialize(data).read()}
-            r = self._session.post(self._url + '/file',
-                                   headers=headers, params=params, timeout=self.timeout, files=files)
-        else:
-            r = self._session.post(self._url + '/post',
-                                   headers=headers, params=params, timeout=self.timeout, json=data)
-
-        return process_response(r)
-
-
 class HttpxConnection:
     """使用httpx实现的客户端连接支持同步和异步"""
     # 超时，请求超求和响应超时，秒
@@ -135,6 +64,13 @@ class HttpxConnection:
 
     def __init__(self, url, token=None):
         import httpx
+
+        path = urlparse(url).path
+        assert path.endswith(('/get', '/post', '/file')), 'Python语言优先使用file，其它语言使用post'
+        if path.endswith('/file'):
+            self._fmt = Format.PKL_GZIP
+        else:
+            self._fmt = Format.JSON
 
         self._url = url
         self._token = token
@@ -179,17 +115,18 @@ class HttpxConnection:
             指定缓存超时。超时此时间将过期，指定0表示不进行缓存
 
         """
+        # 如果是JSON格式可以考虑返回CSV
+        rsp_fmt = self._fmt
+
         # httpx解析枚举有问题，只能提前转成value，而requests没有此问题
-        params = dict(func=func, fmt=fmt.value, cache_get=cache_get, cache_expire=cache_expire)
+        params = dict(func=func, fmt=rsp_fmt.value, cache_get=cache_get, cache_expire=cache_expire)
         data = {'args': args, 'kwargs': kwargs}
         headers = None if self._token is None else {"Authorization": f"Bearer {self._token}"}
 
-        if fmt == Format.PKL_GZIP:
+        if self._fmt == Format.PKL_GZIP:
             files = {"file": serialize(data).read()}
-            r = await self._client.post(self._url + '/file',
-                                        headers=headers, params=params, timeout=self.timeout, files=files)
-        elif fmt == Format.JSON:
-            r = await self._client.post(self._url + '/post',
-                                        headers=headers, params=params, timeout=self.timeout, json=data)
+            r = await self._client.post(self._url, headers=headers, params=params, timeout=self.timeout, files=files)
+        elif self._fmt == Format.JSON:
+            r = await self._client.post(self._url, headers=headers, params=params, timeout=self.timeout, json=data)
 
         return process_response(r)

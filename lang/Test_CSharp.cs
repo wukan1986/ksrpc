@@ -61,7 +61,7 @@ namespace Test_CShape
         {
             var token = "secret-token-1";
             var client = new HttpClient();
-            const string base_url = "http://127.0.0.1:8000/api";
+            const string base_url = "http://127.0.0.1:8000/api/post";
 
             {
                 var x = await Call(client, base_url, "demo.div", new List<int> { 5, 6 }, null, cache_get: true, cache_expire: 86400, token: token);

@@ -17,21 +17,26 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/wukan1986/ksrpc",
     packages=setuptools.find_packages(),
+    # 默认。用于支持反弹RPC
     install_requires=[
-        'httpx',
         'loguru',
         'nest-asyncio',
         'pandas',
-        'requests',
+        'pydantic',
         'websockets',
     ],
     extras_require={
+        # 服务端
         'server': [
             'aioredis',
             'fakeredis',
             'fastapi',
             'python-multipart',
             'uvicorn[standard]',
+        ],
+        # 客户端
+        'client': [
+            'httpx',
         ],
     },
     classifiers=[
@@ -40,5 +45,5 @@ setuptools.setup(
         "Operating System :: OS Independent",
         'Intended Audience :: Developers',
     ],
-    python_requires=">=3.7",
+    python_requires=">=3.6",
 )

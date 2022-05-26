@@ -26,6 +26,7 @@ METHODS_ALLOW = {
     'WindPy': True,
     'tushare': True,
     'rqdatac': True,
+    'demo': True,
 }
 
 # 禁止的方法
@@ -50,7 +51,8 @@ METHODS_BLOCK = {
     },
     'rqdatac': {
         'init': False,
-    }
+    },
+    'demo': True,
 }
 
 # 缓存类型。生产环境请配置redis服务

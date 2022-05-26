@@ -1,5 +1,10 @@
+# !/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Author     :wukan
+# @License    :(C) Copyright 2022, wukan
+# @Date       :2022-05-22
 """
-
+HTTP/WebSocket服务端入口
 """
 import uvicorn
 

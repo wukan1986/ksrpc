@@ -7,23 +7,28 @@ WebSocket服务器
 1. pip install uvicorn[standard], 必须指定stanadard，否则安装后不支持websocket服务
 2. `/ws/json` 可用其它语言调用
 3. `/ws/bytes` 内部调用
+4. `/ws/client` `/ws/amdin`, 反弹RPC
 
 """
+from datetime import datetime
 from typing import List, Any, Dict, Union
 
 from fastapi import WebSocket, WebSocketDisconnect, Depends, Query
+from fastapi import status
 from fastapi.security.utils import get_authorization_scheme_param
 from loguru import logger
 
 from .app_ import app
-from ..caller import call
-from ..config import AUTH_CHECK, AUTH_TOKENS
-from ..model import Format
+from ..caller import call, before_call
+from ..config import IP_CHECK
+from ..model import Format, RspModel
 from ..serializer.json_ import obj_to_dict, dict_to_json
-from ..serializer.pkl_gzip import deserialize
+from ..serializer.pkl_gzip import deserialize, serialize
+from ..utils.ip_ import in_whitelist
 
 
 async def get_current_user(ws: WebSocket, token: Union[str, None] = Query(None)):
+    from ..config import AUTH_CHECK, AUTH_TOKENS
     if not AUTH_CHECK:
         return 'anonymous'
     authorization: str = ws.headers.get("Authorization")
@@ -66,9 +71,21 @@ async def _do(ws: WebSocket,
               cache_get: bool = True, cache_expire: int = 86400,
               user: str = None,  # 没有用到，用于token认证
               ):
-    """"""
-    # 分解调用方法
-    key, buf, data = await call(ws.client.host, user, func, args, kwargs, cache_get, cache_expire)
+    """实际处理函数"""
+    try:
+        before_call(ws.client.host, user, func)
+        key, buf, data = await call(func, args, kwargs, cache_get, cache_expire)
+    except Exception as e:
+        # 主要是处理
+        key = type(e).__name__
+        # 这里没有缓存，因为这个错误是服务器内部检查
+        data = RspModel(status=status.HTTP_401_UNAUTHORIZED,
+                        datetime=datetime.now().isoformat(),
+                        func=func, args=args, kwargs=kwargs)
+        data.type = type(e).__name__
+        data.data = repr(e)
+        data = data.dict()
+        buf = serialize(data).read()
 
     if fmt == Format.PKL_GZIP:
         return buf
@@ -88,8 +105,8 @@ async def _do(ws: WebSocket,
 
 @app.websocket("/ws/json")
 async def websocket_endpoint_json(websocket: WebSocket, user=Depends(get_current_user)):
+    """处理JSON，发送JSON或csv"""
     await manager.connect(websocket)
-
     try:
         while True:
             req = await websocket.receive_json(mode="text")
@@ -97,16 +114,14 @@ async def websocket_endpoint_json(websocket: WebSocket, user=Depends(get_current
             rsp = await _do(websocket, **req, user=user)
             # 部分类型换转json有问题，所以使用特殊的转换函数
             await websocket.send_text(dict_to_json(rsp))
-
     except WebSocketDisconnect:
         manager.disconnect(websocket)
 
 
 @app.websocket("/ws/bytes")
-async def websocket_endpoint_bytes(websocket: WebSocket,
-                                   user=Depends(get_current_user)):
+async def websocket_endpoint_bytes(websocket: WebSocket, user=Depends(get_current_user)):
+    """处理pkl.gz发送pkl.gz"""
     await manager.connect(websocket)
-
     try:
         while True:
             req = await websocket.receive_bytes()
@@ -114,8 +129,58 @@ async def websocket_endpoint_bytes(websocket: WebSocket,
             logger.info(req)
             req['fmt'] = Format.PKL_GZIP
             rsp = await _do(websocket, **req, user=user)
-            # 部分类型换转json有问题，所以使用特殊的转换函数
             await websocket.send_bytes(rsp)
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+
+
+# 房间，分存客户端和管理端，中转时用于查找对应的ws
+rooms_client: Dict[str, WebSocket] = {}
+rooms_admin: Dict[str, WebSocket] = {}
+
+
+@app.websocket("/ws/client")
+async def websocket_endpoint_client(websocket: WebSocket, room: str, user=Depends(get_current_user)):
+    """被控端。肉鸡接入后，等待控制端接入，然后转发到肉鸡，然后转发。必须要进入同一房间"""
+    await manager.connect(websocket)
+    try:
+        if user is None:
+            raise Exception(f"Unauthorized")
+
+        rooms_client[room] = websocket
+        while True:
+            req = await websocket.receive_bytes()
+            # 可以将被控端的二进制解码，然后转成json，实现跨语言，这里先不处理
+            await rooms_admin[room].send_bytes(req)
 
     except WebSocketDisconnect:
         manager.disconnect(websocket)
+    except Exception as e:
+        logger.error(e)
+        manager.disconnect(websocket)
+        await websocket.close()
+
+
+@app.websocket("/ws/admin")
+async def websocket_endpoint_admin(websocket: WebSocket, room: str, user=Depends(get_current_user)):
+    """控制端。等待控制端接入，然后转发"""
+    await manager.connect(websocket)
+    try:
+        # 确保连上admin的用户有权限
+        if IP_CHECK:
+            if not in_whitelist(websocket.client.host):
+                raise Exception(f"{websocket.client.host} blocked.")
+        if user is None:
+            raise Exception(f"Unauthorized")
+
+        rooms_admin[room] = websocket
+        while True:
+            req = await websocket.receive_bytes()
+            await rooms_client[room].send_bytes(req)
+
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+    except Exception as e:
+        logger.error(e)
+        manager.disconnect(websocket)
+        await websocket.close()

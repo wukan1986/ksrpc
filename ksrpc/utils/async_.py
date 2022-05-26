@@ -32,7 +32,12 @@ def to_async(f):
         if inspect.iscoroutinefunction(f):
             # 已经是异步函数了就直接调用
             return await f(*args, **kwargs)
-        loop = asyncio.get_running_loop()
+
+        # python 3.6下没有get_running_loop，只能直接复制代码
+        loop = asyncio._get_running_loop()
+        if loop is None:
+            raise RuntimeError('no running event loop')
+
         return await loop.run_in_executor(None, partial(f, *args, **kwargs))
 
     return decorated

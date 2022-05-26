@@ -25,6 +25,20 @@ def test():
     return pd._testing.makeTimeDataFrame()
 
 
-def __call__(*args, **kwargs):
-    print(args, kwargs, 1111111)
-    pass
+## 以下为python 3.6下module不支持__getattr__的处理方法，请按实际情况进行设置
+import sys
+
+
+class Wrapper(object):
+    def __init__(self, wrapped):
+        self.wrapped = wrapped
+
+    def __getattr__(self, name):
+        # Perform custom logic here
+        try:
+            return getattr(self.wrapped, name)
+        except AttributeError as e:
+            raise e
+
+
+sys.modules[__name__] = Wrapper(sys.modules[__name__])

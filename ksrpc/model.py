@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import List, Any, Dict
 
-from fastapi import status
+# from fastapi import status
 from pydantic import BaseModel
 
 
@@ -13,7 +13,7 @@ class Format(str, Enum):
 
 class RspModel(BaseModel):
     # 状态
-    status: int = status.HTTP_200_OK
+    status: int = 200  # status.HTTP_200_OK
     # 发生时间
     datetime: str = 'now'
     # #请求信息

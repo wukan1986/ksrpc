@@ -9,24 +9,27 @@ HTTP服务端
 3. `/api/file`为python内部使用
 
 """
+from datetime import datetime
 from typing import Dict, Any, List
 
 from fastapi import Query, Body, File, Depends
+from fastapi import status
 from fastapi.requests import Request
 from fastapi.responses import PlainTextResponse, StreamingResponse
 from fastapi.security import OAuth2PasswordBearer
 
 from .app_ import app
-from ..caller import call
-from ..config import AUTH_TOKENS, AUTH_CHECK
-from ..model import Format
+from ..caller import call, before_call
+from ..model import Format, RspModel
 from ..serializer.json_ import obj_to_dict
-from ..serializer.pkl_gzip import deserialize
+from ..serializer.pkl_gzip import deserialize, serialize
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", auto_error=False)
 
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
+    from ..config import AUTH_TOKENS, AUTH_CHECK
+
     if not AUTH_CHECK:
         return 'anonymous'
     return AUTH_TOKENS.get(token, None)
@@ -85,9 +88,20 @@ async def _do(request: Request,
               user: str = None,  # 没有用到，用于token认证
               ):
     """实际处理函数"""
-
-    # 分解调用方法
-    key, buf, data = await call(request.client.host, user, func, args, kwargs, cache_get, cache_expire)
+    try:
+        before_call(request.client.host, user, func)
+        key, buf, data = await call(func, args, kwargs, cache_get, cache_expire)
+    except Exception as e:
+        # 主要是处理
+        key = type(e).__name__
+        # 这里没有缓存，因为这个错误是服务器内部检查
+        data = RspModel(status=status.HTTP_401_UNAUTHORIZED,
+                        datetime=datetime.now().isoformat(),
+                        func=func, args=args, kwargs=kwargs)
+        data.type = type(e).__name__
+        data.data = repr(e)
+        data = data.dict()
+        buf = serialize(data).read()
 
     # 直接二进制返回
     if fmt == Format.PKL_GZIP:

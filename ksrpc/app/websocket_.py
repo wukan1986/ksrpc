@@ -69,12 +69,13 @@ async def _do(ws: WebSocket,
               kwargs: Dict[str, Any] = {},
               fmt: Format = Format.JSON,
               cache_get: bool = True, cache_expire: int = 86400,
+              async_remote: bool = True,
               user: str = None,  # 没有用到，用于token认证
               ):
     """实际处理函数"""
     try:
         before_call(ws.client.host, user, func)
-        key, buf, data = await call(func, args, kwargs, cache_get, cache_expire)
+        key, buf, data = await call(func, args, kwargs, cache_get, cache_expire, async_remote)
     except Exception as e:
         # 主要是处理
         key = type(e).__name__

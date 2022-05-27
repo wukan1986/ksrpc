@@ -12,7 +12,7 @@ URL = 'http://127.0.0.1:8000/api/file'
 def sync_main():
     with HttpxConnection(URL, token=None) as conn:
         conn.timeout = (5, 30)
-        demo = RpcClient('demo', conn, is_async=False)
+        demo = RpcClient('demo', conn, async_local=False)
         demo.cache_get = True
         demo.cache_expire = 0
         print(demo.sync_say_hi("AA"))
@@ -23,7 +23,7 @@ def sync_main():
 async def async_main():
     async with HttpxConnection(URL, token='secret-token-1') as conn:
         conn.timeout = (5, 90)
-        demo = RpcClient('demo', conn, is_async=True)
+        demo = RpcClient('demo', conn, async_local=True)
         demo.cache_get = True
         demo.cache_expire = 60
 

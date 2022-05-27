@@ -98,7 +98,8 @@ class WebSocketConnection:
 
     async def call(self, func, args, kwargs,
                    fmt: Format = Format.PKL_GZIP,
-                   cache_get: bool = True, cache_expire: int = 3600):
+                   cache_get: bool = True, cache_expire: int = 3600,
+                   async_remote=True):
         # 还没有执行过with就内部主动执行一次
         if not self._with:
             await self.__aenter__()
@@ -108,7 +109,7 @@ class WebSocketConnection:
 
         d = dict(func=func, args=args, kwargs=kwargs,
                  fmt=rsp_fmt.value,
-                 cache_get=cache_get, cache_expire=cache_expire)
+                 cache_get=cache_get, cache_expire=cache_expire, async_remote=async_remote)
 
         if self._fmt == Format.PKL_GZIP:
             # 二进制格式

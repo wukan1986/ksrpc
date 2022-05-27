@@ -17,7 +17,8 @@
 2. cache_get: 是否默认从缓存中获取数据
 3. cache_expire: 指定当前查询数据是否放入缓存，生命周期是多长。单位秒
     1. 交易日历、历史行情等没有必要每次下载，超时可以设成1个月或以上
-4. token: 授权认证。可选
+5. async_remote: 服务端是否以异步方式调用，部分情况需要设成False才不报错
+5. token: 授权认证。可选
     1. HTTP，通过Header，进行Bearer认证
     2. WebSocket，如果所用语言的库支持添加Header，进行Bearer认证，否则使用QUERY区
     
@@ -40,7 +41,7 @@ http://127.0.0.1:8000/docs
 ## 示例
 ```shell script
 curl -X 'POST' \
-  'http://localhost:8000/api/post?func=demo.div&fmt=csv&cache_get=true&cache_expire=86400' \
+  'http://localhost:8000/api/post?func=demo.div&fmt=csv&cache_get=true&cache_expire=86400&async_remote=true' \
   -H 'accept: application/json' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -66,7 +67,7 @@ curl -X 'POST' \
 ```
 
 ```html
-http://localhost:8000/api/get?func=demo.test&fmt=csv&cache_get=true&cache_expire=86400
+http://localhost:8000/api/get?func=demo.test&fmt=csv&cache_get=true&cache_expire=86400&async_remote=true
 ```
 
 ```text

@@ -9,7 +9,6 @@
 """
 
 import hashlib
-import inspect
 from datetime import datetime
 
 # from fastapi import status
@@ -17,7 +16,7 @@ from loguru import logger
 
 from .model import RspModel
 from .serializer.pkl_gzip import serialize
-from .utils.async_ import to_async
+from .utils.async_ import to_async, to_sync
 from .utils.ip_ import in_whitelist
 
 
@@ -61,7 +60,7 @@ def before_call(host, user, func):
             raise Exception(f'Method Not Allowed, {func} in blocklist')
 
 
-async def call(func, args, kwargs, cache_get, cache_expire, fmt=None):
+async def call(func, args, kwargs, cache_get, cache_expire, async_remote, fmt=None):
     try:
         buf = None
         data = None  # None表示从缓存中取的，需要其它格式时需要转换
@@ -73,7 +72,7 @@ async def call(func, args, kwargs, cache_get, cache_expire, fmt=None):
             from .cache import async_cache_get
             buf = await async_cache_get(key)
         if buf is None:
-            cache_expire, buf, data = await _call(func, args, kwargs, cache_expire)
+            cache_expire, buf, data = await _call(func, args, kwargs, cache_expire, async_remote)
             # 过短的缓存时间没有必要
             if cache_expire >= 30:
                 # 就算强行去查询数据，也会想办法存下，再次取时还能从缓存中取
@@ -97,7 +96,7 @@ async def call(func, args, kwargs, cache_get, cache_expire, fmt=None):
     return key, buf, data
 
 
-async def _call(func_name, args, kwargs, cache_expire):
+async def _call(func_name, args, kwargs, cache_expire, async_remote):
     """进行实际调用"""
     methods = func_name.split('.')
     module = methods[0]
@@ -129,11 +128,10 @@ async def _call(func_name, args, kwargs, cache_expire):
         if callable(func):
             # 例如os.remove
             type_ = 'function'
-            if not inspect.iscoroutinefunction(func):
-                # 阻塞了会影响后面的请求处理，请求其实已经收到在队列中, 所以转成异步
-                func = to_async(func)
-            # 全当成异步使用
-            func = await func(*args, **kwargs)
+            if async_remote:
+                func = await to_async(func)(*args, **kwargs)
+            else:
+                func = to_sync(func)(*args, **kwargs)
 
         # 结果的类型名
         class_name = func.__class__.__name__

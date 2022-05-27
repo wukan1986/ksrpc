@@ -41,6 +41,7 @@
     <label>kwargs</label><input type="text" id="kwargs" value='{}'/><br/>
     <label>cache_get</label><input type="checkbox" id="cache_get" checked="checked"/>
     <label>cache_expire</label><input type="text" id="cache_expire" value="86400"/>
+    <label>async_remote</label><input type="checkbox" id="async_remote" checked="checked"/>
     <label>fmt</label><select id="fmt">
     <option>csv</option>
     <option>json</option>
@@ -71,6 +72,7 @@ function sendMessage(event) {
         "kwargs":eval("("+kwargs.value+")"),
         "cache_get":cache_get.checked,
         "cache_expire":eval("("+cache_expire.value+")"),
+        "async_remote":async_remote.checked,
         "fmt":fmt.options[fmt.selectedIndex].text,
     }
     ws.send(JSON.stringify(d))

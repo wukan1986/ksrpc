@@ -5,7 +5,7 @@ from ksrpc.hack.WindPy import hack
 
 conn = HttpxConnection('http://127.0.0.1:8000/api/file')
 conn.timeout = None
-client = RpcClient('WindPy', conn, is_async=False)
+client = RpcClient('WindPy', conn, async_local=False)
 client.cache_get = True
 client.cache_expire = 86400
 

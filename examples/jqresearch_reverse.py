@@ -15,11 +15,18 @@ async def async_main():
     async with WebSocketConnection(URL) as conn:
         conn.timeout = (5, 90)
 
-        jq = RpcClient('jqresearch', conn, is_async=False)
+        jq = RpcClient('jqresearch', conn, async_local=False)
         jq.cache_get = False
         jq.cache_expire = 60
         print(jq.api.get_price('000001.XSHE'))
         print(jq.api.get_ticks("000001.XSHE", start_dt=None, end_dt="2018-07-02", count=10))
+
+        # StateException('Interruptingcow can only be used from the MainThread.',)
+        # 由于query相关操作无法异步，所以只能指定async_remote=False
+        jqr = RpcClient('jqresearch_query', conn, async_local=False, async_remote=False)
+        jqr.cache_get = False
+        jqr.cache_expire = 60
+        print(jqr.get_fundamentals_valuation('2015-10-15'))
 
 
 asyncio.run(async_main())

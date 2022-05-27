@@ -3,7 +3,7 @@ from ksrpc.connections.http import HttpxConnection
 
 conn = HttpxConnection('http://127.0.0.1:8000/api/file')
 conn.timeout = None
-np = RpcClient('numpy', conn, is_async=False)
+np = RpcClient('numpy', conn, async_local=False)
 np.cache_get = True
 np.cache_expire = 86400
 

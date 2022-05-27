@@ -41,6 +41,7 @@ async def api_get(request: Request,
 
                   fmt: Format = Query(Format.CSV),
                   cache_get: bool = Query(True), cache_expire: int = Query(86400, lt=86400 * 15),
+                  async_remote: bool = Query(True),
                   user: str = Depends(get_current_user),
                   ):
     """无参数函数。可以通过get发起请求。可在浏览器中直接发起"""
@@ -56,6 +57,7 @@ async def api_post(request: Request,
 
                    fmt: Format = Query(Format.CSV),
                    cache_get: bool = Query(True), cache_expire: int = Query(86400, lt=86400 * 15),
+                   async_remote: bool = Query(True),
                    user: str = Depends(get_current_user),
                    ):
     """简单参数函数。可通过post请求，使用body区传json参数。可跨语言。可用Postman发起"""
@@ -70,6 +72,7 @@ async def api_file(request: Request,
 
                    fmt: Format = Query(Format.CSV),
                    cache_get: bool = Query(True), cache_expire: int = Query(86400, lt=86400 * 15),
+                   async_remote: bool = Query(True),
                    user: str = Depends(get_current_user),
                    ):
     """复杂参数函数。通过文件上传二进制方式。不可跨语言。"""
@@ -84,13 +87,14 @@ async def _do(request: Request,
 
               fmt: Format = Format.CSV,
               cache_get: bool = True, cache_expire: int = 86400,
+              async_remote: bool = True,
               file: bytes = None,  # 用于兼容文件上传模式，但实际没有使用
               user: str = None,  # 没有用到，用于token认证
               ):
     """实际处理函数"""
     try:
         before_call(request.client.host, user, func)
-        key, buf, data = await call(func, args, kwargs, cache_get, cache_expire)
+        key, buf, data = await call(func, args, kwargs, cache_get, cache_expire, async_remote)
     except Exception as e:
         # 主要是处理
         key = type(e).__name__

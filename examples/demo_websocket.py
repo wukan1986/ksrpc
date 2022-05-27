@@ -14,7 +14,7 @@ async def async_main():
     async with WebSocketConnection(URL, token=TOKEN) as conn:
         conn.timeout = (5, 90)
 
-        demo = RpcClient('demo', conn, is_async=False)
+        demo = RpcClient('demo', conn, async_local=False)
         demo.cache_get = True
         demo.cache_expire = 60
         print(demo.sync_say_hi("AA"))
@@ -25,7 +25,7 @@ def sync_main():
     with WebSocketConnection(URL, token=TOKEN) as client:
         client.timeout = (5, 90)
 
-        demo = RpcClient('demo', client, is_async=False)
+        demo = RpcClient('demo', client, async_local=False)
         demo.cache_get = True
         demo.cache_expire = 60
         print(demo.sync_say_hi("AA"))

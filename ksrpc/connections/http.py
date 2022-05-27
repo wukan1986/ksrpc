@@ -96,7 +96,8 @@ class HttpxConnection:
 
     async def call(self, func, args, kwargs,
                    fmt: Format = Format.PKL_GZIP,
-                   cache_get: bool = True, cache_expire: int = 3600):
+                   cache_get: bool = True, cache_expire: int = 3600,
+                   async_remote=True):
         """调用函数
 
         Parameters
@@ -113,13 +114,16 @@ class HttpxConnection:
             是否优先从缓存中获取
         cache_expire: int
             指定缓存超时。超时此时间将过期，指定0表示不进行缓存
+        async_remote: bool
+            异步方式调用
 
         """
         # 如果是JSON格式可以考虑返回CSV
         rsp_fmt = self._fmt
 
         # httpx解析枚举有问题，只能提前转成value，而requests没有此问题
-        params = dict(func=func, fmt=rsp_fmt.value, cache_get=cache_get, cache_expire=cache_expire)
+        params = dict(func=func, fmt=rsp_fmt.value,
+                      cache_get=cache_get, cache_expire=cache_expire, async_remote=async_remote)
         data = {'args': args, 'kwargs': kwargs}
         headers = None if self._token is None else {"Authorization": f"Bearer {self._token}"}
 

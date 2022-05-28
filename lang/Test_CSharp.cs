@@ -33,6 +33,7 @@ namespace Test_CShape
             string func, IEnumerable args = null, IDictionary kwargs = null,
             string fmt = "csv", // csv或json
             bool cache_get = true, int cache_expire = 86400,
+            bool async_remote = true,
             string token = null)
         {
             if (args == null)
@@ -45,7 +46,7 @@ namespace Test_CShape
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
             }
 
-            var url = $"{base_url}/post?func={func}&fmt={fmt}&cache_get={cache_get}&cache_expire={cache_expire}";
+            var url = $"{base_url}?func={func}&fmt={fmt}&cache_get={cache_get}&cache_expire={cache_expire}&async_remote={async_remote}";
             var jsonString = JsonSerializer.Serialize(new { args = args, kwargs = kwargs });
             var content = new StringContent(jsonString, Encoding.UTF8, "application/json");
 

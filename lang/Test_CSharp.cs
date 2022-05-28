@@ -27,7 +27,7 @@ namespace Test_CShape
         /// 当rsp_fmt=csv时，数据为DataFrame等格式时，返回csv，其它情况返回json
         /// 当rsp_fmt=
         /// </returns>
-        async static Task<string> Call(
+        async static Task<string> ksrpc_call(
             HttpClient client,
             string base_url,
             string func, IEnumerable args = null, IDictionary kwargs = null,
@@ -65,16 +65,16 @@ namespace Test_CShape
             const string base_url = "http://127.0.0.1:8000/api/post";
 
             {
-                var x = await Call(client, base_url, "demo.div", new List<int> { 5, 6 }, null, cache_get: true, cache_expire: 86400, token: token);
+                var x = await ksrpc_call(client, base_url, "demo.div", new List<int> { 5, 6 }, null, cache_get: true, cache_expire: 86400, token: token);
                 Console.WriteLine(x);
             }
 
             {
-                var x = await Call(client, base_url, "demo.div", null, new Dictionary<string, object> { { "a", 2 }, { "b", 3 } }, cache_get: true, cache_expire: 86400, token: token);
+                var x = await ksrpc_call(client, base_url, "demo.div", null, new Dictionary<string, object> { { "a", 2 }, { "b", 3 } }, cache_get: true, cache_expire: 86400, token: token);
                 Console.WriteLine(x);
             }
             {
-                var x = await Call(client, base_url, "demo.test", null, null, fmt: "json", cache_get: true, cache_expire: 86400, token: token);
+                var x = await ksrpc_call(client, base_url, "demo.test", null, null, fmt: "json", cache_get: true, cache_expire: 86400, token: token);
                 Console.WriteLine(x);
             }
         }

@@ -118,10 +118,10 @@ print(df)
 ## 反弹RPC
 如果提供服务的机器在内网，无法搭建服务，也无法直接访问怎么办？参考Reverse Shell的概念，本人提供了Reverse RPC功能
 1. 公网服务器上安装`pip install ksrpc[server]`，修改配置，运行`python run_app.py`，记下公网IP
-2. 内网服务器上安装`pip install ksrpc`，修改`rpc_reverse.py`中为公网IP，运行`python rpc_reverse.py`。此代码可粘贴到Notebook中运行
-3. 观察是否能连接成功
+2. 内网服务器上安装`pip install ksrpc`(如果网络受限，可下载whl文件本地安装)，修改`rpc_reverse.py`中为公网IP，运行`python rpc_reverse.py`。此代码可粘贴到Notebook中运行
+3. 观察内网脚本是否能连接公网服务器
 4. 个人电脑上安装`pip install ksrpc[client]`，编辑`examples/demo_reverse.py`中为公网IP，运行，观察结果
-5. 注意地址，内网被控端连接公网IP下的`/client`, 个人电脑连接公网IP下的`/admin`，并且要用完全一样的房间号
+5. 注意地址不同，内网被控端连接公网IP下的`/client`, 个人电脑连接公网IP下的`/admin`，并且要用完全一样的房间号
 
 ## 参考项目
 开发到一定阶段后才发现与`rpyc`这个免注册暴露函数的功能类似，大家也可以去学习一下

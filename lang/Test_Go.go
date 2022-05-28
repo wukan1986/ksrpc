@@ -26,7 +26,7 @@ func ksrpc_call(base_url string, func_ string, args interface{}, kwargs map[stri
 
 func main() {
     TOKEN:="secret-token-1"
-    URL:="http://1.117.86.34:8000/api/post"
+    URL:="http://127.0.0.1:8000/api/post"
     
     args1 := [...]interface{}{}
     kwargs1 :=map[string]interface{}{}

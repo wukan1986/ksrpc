@@ -2,7 +2,8 @@ install.packages("httr")
 
 library(httr)
 ksrpc_call <- function(base_url, func, args=list(), kwargs=list(), fmt="csv", cache_get = TRUE, cache_expire = 86400, async_remote = TRUE, token=NULL) {
-  url<-sprintf("%s?func=%s&fmt=csv&cache_get=%d&cache_expire=%d&async_remote=%d", base_url, func, cache_get,cache_expire, async_remote)
+  url<-sprintf("%s?func=%s&fmt=%s&cache_get=%d&cache_expire=%d&async_remote=%d",
+               base_url, func, fmt, cache_get,cache_expire, async_remote)
   json_array <- list(args = args, kwargs = kwargs)
   
   body = jsonlite::toJSON(json_array, auto_unbox = T)

@@ -28,21 +28,25 @@ func main() {
     TOKEN:="secret-token-1"
     URL:="http://127.0.0.1:8000/api/post"
     
-    args1 := [...]interface{}{}
-    kwargs1 :=map[string]interface{}{}
-    
-    res1 := ksrpc_call(URL, "demo.test", args1, kwargs1, "csv", true,86400,true,TOKEN)
-    fmt.Println(res1)
-    
-    args2 := [...]interface{}{1,2}
-    kwargs2 :=map[string]interface{}{}
-    
-    res2 := ksrpc_call(URL, "demo.div", args2, kwargs2, "csv", true,86400,true,TOKEN)
-    fmt.Println(res2)
-    
-    args3 := [...]interface{}{}
-    kwargs3 :=map[string]interface{}{"a":1, "b":3}
-    
-    res3 := ksrpc_call(URL, "demo.div", args3, kwargs3, "csv", true,86400,true,TOKEN)
-    fmt.Println(res3)
+    {
+        args := [...]interface{}{}
+        kwargs :=map[string]interface{}{}
+
+        res := ksrpc_call(URL, "demo.test", args, kwargs, "csv", true,86400,true,TOKEN)
+        fmt.Println(res)
+    }
+    {
+        args := [...]interface{}{1,2}
+        kwargs :=map[string]interface{}{}
+
+        res := ksrpc_call(URL, "demo.div", args, kwargs, "csv", true,86400,true,TOKEN)
+        fmt.Println(res)
+    }
+        {
+        args := [...]interface{}{}
+        kwargs :=map[string]interface{}{"a":1, "b":3}
+
+        res := ksrpc_call(URL, "demo.div", args, kwargs, "csv", true,86400,true,TOKEN)
+        fmt.Println(res)
+    }
 }

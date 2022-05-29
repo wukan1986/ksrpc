@@ -120,7 +120,9 @@ async def _do(request: Request,
 
     # DataFrame需要csv格式时走此路径
     if fmt == Format.CSV and data['type'] in ('DataFrame', 'Series'):
-        return PlainTextResponse(data['data'].to_csv())
+        # 指定返回的Content-Type，这样MATLAB的webread可自动识别
+        r = PlainTextResponse(data['data'].to_csv(), media_type="text/csv")
+        return r
 
     # JSON格式时，为了方便DataFrame的显示，做一下转换
     data['data'] = obj_to_dict(data['data'])

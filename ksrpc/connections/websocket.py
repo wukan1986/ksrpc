@@ -16,7 +16,8 @@ from urllib.parse import urlparse
 
 from loguru import logger
 
-from ..caller import call, check_methods
+from ..caller import call
+from ..utils.check_ import check_methods
 from ..model import Format, RspModel
 from ..serializer.json_ import dict_to_json, json_to_dict, dict_to_obj
 from ..serializer.pkl_gzip import serialize, deserialize
@@ -85,10 +86,7 @@ class WebSocketConnection:
         await self._client.__aexit__(exc_type, exc_value, traceback)
 
     def __enter__(self):
-        """同步with
-
-        !!! 目前测试发现只能异步，同步无法使用
-        """
+        """同步with"""
         to_sync(self.__aenter__)()
         return self
 

@@ -110,13 +110,13 @@ print(df)
 
 ## 跨语言开发文档
 跨语言示例代码在`lang`目录下
-[跨语言开发文档](lang/README.md)
+[跨语言开发文档](lang/)
 
 ## 声明
 此库仅供学习交流，请在数据提供方的授权范围内使用。请勿向第三方转发数据
 
-## 反弹RPC
-如果提供服务的机器在内网，无法搭建服务，也无法直接访问怎么办？参考Reverse Shell的概念，本人提供了Reverse RPC功能
+## 反弹RPC(反向RPC)
+如果提供服务的机器在内网，无法搭建服务，也无法直接访问怎么办？参考Reverse Shell的概念，本项目提供了Reverse RPC功能
 1. 公网服务器上安装`pip install ksrpc[server]`，修改配置，运行`python run_app.py`，记下公网IP
 2. 内网服务器上安装`pip install ksrpc`(如果网络受限，可下载whl文件本地安装)，修改`rpc_reverse.py`中为公网IP，运行`python rpc_reverse.py`。此代码可粘贴到Notebook中运行
 3. 观察内网脚本是否能连接公网服务器

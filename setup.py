@@ -33,6 +33,7 @@ setuptools.setup(
             'fastapi',
             'python-multipart',
             'uvicorn[standard]',
+            'IPy',
         ],
         # 客户端
         'client': [

@@ -13,6 +13,7 @@ WebSocket服务器
 from datetime import datetime
 from typing import List, Any, Dict, Union
 
+from IPy import IP
 from fastapi import WebSocket, WebSocketDisconnect, Depends, Query
 from fastapi import status
 from fastapi.security.utils import get_authorization_scheme_param
@@ -20,11 +21,10 @@ from loguru import logger
 
 from .app_ import app
 from ..caller import call, before_call
-from ..config import IP_CHECK
 from ..model import Format, RspModel
 from ..serializer.json_ import obj_to_dict, dict_to_json
 from ..serializer.pkl_gzip import deserialize, serialize
-from ..utils.ip_ import in_whitelist
+from ..utils.check_ import check_ip
 
 
 async def get_current_user(ws: WebSocket, token: Union[str, None] = Query(None)):
@@ -168,9 +168,15 @@ async def websocket_endpoint_admin(websocket: WebSocket, room: str, user=Depends
     await manager.connect(websocket)
     try:
         # 确保连上admin的用户有权限
+        from ..config import IP_CHECK, IP_ALLOW, IP_BLOCK
+
         if IP_CHECK:
-            if not in_whitelist(websocket.client.host):
-                raise Exception(f"{websocket.client.host} blocked.")
+            host = IP(websocket.client.host)
+            if not check_ip(IP_ALLOW, host, False):
+                raise Exception(f'IP Not Allowed, {host} not in allowlist')
+            if not check_ip(IP_BLOCK, host, True):
+                raise Exception(f'IP Not Allowed, {host} in blocklist')
+
         if user is None:
             raise Exception(f"Unauthorized")
 

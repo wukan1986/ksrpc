@@ -12,22 +12,13 @@ import hashlib
 from datetime import datetime
 
 # from fastapi import status
+from IPy import IP
 from loguru import logger
 
 from .model import RspModel
 from .serializer.pkl_gzip import serialize
 from .utils.async_ import to_async, to_sync
-from .utils.ip_ import in_whitelist
-
-
-def check_methods(dict_, list_, default):
-    """方法权限检查"""
-    d = dict_
-    for x in list_:
-        d = d.get(x, default)
-        if isinstance(d, bool):
-            return d
-    return d
+from .utils.check_ import check_methods, check_ip
 
 
 def make_key(func, args, kwargs):
@@ -41,12 +32,16 @@ def make_key(func, args, kwargs):
 def before_call(host, user, func):
     """调用前的检查"""
     from .config import (
-        METHODS_CHECK, METHODS_ALLOW, METHODS_BLOCK, IP_CHECK,
+        METHODS_CHECK, METHODS_ALLOW, METHODS_BLOCK,
+        IP_CHECK, IP_ALLOW, IP_BLOCK
     )
 
     if IP_CHECK:
-        if not in_whitelist(host):
-            raise Exception(f"{host} blocked. Copyright protection, Intranet use only")
+        host = IP(host)
+        if not check_ip(IP_ALLOW, host, False):
+            raise Exception(f'IP Not Allowed, {host} not in allowlist')
+        if not check_ip(IP_BLOCK, host, True):
+            raise Exception(f'IP Not Allowed, {host} in blocklist')
 
     if user is None:
         raise Exception(f"Unauthorized")

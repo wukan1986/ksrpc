@@ -27,6 +27,20 @@ def check_methods(dict_, list_, default):
     return default
 
 
+def get_quota(dict_, list_, default):
+    """方法权限检查
+
+    找到了，就用约定的值
+    没找到，就用默认值default
+    """
+    d = dict_
+    for x in list_:
+        d = d.get(x, default)
+        if isinstance(d, int):
+            return d
+    return default
+
+
 if __name__ == "__main__":
     from IPy import IP
 

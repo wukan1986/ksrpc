@@ -39,3 +39,27 @@ async def async_cache_setex(name, time, value):
         return await cache.setex(name, time, value)
     # 阻塞方式调用
     cache.setex(name, time, value)
+
+
+async def async_cache_incrby(name, amount):
+    """统一缓存写入方式"""
+    if cache_is_async:
+        return await cache.incrby(name, amount)
+    # 阻塞方式调用
+    cache.incrby(name, amount)
+
+
+async def async_cache_decrby(name, amount):
+    """统一缓存写入方式"""
+    if cache_is_async:
+        return await cache.decrby(name, amount)
+    # 阻塞方式调用
+    cache.decrby(name, amount)
+
+
+async def async_cache_keys(pattern):
+    """统一缓存读取方式"""
+    if cache_is_async:
+        return await cache.keys(pattern)
+    # 阻塞方式调用
+    return cache.keys(pattern)

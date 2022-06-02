@@ -8,12 +8,12 @@ import pandas as pd
 
 
 def sync_say_hi(name):
-    time.sleep(5)
+    time.sleep(1)
     return f'Hello {name}'
 
 
 async def async_say_hi(name):
-    await asyncio.sleep(5)
+    await asyncio.sleep(1)
     return f'Hello {name}'
 
 
@@ -22,6 +22,7 @@ def div(a, b):
 
 
 def test():
+    pd._testing._N = 250
     return pd._testing.makeTimeDataFrame()
 
 

@@ -1,10 +1,12 @@
 """
 服务端配置
 """
-# 是否检查可调用的方法。
-# !!! 生产环境中请不要随意关闭，否则权限过大
 from IPy import IP
 
+"""
+是否检查可调用的方法。
+!!! 生产环境中请不要随意关闭，否则权限过大
+"""
 METHODS_CHECK = False
 
 # 允许的方法
@@ -57,7 +59,9 @@ METHODS_BLOCK = {
     'demo': True,
 }
 
-# 是否进行IP检查，屏蔽外网访问
+"""
+是否进行IP检查，可屏蔽外网访问
+"""
 IP_CHECK = True
 
 IP_ALLOW = {
@@ -71,18 +75,38 @@ IP_BLOCK = {
     IP('8.8.4.4/32'): False,
 }
 
-# 缓存类型。生产环境请配置redis服务
-CACHE_TYPE = 'fakeredis'  # fakeredis, aioredis
-# 缓存服务地址
-REDIS_URL = "redis://:password@localhost:6379/0"
-
-# 是否启用授权
+"""
+是否启用授权
+"""
 AUTH_CHECK = False
 # API授权
 AUTH_TOKENS = {
     "secret-token-1": "john",
     "secret-token-2": "susan",
 }
+
+"""
+是否进行配额检查，可限制用户超量下载
+只限制初始请求数据，第二次请求走缓存消耗配额
+"""
+QUOTA_CHECK = False
+
+QUOTA_MODULE = {
+    'demo': 1000,
+}
+
+QUOTA_FUNC = {
+    'demo': {
+        'test': 500,
+    }
+}
+QUOTA_MODULE_DEFAULT = 10000 * 10000  # 1亿行
+QUOTA_FUNC_DEFAULT = 10000 * 1000  # 1千万行
+
+# 缓存类型。生产环境请配置redis服务
+CACHE_TYPE = 'fakeredis'  # fakeredis, aioredis
+# 缓存服务地址
+REDIS_URL = "redis://:password@localhost:6379/0"
 
 # 聚宽账号
 JQ_USERNAME = '13912345678'

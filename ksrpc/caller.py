@@ -11,14 +11,18 @@
 import hashlib
 from datetime import datetime
 
+import numpy as np
+import pandas as pd
 # from fastapi import status
 from IPy import IP
 from loguru import logger
 
+from .cache import async_cache_get, async_cache_setex, async_cache_incrby
+from .config import QUOTA_CHECK
 from .model import RspModel
 from .serializer.pkl_gzip import serialize
 from .utils.async_ import to_async, to_sync
-from .utils.check_ import check_methods, check_ip
+from .utils.check_ import check_methods, check_ip, get_quota
 
 
 def make_key(func, args, kwargs):
@@ -55,7 +59,7 @@ def before_call(host, user, func):
             raise Exception(f'Method Not Allowed, {func} in blocklist')
 
 
-async def call(func, args, kwargs, cache_get, cache_expire, async_remote, fmt=None):
+async def call(user, func, args, kwargs, cache_get, cache_expire, async_remote, fmt=None):
     try:
         buf = None
         data = None  # None表示从缓存中取的，需要其它格式时需要转换
@@ -64,14 +68,13 @@ async def call(func, args, kwargs, cache_get, cache_expire, async_remote, fmt=No
 
         if cache_get:
             # 优先取缓存
-            from .cache import async_cache_get
             buf = await async_cache_get(key)
         if buf is None:
-            cache_expire, buf, data = await _call(func, args, kwargs, cache_expire, async_remote)
+            cache_expire, buf, data = await _call(user, func, args, kwargs, cache_expire, async_remote)
+
             # 过短的缓存时间没有必要
             if cache_expire >= 30:
                 # 就算强行去查询数据，也会想办法存下，再次取时还能从缓存中取
-                from .cache import async_cache_setex
                 await async_cache_setex(key, cache_expire, buf)
                 logger.info(f'To cache: expire:{cache_expire}\tlen:{len(buf)}\t{key}')
         else:
@@ -91,11 +94,29 @@ async def call(func, args, kwargs, cache_get, cache_expire, async_remote, fmt=No
     return key, buf, data
 
 
-async def _call(func_name, args, kwargs, cache_expire, async_remote):
-    """进行实际调用"""
+async def _call(user, func_name, args, kwargs, cache_expire, async_remote):
+    """进行实际调用
+
+    将配额计算放在调用第三方代码时，优化用户体验
+    """
+
     methods = func_name.split('.')
     module = methods[0]
-    methods = methods[1:]
+
+    m_quota_key = f'QUOTA/{user}/{module}'
+    f_quota_key = f'QUOTA/{user}/{func_name}'
+    if QUOTA_CHECK:
+        # 配额检查
+        from .config import QUOTA_MODULE, QUOTA_MODULE_DEFAULT, QUOTA_FUNC, QUOTA_FUNC_DEFAULT
+
+        m_quota = int(await async_cache_get(m_quota_key) or 0)
+        f_quota = int(await async_cache_get(f_quota_key) or 0)
+        quota = get_quota(QUOTA_FUNC, methods, QUOTA_FUNC_DEFAULT)
+        if f_quota > quota:
+            raise Exception(f'Over quota: user:{user}, {func_name}:{f_quota}>{quota}')
+        quota = get_quota(QUOTA_MODULE, [module], QUOTA_MODULE_DEFAULT)
+        if m_quota > quota:
+            raise Exception(f'Over quota: user:{user}, {module}:{quota}')
 
     try:
         # 当前server目录下文件，用于特别处理
@@ -111,6 +132,7 @@ async def _call(func_name, args, kwargs, cache_expire, async_remote):
                  args=args,
                  kwargs=kwargs)
 
+    methods = methods[1:]
     try:
         # 转成字符串，后面可能于做cache的key
         logger.info(f'Call: {func_name}\t{args}\t{kwargs}')
@@ -144,6 +166,13 @@ async def _call(func_name, args, kwargs, cache_expire, async_remote):
         else:
             # 例如math.pi，但用法math.pi()
             data = func
+
+            if QUOTA_CHECK:
+                # 模块和函数都进行配额统计，是按行记（聚宽），按单元格记（万得），还是按调用次数记？
+                if isinstance(data, (pd.DataFrame, pd.Series, np.ndarray, list)):
+                    # 按行统计
+                    await async_cache_incrby(m_quota_key, len(data))
+                    await async_cache_incrby(f_quota_key, len(data))
 
         d.type = type(func).__name__
         d.data = data

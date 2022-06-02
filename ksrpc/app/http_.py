@@ -94,7 +94,7 @@ async def _do(request: Request,
     """实际处理函数"""
     try:
         before_call(request.client.host, user, func)
-        key, buf, data = await call(func, args, kwargs, cache_get, cache_expire, async_remote)
+        key, buf, data = await call(user, func, args, kwargs, cache_get, cache_expire, async_remote)
     except Exception as e:
         # 主要是处理
         key = type(e).__name__

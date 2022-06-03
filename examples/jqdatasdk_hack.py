@@ -16,6 +16,7 @@ hack(client)
 
 # 原版代码可都保持不变
 from jqdatasdk import *
+from datetime import datetime
 
 auth('JQ_USERNAME', 'JQ_PASSWORD')
 

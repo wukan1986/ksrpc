@@ -31,6 +31,8 @@ METHODS_ALLOW = {
     'tushare': True,
     'rqdatac': True,
     'demo': True,
+    'xbbg': True,
+    'eikon': True,
 }
 
 # 禁止的方法
@@ -39,24 +41,9 @@ METHODS_BLOCK = {
     'os': {
         'remove': False,
     },
-    'jqdatasdk': {
-        'is_auth': False,
-        'auth': False,
-        'logout': False,
-    },
-    'WindPy': {
-        'w': {
-            'start': False,
-        }
-    },
-    'tushare': {
-        'set_token': False,
-        'pro_api': False,
-    },
-    'rqdatac': {
-        'init': False,
-    },
-    'demo': True,
+    'ksrpc': {
+        'config': False,  # !!!一定要注意此处，否则客户端可以盗取账号
+    }
 }
 
 """

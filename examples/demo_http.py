@@ -19,6 +19,15 @@ def sync_main():
         print(demo.test())
         print(demo.sync_say_hi("AA"))
 
+        demo = RpcClient('config', conn, async_local=False)
+        demo.cache_get = True
+        demo.cache_expire = 60
+        print(demo.JQ_USERNAME())
+        demo = RpcClient('ksrpc.config', conn, async_local=False)
+        demo.cache_get = True
+        demo.cache_expire = 60
+        print(demo.JQ_USERNAME())
+
 
 async def async_main():
     async with HttpxConnection(URL, token='secret-token-1') as conn:

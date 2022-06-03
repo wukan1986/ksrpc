@@ -123,6 +123,8 @@ async def _call(user, func_name, args, kwargs, cache_expire, async_remote):
         api = __import__(f'{__package__}.server.{module}', fromlist=['*'])
     except ModuleNotFoundError as e:
         # 导入系统包
+        if module == __package__:
+            raise Exception(f'Not Allowed to call {__package__}')
         api = __import__(module, fromlist=['*'])
 
     # 返回的数据包
@@ -194,7 +196,7 @@ async def _call(user, func_name, args, kwargs, cache_expire, async_remote):
         buf = serialize(d).read()
 
     except Exception as e:
-        d.status = 500,  # status.HTTP_500_INTERNAL_SERVER_ERROR
+        d.status = 500  # status.HTTP_500_INTERNAL_SERVER_ERROR
         d.type = type(e).__name__
         d.data = repr(e)
         # 错误也缓存一会，防止用户写了死循环搞崩上游

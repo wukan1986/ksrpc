@@ -8,6 +8,8 @@ client = RpcClient('rqdatac', conn, async_local=False)
 client.cache_get = True
 client.cache_expire = 86400
 
+print(client.RQ_USERNAME())
+
 # 对原版库进行定制处理，需要已经安装了原版库
 from ksrpc.hack.rqdatac import hack
 

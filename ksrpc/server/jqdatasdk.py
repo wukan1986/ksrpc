@@ -8,8 +8,6 @@ from atexit import register
 from jqdatasdk.client import JQDataClient
 from loguru import logger
 
-from ..config import JQ_USERNAME, JQ_PASSWORD
-
 
 class HackThreadingLocal:
     _instance = None
@@ -36,7 +34,12 @@ __all__ = []
 def __getattr__(name):
     # 登录认证，争取只做一次
     if not _is_auth():
+        from ..config import JQ_USERNAME, JQ_PASSWORD
+
         _auth(JQ_USERNAME, JQ_PASSWORD)
+        # 用完后清空，防止被客户端获取
+        del JQ_USERNAME
+        del JQ_PASSWORD
 
     return JQDataClient.instance().__getattr__(name)
 

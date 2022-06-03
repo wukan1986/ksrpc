@@ -17,11 +17,11 @@ from urllib.parse import urlparse
 from loguru import logger
 
 from ..caller import call
-from ..utils.check_ import check_methods
 from ..model import Format, RspModel
 from ..serializer.json_ import dict_to_json, json_to_dict, dict_to_obj
 from ..serializer.pkl_gzip import serialize, deserialize
 from ..utils.async_ import to_sync
+from ..utils.check_ import check_methods
 
 
 def process_response(r):

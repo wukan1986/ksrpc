@@ -13,6 +13,9 @@ from rqdatac.client import get_client
 from ..config import RQ_USERNAME, RQ_PASSWORD
 
 init(username=RQ_USERNAME, password=RQ_PASSWORD)
+# 用完后清空，防止被客户端获取
+del RQ_USERNAME
+del RQ_PASSWORD
 
 
 @register

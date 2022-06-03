@@ -170,9 +170,21 @@ async def _call(user, func_name, args, kwargs, cache_expire, async_remote):
             if QUOTA_CHECK:
                 # 模块和函数都进行配额统计，是按行记（聚宽），按单元格记（万得），还是按调用次数记？
                 if isinstance(data, (pd.DataFrame, pd.Series, np.ndarray, list)):
+                    # # 按调用次数
+                    # await async_cache_incrby(m_quota_key, 1)
+                    # await async_cache_incrby(f_quota_key, 1)
+
                     # 按行统计
                     await async_cache_incrby(m_quota_key, len(data))
                     await async_cache_incrby(f_quota_key, len(data))
+
+                    # # 按单元格统计
+                    # if hasattr(data, 'size'):
+                    #     await async_cache_incrby(m_quota_key, data.size)
+                    #     await async_cache_incrby(f_quota_key, data.size)
+                    # else:
+                    #     await async_cache_incrby(m_quota_key, len(data))
+                    #     await async_cache_incrby(f_quota_key, len(data))
 
         d.type = type(func).__name__
         d.data = data

@@ -18,6 +18,7 @@ hack(client)
 import tushare as ts
 
 ts.set_token('TUSHARE_TOKEN')
+print(ts.get_token())
 pro = ts.pro_api()
 df = pro.trade_cal(exchange='', start_date='20210901', end_date='20211231')
 print(df)

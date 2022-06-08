@@ -24,6 +24,7 @@ setuptools.setup(
         'pandas',
         'pydantic',
         'websockets',
+        'IPy',
     ],
     extras_require={
         # 服务端

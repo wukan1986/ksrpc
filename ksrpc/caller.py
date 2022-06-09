@@ -18,7 +18,7 @@ from IPy import IP
 from loguru import logger
 
 from .cache import async_cache_get, async_cache_setex, async_cache_incrby
-from .config import QUOTA_CHECK
+from .config import QUOTA_CHECK, IP_ALLOW, IP_BLOCK, IP_CHECK, METHODS_CHECK
 from .model import RspModel
 from .serializer.pkl_gzip import serialize
 from .utils.async_ import to_async, to_sync
@@ -33,18 +33,22 @@ def make_key(func, args, kwargs):
     return f'{func}_{args_kwargs}'
 
 
+# 两张清单数据提前处理，加快处理速度
+__IP_ALLOW__ = {IP(k): v for k, v in IP_ALLOW.items()}
+__IP_BLOCK__ = {IP(k): v for k, v in IP_BLOCK.items()}
+
+
 def before_call(host, user, func):
     """调用前的检查"""
     from .config import (
-        METHODS_CHECK, METHODS_ALLOW, METHODS_BLOCK,
-        IP_CHECK, IP_ALLOW, IP_BLOCK
+        METHODS_ALLOW, METHODS_BLOCK,
     )
 
     if IP_CHECK:
         host = IP(host)
-        if not check_ip(IP_ALLOW, host, False):
+        if not check_ip(__IP_ALLOW__, host, False):
             raise Exception(f'IP Not Allowed, {host} not in allowlist')
-        if not check_ip(IP_BLOCK, host, True):
+        if not check_ip(__IP_BLOCK__, host, True):
             raise Exception(f'IP Not Allowed, {host} in blocklist')
 
     if user is None:

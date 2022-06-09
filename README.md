@@ -41,9 +41,9 @@ Keep Simple RPC。免注册远程过程调用
 ## 服务端安装
 1. 安装`ksrpc`库
 > pip install ksrpc[server] -i https://mirrors.aliyun.com/pypi/simple --upgrade
-2. 编辑`config.py`文件，进行`ksrpy`的功能管理。如权限配置
-3. 编辑`run_app.py`文件，进行`FastAPI`服务器设置。如端口号等
-4. 运行`python run_app.py`
+2. 直接运行`python -m ksrpc`, 观察提示的`config.py`文件路径
+2. 编辑`config.py`文件，进行`ksrpy`的功能管理。如权限配置等
+4. 再次运行`python -m ksrpc`或对应目录下运行`python run_app.py`
 5. 确保服务器上防火墙已经开放对应端口
 
 ## 客户端安装

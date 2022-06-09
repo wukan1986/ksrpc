@@ -1,7 +1,6 @@
 """
 服务端配置
 """
-from IPy import IP
 
 """
 是否检查可调用的方法。
@@ -52,14 +51,14 @@ METHODS_BLOCK = {
 IP_CHECK = True
 
 IP_ALLOW = {
-    IP('127.0.0.0/8'): True,  # 回环地址
-    IP('192.168.0.0/16'): True,  # C类内网
-    IP('172.16.0.0/12'): True,  # B类内网
-    IP('10.0.0.0/8'): True,  # A类内网
+    '127.0.0.0/8': True,  # 回环地址
+    '192.168.0.0/16': True,  # C类内网
+    '172.16.0.0/12': True,  # B类内网
+    '10.0.0.0/8': True,  # A类内网
 }
 IP_BLOCK = {
-    IP('8.8.8.8/32'): False,
-    IP('8.8.4.4/32'): False,
+    '8.8.8.8/32': False,
+    '8.8.4.4/32': False,
 }
 
 """
@@ -111,3 +110,6 @@ RQ_PASSWORD = '12345678'
 
 # 启用万得
 WIND_ENABLE = False
+
+# 打印当前配置
+print('current config:', __file__)

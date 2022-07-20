@@ -21,6 +21,7 @@ from loguru import logger
 
 from .app_ import app
 from ..caller import call, before_call
+from ..config import IP_BLOCK, IP_ALLOW
 from ..model import Format, RspModel
 from ..serializer.json_ import obj_to_dict, dict_to_json
 from ..serializer.pkl_gzip import deserialize, serialize
@@ -162,19 +163,24 @@ async def websocket_endpoint_client(websocket: WebSocket, room: str, user=Depend
         await websocket.close()
 
 
+# 两张清单数据提前处理，加快处理速度
+__IP_ALLOW__ = {IP(k): v for k, v in IP_ALLOW.items()}
+__IP_BLOCK__ = {IP(k): v for k, v in IP_BLOCK.items()}
+
+
 @app.websocket("/ws/admin")
 async def websocket_endpoint_admin(websocket: WebSocket, room: str, user=Depends(get_current_user)):
     """控制端。等待控制端接入，然后转发"""
     await manager.connect(websocket)
     try:
         # 确保连上admin的用户有权限
-        from ..config import IP_CHECK, IP_ALLOW, IP_BLOCK
+        from ..config import IP_CHECK
 
         if IP_CHECK:
             host = IP(websocket.client.host)
-            if not check_ip(IP_ALLOW, host, False):
+            if not check_ip(__IP_ALLOW__, host, False):
                 raise Exception(f'IP Not Allowed, {host} not in allowlist')
-            if not check_ip(IP_BLOCK, host, True):
+            if not check_ip(__IP_BLOCK__, host, True):
                 raise Exception(f'IP Not Allowed, {host} in blocklist')
 
         if user is None:

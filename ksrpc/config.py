@@ -48,7 +48,7 @@ METHODS_BLOCK = {
 """
 是否进行IP检查，可屏蔽外网访问
 """
-IP_CHECK = True
+IP_CHECK = False
 
 IP_ALLOW = {
     '127.0.0.0/8': True,  # 回环地址

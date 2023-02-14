@@ -24,6 +24,7 @@ setuptools.setup(
         'pandas',
         'pydantic',
         'websockets',
+        'IPy',
     ],
     extras_require={
         # 服务端
@@ -33,7 +34,6 @@ setuptools.setup(
             'fastapi',
             'python-multipart',
             'uvicorn[standard]',
-            'IPy',
         ],
         # 客户端
         'client': [

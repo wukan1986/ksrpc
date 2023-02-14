@@ -75,7 +75,8 @@ class WebSocketConnection:
         from websockets import connect
 
         headers = None if self._token is None else {"Authorization": f"Bearer {self._token}"}
-        self._client = connect(self._url, extra_headers=headers)
+        # 默认是2**20，只有1MB，扩充一下成8MB
+        self._client = connect(self._url, extra_headers=headers, max_size=2**23)
 
         self._ws = await self._client.__aenter__()
         self._with = True

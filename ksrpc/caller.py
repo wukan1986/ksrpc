@@ -141,7 +141,7 @@ async def _call(user, func_name, args, kwargs, cache_expire, async_remote):
     methods = methods[1:]
     try:
         # 转成字符串，后面可能于做cache的key
-        logger.info(f'Call: {func_name}\t{args}\t{kwargs}')
+        logger.info(f'Call: {func_name}\t{args}\t{kwargs}'[:200])
 
         func = api
         for method in methods:

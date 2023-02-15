@@ -76,7 +76,7 @@ class WebSocketConnection:
 
         headers = None if self._token is None else {"Authorization": f"Bearer {self._token}"}
         # 默认是2**20，只有1MB，扩充一下成8MB
-        self._client = connect(self._url, extra_headers=headers, max_size=2**23)
+        self._client = connect(self._url, extra_headers=headers, max_size=2 ** 23)
 
         self._ws = await self._client.__aenter__()
         self._with = True
@@ -125,7 +125,8 @@ class WebSocketConnection:
         while True:
             req = await self._ws.recv()
             req = deserialize(req)
-            logger.info(req)
+            # 可能显示太多，需要裁剪一些
+            logger.info(repr(req)[:200])
             # 不需要缓存
             req['cache_get'] = False
             req['cache_expire'] = 0
@@ -140,18 +141,21 @@ class WebSocketConnection:
                         raise Exception(f'Method Not Allowed, {func} not in allowlist')
                     if not check_methods(METHODS_BLOCK, methods, True):
                         raise Exception(f'Method Not Allowed, {func} in blocklist')
-
-                key, buf, data = await call(**req)
+                # 每个连上去的都分别使用了自己的用户名，这里不需要用户名即可操作
+                user = 'reverse'
+                key, buf, data = await call(user, **req)
             except Exception as e:
                 # 主要是处理
                 key = type(e).__name__
                 # 这里没有缓存，因为这个错误是服务器内部检查
                 data = RspModel(status=401,  # status.HTTP_401_UNAUTHORIZED,
                                 datetime=datetime.now().isoformat(),
-                                func=func, args=req['args'], kwargs=req['args'])
+                                func=func, args=req['args'], kwargs=req['kwargs'])
                 data.type = type(e).__name__
                 data.data = repr(e)
                 data = data.dict()
                 buf = serialize(data).read()
 
+            print('需要发送字节数', len(buf))
             await self._ws.send(buf)
+            print('发送完成')

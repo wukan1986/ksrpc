@@ -9,6 +9,7 @@ WebSocket服务器
 3. `/ws/bytes` 内部调用
 4. `/ws/client` `/ws/amdin`, 反弹RPC
 
+反向RPC时偶尔出现无响应的情况，应当是大数据量时导致的不稳定，所以自己实现了分片功能
 """
 from datetime import datetime
 from typing import List, Any, Dict, Union
@@ -26,6 +27,9 @@ from ..model import Format, RspModel
 from ..serializer.json_ import obj_to_dict, dict_to_json
 from ..serializer.pkl_gzip import deserialize, serialize
 from ..utils.check_ import check_ip
+
+# 二进制拆包
+BYTES_PER_SEND = 1024 * 32
 
 
 async def get_current_user(ws: WebSocket, token: Union[str, None] = Query(None)):
@@ -127,11 +131,19 @@ async def websocket_endpoint_bytes(websocket: WebSocket, user=Depends(get_curren
     try:
         while True:
             req = await websocket.receive_bytes()
+            bl = deserialize(req)
+            req = b''
+            while len(req) < bl:
+                req += await websocket.receive_bytes()
             req = deserialize(req)
             logger.info(req)
             req['fmt'] = Format.PKL_GZIP
-            rsp = await _do(websocket, **req, user=user)
-            await websocket.send_bytes(rsp)
+            b = await _do(websocket, **req, user=user)
+            bl = len(b)
+            await websocket.send_bytes(serialize(bl).read())
+            for i in range(0, len(b), BYTES_PER_SEND):
+                await websocket.send_bytes(b[i:i + BYTES_PER_SEND])
+
     except WebSocketDisconnect:
         manager.disconnect(websocket)
 

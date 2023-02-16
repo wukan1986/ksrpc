@@ -23,37 +23,27 @@ from ..serializer.pkl_gzip import serialize, deserialize
 from ..utils.async_ import to_sync
 from ..utils.check_ import check_methods
 
+# 二进制拆包
+BYTES_PER_SEND = 1024 * 32
 
-def process_response(r):
-    """处理响应。根据不同的响应分别处理
 
-    Parameters
-    ----------
-    r: Response
+def process_response_dict(data):
+    # data = deserialize(r)
+    if data['status'] == 200:
+        return data['data']
+    return data
 
-    Returns
-    -------
-    object
-    json
-    csv
 
-    """
-    if isinstance(r, bytes):
-        # 二进制，反序列化后是字典
-        data = deserialize(r)
-        if data['status'] == 200:
-            return data['data']
-        return data
-    else:
-        # json字符串转成字字典
-        data = json_to_dict(r)
-        # 特殊类型先还原
-        if data.get('type', None) in ('DataFrame', 'Series', 'ndarray'):
-            data['data'] = dict_to_obj(data['data'])
-        # 成功响应直接返回数据区
-        if data['status'] == 200:
-            return data['data']
-        return data
+def process_response_json(r):
+    # json字符串转成字字典
+    data = json_to_dict(r)
+    # 特殊类型先还原
+    if data.get('type', None) in ('DataFrame', 'Series', 'ndarray'):
+        data['data'] = dict_to_obj(data['data'])
+    # 成功响应直接返回数据区
+    if data['status'] == 200:
+        return data['data']
+    return data
 
 
 class WebSocketConnection:
@@ -112,18 +102,35 @@ class WebSocketConnection:
 
         if self._fmt == Format.PKL_GZIP:
             # 二进制格式
-            await self._ws.send(serialize(d).read())
+            b = serialize(d).read()
+            bl = len(b)
+            await self._ws.send(serialize(bl).read())
+            for i in range(0, len(b), BYTES_PER_SEND):
+                await self._ws.send(b[i:i + BYTES_PER_SEND])
         else:
             # json格式
             await self._ws.send(dict_to_json(d))
 
+        # 这里收到的数据是否需要解析一下，如果是二进制的，需要特别处理
         rsp = await self._ws.recv()
-        return process_response(rsp)
+        if isinstance(rsp, bytes):
+            # 二进制，反序列化后是字典
+            bl = deserialize(rsp)
+            rsp = b''
+            while len(rsp) < bl:
+                rsp += await self._ws.recv()
+            return process_response_dict(deserialize(rsp))
+        else:
+            return process_response_json(rsp)
 
     async def reverse(self):
         """反弹RPC的被控端"""
         while True:
             req = await self._ws.recv()
+            bl = deserialize(req)
+            req = b''
+            while len(req) < bl:
+                req += await self._ws.recv()
             req = deserialize(req)
             # 可能显示太多，需要裁剪一些
             logger.info(repr(req)[:200])
@@ -156,6 +163,12 @@ class WebSocketConnection:
                 data = data.dict()
                 buf = serialize(data).read()
 
-            print('需要发送字节数', len(buf))
-            await self._ws.send(buf)
+            # 将这里分成两种处理方法
+            bl = len(buf)
+            print('需要发送字节数', bl, end='')
+            await self._ws.send(serialize(bl).read())
+            for i in range(0, len(buf), BYTES_PER_SEND):
+                print('-', end='')
+                await self._ws.send(buf[i:i + BYTES_PER_SEND])
+                print('+', end='')
             print('发送完成')

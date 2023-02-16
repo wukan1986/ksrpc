@@ -23,6 +23,7 @@ URL = 'ws://127.0.0.1:8000/ws/client?room=9527'
 
 async def async_main():
     while True:
+        await asyncio.sleep(1)
         logger.info('try to connect')
         try:
             # 连接被控端地址（带/client），同时还要指定约定的房间号

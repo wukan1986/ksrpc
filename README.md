@@ -42,7 +42,7 @@ Keep Simple RPC。免注册远程过程调用
 1. 安装`ksrpc`库
 > pip install ksrpc[server] -i https://mirrors.aliyun.com/pypi/simple --upgrade
 2. 直接运行`python -m ksrpc`, 观察提示的`config.py`文件路径
-2. 编辑`config.py`文件，进行`ksrpy`的功能管理。如权限配置等
+2. 编辑`config.py`文件，进行`ksrpy`的功能管理。如权限配置等`ENABLE_SERVER = True`
 4. 再次运行`python -m ksrpc`或对应目录下运行`python run_app.py`
 5. 确保服务器上防火墙已经开放对应端口
 
@@ -116,13 +116,14 @@ print(df)
 ## 声明
 此库仅供学习交流，请在数据提供方的授权范围内使用。请勿向第三方转发数据
 
-## 反弹RPC(反向RPC)
+## 反弹RPC(反向RPC)/中继服务
 如果提供服务的机器在内网，无法搭建服务，也无法直接访问怎么办？参考Reverse Shell的概念，本项目提供了Reverse RPC功能
 1. 公网服务器上安装`pip install ksrpc[server]`，修改配置，运行`python run_app.py`，记下公网IP
 2. 内网服务器上安装`pip install ksrpc`(如果网络受限，可下载whl文件本地安装)，修改`rpc_reverse.py`中为公网IP，运行`python rpc_reverse.py`。此代码可粘贴到Notebook中运行
 3. 观察内网脚本是否能连接公网服务器
 4. 个人电脑上安装`pip install ksrpc[client]`，编辑`examples/demo_reverse.py`中为公网IP，运行，观察结果
 5. 注意地址不同，内网被控端连接公网IP下的`/client`, 个人电脑连接公网IP下的`/admin`，并且要用完全一样的房间号
+6. 默认情况下，`config.py`中的`ENABLE_RELAY = True`已经开启
 
 ## 参考项目
 开发到一定阶段后才发现与`rpyc`这个免注册暴露函数的功能类似，大家也可以去学习一下

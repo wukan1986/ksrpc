@@ -22,7 +22,7 @@ from loguru import logger
 
 from .app_ import app
 from ..caller import call, before_call
-from ..config import IP_BLOCK, IP_ALLOW
+from ..config import IP_BLOCK, IP_ALLOW, ENABLE_RELAY
 from ..model import Format, RspModel
 from ..serializer.json_ import obj_to_dict, dict_to_json
 from ..serializer.pkl_gzip import deserialize, serialize
@@ -158,6 +158,9 @@ async def websocket_endpoint_client(websocket: WebSocket, room: str, user=Depend
     """被控端。肉鸡接入后，等待控制端接入，然后转发到肉鸡，然后转发。必须要进入同一房间"""
     await manager.connect(websocket)
     try:
+        if not ENABLE_RELAY:
+            raise Exception(f'Relay offline')
+
         if user is None:
             raise Exception(f"Unauthorized")
 
@@ -187,6 +190,9 @@ async def websocket_endpoint_admin(websocket: WebSocket, room: str, user=Depends
     try:
         # 确保连上admin的用户有权限
         from ..config import IP_CHECK
+
+        if not ENABLE_RELAY:
+            raise Exception(f'Relay offline')
 
         if IP_CHECK:
             host = IP(websocket.client.host)

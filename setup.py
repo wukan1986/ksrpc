@@ -25,6 +25,7 @@ setuptools.setup(
         'pydantic',
         'websockets',
         'IPy',
+        'fakeredis',
     ],
     extras_require={
         # 服务端

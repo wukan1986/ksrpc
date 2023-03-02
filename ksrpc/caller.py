@@ -18,7 +18,7 @@ from IPy import IP
 from loguru import logger
 
 from .cache import async_cache_get, async_cache_setex, async_cache_incrby
-from .config import QUOTA_CHECK, IP_ALLOW, IP_BLOCK, IP_CHECK, METHODS_CHECK
+from .config import QUOTA_CHECK, IP_ALLOW, IP_BLOCK, IP_CHECK, METHODS_CHECK, ENABLE_SERVER
 from .model import RspModel
 from .serializer.pkl_gzip import serialize
 from .utils.async_ import to_async, to_sync
@@ -43,6 +43,9 @@ def before_call(host, user, func):
     from .config import (
         METHODS_ALLOW, METHODS_BLOCK,
     )
+
+    if not ENABLE_SERVER:
+        raise Exception(f'Service offline')
 
     if IP_CHECK:
         host = IP(host)

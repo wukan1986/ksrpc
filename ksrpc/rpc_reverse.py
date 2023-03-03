@@ -18,10 +18,12 @@ from loguru import logger
 from ksrpc.connections.websocket import WebSocketConnection
 
 TOKEN = 'secret-token-2'
+# 注意：房间号请设置一个复杂的字符串，一定不要与其他用户的冲突，否则数据会乱
 URL = 'ws://127.0.0.1:8000/ws/client?room=9527'
 
 
 async def async_main():
+    logger.info('再次强调，使用完后一定要停止内核，防止长期占用资源!!!')
     # 加上重试次数限制，防止忘记关闭Notebook内核导致占用资源
     cnt = 10
     while cnt > 0:

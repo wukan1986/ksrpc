@@ -7,7 +7,7 @@ from ksrpc.connections.websocket import WebSocketConnection
 from ksrpc.rpc_client import RpcClient
 
 TOKEN = 'secret-token-1'
-URL = 'ws://127.0.0.1:8000/ws/admin?room=9527'
+URL = 'ws://127.0.0.1:8000/ws/admin?room=HA9527'
 
 
 async def async_main():

@@ -11,6 +11,7 @@
 3. 为了使用方便，还提供了不需with的版本，可直接调用
 
 """
+import asyncio
 from datetime import datetime
 from urllib.parse import urlparse
 
@@ -123,10 +124,31 @@ class WebSocketConnection:
         else:
             return process_response_json(rsp)
 
-    async def reverse(self):
+    async def reverse(self, recv_timeout=True):
         """反弹RPC的被控端"""
+        recv_count = 0
         while True:
-            req = await self._ws.recv()
+            if recv_timeout:
+                # 对第一个数据包长度添加超时机制
+                timeout_count = 0
+                while True:
+                    try:
+                        # 等15秒
+                        req = await asyncio.wait_for(self._ws.recv(), 30)
+                        timeout_count = 0
+                        break
+                    except asyncio.TimeoutError:
+                        timeout_count += 1
+                        # print('接收超时')
+                        if timeout_count >= 2:
+                            # 约60秒
+                            # print('接收超时断开')
+                            return recv_count
+            else:
+                # 一直等待，无超时
+                req = await self._ws.recv()
+
+            recv_count += 1
             bl = deserialize(req)
             req = b''
             while len(req) < bl:
@@ -165,10 +187,10 @@ class WebSocketConnection:
 
             # 将这里分成两种处理方法
             bl = len(buf)
-            print('需要发送字节数', bl, end='')
+            print(f'需发送字节数:{bl} ', end='')
             await self._ws.send(serialize(bl).read())
             for i in range(0, len(buf), BYTES_PER_SEND):
-                print('-', end='')
+                print('>', end='')
                 await self._ws.send(buf[i:i + BYTES_PER_SEND])
-                print('+', end='')
-            print('发送完成')
+                print('\b=', end='')
+            print(' 发送完成')

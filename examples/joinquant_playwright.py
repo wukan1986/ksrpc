@@ -40,6 +40,8 @@ def run(playwright: Playwright) -> None:
     with page.expect_popup() as page1_info:
         page.frame_locator("iframe[name=\"research\"]").get_by_role("link", name="ksrpc_run.ipynb").click()
     page1 = page1_info.value
+    print('可能网页没有加载完，等待一会')
+    page1.wait_for_load_state("load")
     page1.frame_locator("iframe[name=\"research\"]").get_by_role("link", name="单元格").click()
     page1.frame_locator("iframe[name=\"research\"]").get_by_role("link", name="运行所有", exact=True).click()
 

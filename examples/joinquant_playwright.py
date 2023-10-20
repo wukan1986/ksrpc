@@ -42,12 +42,12 @@ def run(playwright: Playwright) -> None:
     page1 = page1_info.value
     print('可能网页没有加载完，等待一会')
     page1.wait_for_load_state("load")
-    page1.frame_locator("iframe[name=\"research\"]").get_by_role("link", name="单元格").click()
-    page1.frame_locator("iframe[name=\"research\"]").get_by_role("link", name="运行所有", exact=True).click()
+    page1.frame_locator("iframe[name=\"research\"]").get_by_role("link", name="内核").click()
+    page1.frame_locator("iframe[name=\"research\"]").get_by_role("link", name="重启并运行所有").click()
+    page1.frame_locator("iframe[name=\"research\"]").get_by_role("button", name="重启并运行所有单元格").click()
 
     # ---------------------
-    print('关闭浏览器前请手工将Notebook内核关闭，否则下次登录时`运行所有`可能失效')
-    # input('Ctrl+C 退出')
+    print('已完成')
     context.close()
     browser.close()
 

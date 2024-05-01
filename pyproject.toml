@@ -10,7 +10,7 @@ authors = [
 description = "Keep Simple RPC"
 readme = "README.md"
 requires-python = ">=3.6"
-keywords = ["polars", "expression", "talib"]
+keywords = ["rpc"]
 license = { file = "LICENSE" }
 classifiers = [
     "Development Status :: 4 - Beta",

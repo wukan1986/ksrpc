@@ -3,7 +3,7 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ksprc"
+name = "ksrpc"
 authors = [
     { name = "wukan", email = "wu-kan@163.com" },
 ]

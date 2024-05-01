@@ -1,7 +1,6 @@
 # 客户端，用于处理请求
 # 需要选择到底是http还是ws，还是nng一类的
-
-from .utils.async_ import to_async, to_sync
+from revolving_asyncio import to_async, to_sync
 
 
 class RpcClient:

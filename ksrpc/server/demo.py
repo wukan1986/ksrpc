@@ -21,8 +21,9 @@ def div(a, b):
     return a / b
 
 
-def test():
-    pd._testing._N = 250
+def test(i):
+    pd._testing._N = 10000
+    pd._testing._K = 26
     return pd._testing.makeTimeDataFrame()
 
 

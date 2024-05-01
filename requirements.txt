@@ -9,3 +9,4 @@ pydantic
 python-multipart
 requests
 websockets
+IPy

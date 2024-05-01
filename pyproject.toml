@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ksprc"
+authors = [
+    { name = "wukan", email = "wu-kan@163.com" },
+]
+description = "Keep Simple RPC"
+readme = "README.md"
+requires-python = ">=3.6"
+keywords = ["polars", "expression", "talib"]
+license = { file = "LICENSE" }
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python"
+]
+dependencies = [
+    'loguru',
+    'revolving_asyncio',
+    'pandas',
+    'pydantic',
+    'websockets',
+    'IPy',
+    'fakeredis',
+]
+dynamic = ["version"]
+
+[project.optional-dependencies]
+client = [
+    "httpx",
+]
+server = [
+    'aioredis',
+    'fakeredis',
+    'fastapi',
+    'python-multipart',
+    'uvicorn[standard]',
+]
+
+[tool.setuptools]
+packages = [
+    "ksrpc",
+    "ksrpc.app",
+    "ksrpc.connections",
+    "ksrpc.hack",
+    "ksrpc.serializer",
+    "ksrpc.server",
+    "ksrpc.utils",
+]
+
+[tool.setuptools.dynamic]
+version = { attr = "ksrpc._version.__version__" }

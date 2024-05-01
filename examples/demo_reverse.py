@@ -19,8 +19,8 @@ async def async_main():
         demo.cache_get = False
         demo.cache_expire = 60
         print(demo.sync_say_hi("AA"))
-        print(demo.test1())
-        # print(demo.test())
+        for i in range(100):
+            print(demo.test(i).head(1))
 
 
 asyncio.run(async_main())

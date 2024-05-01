@@ -16,13 +16,14 @@ from datetime import datetime
 from urllib.parse import urlparse
 
 from loguru import logger
+from revolving_asyncio import to_sync
 
 from ..caller import call
 from ..model import Format, RspModel
 from ..serializer.json_ import dict_to_json, json_to_dict, dict_to_obj
 from ..serializer.pkl_gzip import serialize, deserialize
-from ..utils.async_ import to_sync
 from ..utils.check_ import check_methods
+from ..utils.notebook import clear_output
 
 # 二进制拆包
 BYTES_PER_SEND = 1024 * 32
@@ -124,9 +125,10 @@ class WebSocketConnection:
         else:
             return process_response_json(rsp)
 
-    async def reverse(self, recv_timeout=True):
+    async def reverse(self, recv_timeout=True, clear_cnt=5):
         """反弹RPC的被控端"""
         recv_count = 0
+        _clear_cnt = 0
         while True:
             if recv_timeout:
                 # 对第一个数据包长度添加超时机制
@@ -185,6 +187,9 @@ class WebSocketConnection:
                 data = data.dict()
                 buf = serialize(data).read()
 
+            # 释放内存
+            del data
+            del req
             # 将这里分成两种处理方法
             bl = len(buf)
             print(f'需发送字节数:{bl} ', end='')
@@ -194,3 +199,9 @@ class WebSocketConnection:
                 await self._ws.send(buf[i:i + BYTES_PER_SEND])
                 print('\b=', end='')
             print(' 发送完成')
+            # 释放内存
+            del buf
+            _clear_cnt += 1
+            if _clear_cnt >= clear_cnt:
+                _clear_cnt = 0
+                clear_output()

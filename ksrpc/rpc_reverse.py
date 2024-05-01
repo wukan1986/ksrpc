@@ -11,6 +11,8 @@ reverse rpc，反弹rpc
 以下代码可以直接复制在Notebook中使用
 
 !!!一定要自行修改房间号!!!
+
+!pip install ksrpc-0.3.3-py3-none-any.whl --user --upgrade
 """
 
 import asyncio
@@ -20,7 +22,7 @@ from loguru import logger
 from ksrpc.connections.websocket import WebSocketConnection
 
 # 重试次数，防止忘记关闭Notebook内核导致占用资源
-RETRY_COUNT = 10
+RETRY_COUNT = 30
 TOKEN = 'secret-token-2'
 # 注意：房间号请设置一个复杂的字符串，一定不要与其他用户的冲突，否则数据会乱
 URL = 'ws://127.0.0.1:8000/ws/client?room=HA9527'
@@ -36,7 +38,7 @@ async def async_main():
             # 连接被控端地址（带/client），同时还要指定约定的房间号字符串
             async with WebSocketConnection(URL, token=TOKEN) as conn:
                 logger.info('connected')
-                recv_count = await conn.reverse(recv_timeout=True)
+                recv_count = await conn.reverse(recv_timeout=True, clear_cnt=3)
                 # 空闲断开时会走到这一步
                 logger.info('recv timeout')
                 if recv_count == 0:

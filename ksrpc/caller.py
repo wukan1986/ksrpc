@@ -16,12 +16,12 @@ import pandas as pd
 # from fastapi import status
 from IPy import IP
 from loguru import logger
+from revolving_asyncio import to_async, to_sync
 
 from .cache import async_cache_get, async_cache_setex, async_cache_incrby
 from .config import QUOTA_CHECK, IP_ALLOW, IP_BLOCK, IP_CHECK, METHODS_CHECK, ENABLE_SERVER
 from .model import RspModel
 from .serializer.pkl_gzip import serialize
-from .utils.async_ import to_async, to_sync
 from .utils.check_ import check_methods, check_ip, get_quota
 
 

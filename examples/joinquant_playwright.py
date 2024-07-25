@@ -54,6 +54,7 @@ def run(playwright: Playwright) -> None:
 
         page.get_by_role("textbox", name="手机号").fill(USERNAME)
         page.get_by_placeholder("请输入密码").fill(PASSWORD)
+        page.get_by_label("阅读并接受聚宽用户协议及隐私政策").check()
         page.get_by_role("button", name="登 录").click()
     except AssertionError:
         print('可能是已经登录过了，所以找不到对像')

@@ -1,5 +1,8 @@
 # 客户端，用于处理请求
 # 需要选择到底是http还是ws，还是nng一类的
+import asyncio
+
+from loguru import logger
 from revolving_asyncio import to_async, to_sync
 
 
@@ -12,6 +15,8 @@ class RpcClient:
     async_local = False
     """远程是否以异步方式掉用，某些情况下设置成同步才不报错"""
     async_remote = True
+    """接收超时时间，秒"""
+    recv_timeout = 30
 
     def __init__(self,
                  module,
@@ -55,10 +60,15 @@ class RpcClient:
         else:
             f = to_sync(self._connection.call)
 
-        # 注意：这里没有指定输入输出格式，只有输入二进制，输出二进制的格式
-        # 服务器可以支持多种格式是用于非python客户端
-        return f(func, args, kwargs,
-                 cache_get=self.cache_get, cache_expire=self.cache_expire, async_remote=self.async_remote)
+        try:
+            # 注意：这里没有指定输入输出格式，只有输入二进制，输出二进制的格式
+            # 服务器可以支持多种格式是用于非python客户端
+            return f(func, args, kwargs,
+                     cache_get=self.cache_get, cache_expire=self.cache_expire, async_remote=self.async_remote,
+                     timeout=self.recv_timeout)
+        except asyncio.TimeoutError:
+            logger.warning(f'{func} timeout, {self.recv_timeout}s')
+            raise
 
     def __len__(self):
         # 不知怎么回事，被主动调用了

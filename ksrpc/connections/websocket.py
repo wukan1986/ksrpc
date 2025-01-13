@@ -90,7 +90,8 @@ class WebSocketConnection:
     async def call(self, func, args, kwargs,
                    fmt: Format = Format.PKL_GZIP,
                    cache_get: bool = True, cache_expire: int = 3600,
-                   async_remote=True):
+                   async_remote=True,
+                   timeout=30):
         # 还没有执行过with就内部主动执行一次
         if not self._with:
             await self.__aenter__()
@@ -114,13 +115,13 @@ class WebSocketConnection:
             await self._ws.send(dict_to_json(d))
 
         # 这里收到的数据是否需要解析一下，如果是二进制的，需要特别处理
-        rsp = await self._ws.recv()
+        rsp = await asyncio.wait_for(self._ws.recv(), timeout)
         if isinstance(rsp, bytes):
             # 二进制，反序列化后是字典
             bl = deserialize(rsp)
             rsp = b''
             while len(rsp) < bl:
-                rsp += await self._ws.recv()
+                rsp += await asyncio.wait_for(self._ws.recv(), timeout)
             return process_response_dict(deserialize(rsp))
         else:
             return process_response_json(rsp)

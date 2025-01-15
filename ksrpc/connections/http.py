@@ -60,7 +60,7 @@ def process_response(r):
 class HttpxConnection:
     """使用httpx实现的客户端连接支持同步和异步"""
     # 超时，请求超求和响应超时，秒
-    timeout = (5, 30)
+    timeout = 30  # (5, 30)
 
     def __init__(self, url, token=None):
         import httpx
@@ -75,10 +75,12 @@ class HttpxConnection:
         self._url = url
         self._token = token
         self._client = httpx.AsyncClient()
+        self._with = False
 
     async def __aenter__(self):
         """异步async with"""
         await self._client.__aenter__()
+        self._with = True
         return self
 
     async def __aexit__(self, exc_type=None, exc_value=None, traceback=None):
@@ -118,6 +120,9 @@ class HttpxConnection:
             异步方式调用
 
         """
+        if not self._with:
+            await self.__aenter__()
+
         # 如果是JSON格式可以考虑返回CSV
         rsp_fmt = self._fmt
 

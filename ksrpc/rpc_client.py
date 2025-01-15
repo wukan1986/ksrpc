@@ -67,6 +67,7 @@ class RpcClient:
                      cache_get=self.cache_get, cache_expire=self.cache_expire, async_remote=self.async_remote,
                      timeout=self.recv_timeout)
         except asyncio.TimeoutError:
+            self._connection._with = False  # 重置
             logger.warning(f'{func} timeout, {self.recv_timeout}s')
             raise
 

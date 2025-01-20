@@ -70,6 +70,10 @@ class RpcClient:
             self._connection._with = False  # 重置
             logger.warning(f'{func} timeout, {self.recv_timeout}s')
             raise
+        except Exception as e:
+            self._connection._with = False  # 重置
+            logger.warning(f'{func} error, {e}')
+            raise
 
     def __len__(self):
         # 不知怎么回事，被主动调用了

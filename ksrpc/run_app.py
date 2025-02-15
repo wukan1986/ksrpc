@@ -12,10 +12,11 @@ import uvicorn
 from ksrpc.app.http_ import *  # noqa
 # WebSocket服务
 from ksrpc.app.websocket_ import *  # noqa
+from ksrpc.config import HOST, PORT
 
 
 def main():
-    uvicorn.run(app, host='0.0.0.0', port=8000)
+    uvicorn.run(app, host=HOST, port=PORT)
 
 
 if __name__ == "__main__":

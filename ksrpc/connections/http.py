@@ -16,11 +16,11 @@ from io import BytesIO
 from urllib.parse import urlparse
 
 import pandas as pd
+from revolving_asyncio import to_sync
 
 from ..model import Format
 from ..serializer.json_ import dict_to_obj
 from ..serializer.pkl_gzip import deserialize, serialize
-from ..utils.async_ import to_sync
 
 
 def process_response(r):

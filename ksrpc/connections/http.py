@@ -59,11 +59,8 @@ def process_response(r):
 
 class HttpxConnection:
     """使用httpx实现的客户端连接支持同步和异步"""
-    # 超时，请求超求和响应超时，秒
-    timeout = 30  # (5, 30)
 
     def __init__(self, url, token=None):
-        import httpx
 
         path = urlparse(url).path
         assert path.endswith(('/get', '/post', '/file')), 'Python语言优先使用file，其它语言使用post'
@@ -74,11 +71,13 @@ class HttpxConnection:
 
         self._url = url
         self._token = token
-        self._client = httpx.AsyncClient()
         self._with = False
 
     async def __aenter__(self):
         """异步async with"""
+        import httpx
+        self._client = httpx.AsyncClient()
+
         await self._client.__aenter__()
         self._with = True
         return self
@@ -89,17 +88,18 @@ class HttpxConnection:
 
     def __enter__(self):
         """同步with"""
-        to_sync(self._client.__aenter__)()
+        to_sync(self.__aenter__)()
         return self
 
     def __exit__(self, exc_type=None, exc_val=None, exc_tb=None):
         """同步with"""
-        to_sync(self._client.__aexit__)()
+        to_sync(self.__aexit__)()
 
     async def call(self, func, args, kwargs,
                    fmt: Format = Format.PKL_GZIP,
                    cache_get: bool = True, cache_expire: int = 3600,
-                   async_remote=True):
+                   async_remote=True,
+                   timeout=30):
         """调用函数
 
         Parameters
@@ -118,6 +118,9 @@ class HttpxConnection:
             指定缓存超时。超时此时间将过期，指定0表示不进行缓存
         async_remote: bool
             异步方式调用
+        timeout: int
+            超时时间，单位秒
+
 
         """
         if not self._with:
@@ -134,8 +137,8 @@ class HttpxConnection:
 
         if self._fmt == Format.PKL_GZIP:
             files = {"file": serialize(data).read()}
-            r = await self._client.post(self._url, headers=headers, params=params, timeout=self.timeout, files=files)
+            r = await self._client.post(self._url, headers=headers, params=params, timeout=timeout, files=files)
         elif self._fmt == Format.JSON:
-            r = await self._client.post(self._url, headers=headers, params=params, timeout=self.timeout, json=data)
+            r = await self._client.post(self._url, headers=headers, params=params, timeout=timeout, json=data)
 
         return process_response(r)

@@ -3,7 +3,6 @@ from ksrpc import RpcClient
 from ksrpc.connections.http import HttpxConnection
 
 conn = HttpxConnection('http://127.0.0.1:8000/api/file')
-conn.timeout = None
 client = RpcClient('rqdatac', conn, async_local=False)
 client.cache_get = True
 client.cache_expire = 86400

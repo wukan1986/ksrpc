@@ -104,7 +104,7 @@ async def _do(request: Request,
                         func=func, args=args, kwargs=kwargs)
         data.type = type(e).__name__
         data.data = repr(e)
-        data = data.dict()
+        data = data.model_dump()
         buf = serialize(data).read()
 
     # 直接二进制返回

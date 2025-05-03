@@ -24,6 +24,9 @@ from ..serializer.json_ import dict_to_json, json_to_dict, dict_to_obj
 from ..serializer.pkl_gzip import serialize, deserialize
 from ..utils.check_ import check_methods
 from ..utils.notebook import clear_output
+from websockets import __version__ as websockets_version
+
+is_old = websockets_version.split('.')[0] < '13'
 
 # 二进制拆包
 BYTES_PER_SEND = 1024 * 32
@@ -68,7 +71,10 @@ class WebSocketConnection:
 
         headers = None if self._token is None else {"Authorization": f"Bearer {self._token}"}
         # 默认是2**20，只有1MB，扩充一下成8MB
-        self._client = connect(self._url, extra_headers=headers, max_size=2 ** 23)
+        if is_old:
+            self._client = connect(self._url, extra_headers=headers, max_size=2 ** 23)
+        else:
+            self._client = connect(self._url, additional_headers=headers, max_size=2 ** 23)
 
         self._ws = await self._client.__aenter__()
         self._with = True
@@ -185,7 +191,7 @@ class WebSocketConnection:
                                 func=func, args=req['args'], kwargs=req['kwargs'])
                 data.type = type(e).__name__
                 data.data = repr(e)
-                data = data.dict()
+                data = data.model_dump()
                 buf = serialize(data).read()
 
             # 释放内存

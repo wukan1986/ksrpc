@@ -3,10 +3,11 @@ fakeredis
 fastapi
 httpx
 loguru
-nest-asyncio
+revolving_asyncio
 pandas
 pydantic
 python-multipart
 requests
 websockets
 IPy
+uvicorn[standard]

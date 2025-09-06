@@ -90,7 +90,7 @@ async def _do(ws: WebSocket,
                         func=func, args=args, kwargs=kwargs)
         data.type = type(e).__name__
         data.data = repr(e)
-        data = data.model_dump()
+        data = data.model_dump() if hasattr(data, 'model_dump') else data.dict()
         buf = serialize(data).read()
 
     if fmt == Format.PKL_GZIP:

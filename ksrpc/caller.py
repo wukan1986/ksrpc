@@ -95,7 +95,7 @@ async def call(user, func, args, kwargs, cache_get, cache_expire, async_remote, 
                         func=func, args=args, kwargs=kwargs)
         data.type = type(e).__name__
         data.data = repr(e)
-        data = data.model_dump()
+        data = data.model_dump() if hasattr(data, 'model_dump') else data.dict()
         buf = serialize(data).read()
 
     return key, buf, data
@@ -199,7 +199,7 @@ async def _call(user, func_name, args, kwargs, cache_expire, async_remote):
         d.data = data
 
         # pkl序列化，为了能完整还源
-        d = d.model_dump()
+        d = d.model_dump() if hasattr(d, 'model_dump') else d.dict()
         buf = serialize(d).read()
 
     except Exception as e:
@@ -208,7 +208,7 @@ async def _call(user, func_name, args, kwargs, cache_expire, async_remote):
         d.data = repr(e)
         # 错误也缓存一会，防止用户写了死循环搞崩上游
         cache_expire = min(cache_expire, 60)
-        d = d.model_dump()
+        d = d.model_dump() if hasattr(d, 'model_dump') else d.dict()
         # 由于错误信息也想缓存，所以这里进行编码
         buf = serialize(d).read()
 

@@ -26,7 +26,7 @@ from ..utils.check_ import check_methods
 from ..utils.notebook import clear_output
 from websockets import __version__ as websockets_version
 
-is_old = websockets_version.split('.')[0] < '13'
+is_old = int(websockets_version.split('.')[0]) < 13
 
 # 二进制拆包
 BYTES_PER_SEND = 1024 * 32

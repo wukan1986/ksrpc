@@ -10,6 +10,7 @@
 3. 公网服务器(A)上传`frps.toml`和`frps`。防火墙开放端口`bindPort = 7000`和`remotePort = 7001`
     - 先运行`chmod 777 frps`
     - 再运行`./frps -c ./frps.toml`
+    - 试验成功后可改为`nohup ./frps -c ./frps.toml > frps.log 2>&1 &`
 4. 内网服务器(B)上传`frpc.toml`和`frpc`,以及`ksrpc.ipynb`和`frpc.ipynb`
 5. 内网服务器(B)`Jupyter Notebook`中打开`ksrpc.ipynb`
     - 先运行`!pip install ksrpc --user --upgrade`

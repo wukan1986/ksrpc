@@ -18,7 +18,12 @@ async def async_main():
         demo.cache_expire = 60
         print(demo.sync_say_hi("AA"))
         for i in range(100):
-            print(demo.test(i).head(1))
+            print(demo.test(i))
 
+
+# TODO WebSocket+async要加这两句，否则报错
+import revolving_asyncio
+
+revolving_asyncio.apply()
 
 asyncio.run(async_main())

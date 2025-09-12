@@ -8,34 +8,19 @@
 根据指定参数，调用，并返回结果
 """
 
-import hashlib
 from datetime import datetime
 
 import numpy as np
 import pandas as pd
-# from fastapi import status
-from IPy import IP
 from loguru import logger
 from revolving_asyncio import to_async, to_sync
 
 from .cache import async_cache_get, async_cache_setex, async_cache_incrby
+from .caller_simple import make_key
 from .config import QUOTA_CHECK, IP_ALLOW, IP_BLOCK, IP_CHECK, METHODS_CHECK, ENABLE_SERVER
 from .model import RspModel
 from .serializer.pkl_gzip import serialize
 from .utils.check_ import check_methods, check_ip, get_quota
-
-
-def make_key(func, args, kwargs):
-    """生成缓存key"""
-    args_kwargs = f'{repr(args)}_{repr(kwargs)}'
-    if len(args_kwargs) > 32:
-        args_kwargs = hashlib.md5(args_kwargs.encode('utf-8')).hexdigest()
-    return f'{func}_{args_kwargs}'
-
-
-# 两张清单数据提前处理，加快处理速度
-__IP_ALLOW__ = {IP(k): v for k, v in IP_ALLOW.items()}
-__IP_BLOCK__ = {IP(k): v for k, v in IP_BLOCK.items()}
 
 
 def before_call(host, user, func):
@@ -48,6 +33,11 @@ def before_call(host, user, func):
         raise Exception(f'Service offline')
 
     if IP_CHECK:
+        from IPy import IP
+        # 两张清单数据提前处理，加快处理速度
+        __IP_ALLOW__ = {IP(k): v for k, v in IP_ALLOW.items()}
+        __IP_BLOCK__ = {IP(k): v for k, v in IP_BLOCK.items()}
+
         host = IP(host)
         if not check_ip(__IP_ALLOW__, host, False):
             raise Exception(f'IP Not Allowed, {host} not in allowlist')
@@ -110,30 +100,6 @@ async def _call(user, func_name, args, kwargs, cache_expire, async_remote):
     methods = func_name.split('.')
     module = methods[0]
 
-    m_quota_key = f'QUOTA/{user}/{module}'
-    f_quota_key = f'QUOTA/{user}/{func_name}'
-    if QUOTA_CHECK:
-        # 配额检查
-        from .config import QUOTA_MODULE, QUOTA_MODULE_DEFAULT, QUOTA_FUNC, QUOTA_FUNC_DEFAULT
-
-        m_quota = int(await async_cache_get(m_quota_key) or 0)
-        f_quota = int(await async_cache_get(f_quota_key) or 0)
-        quota = get_quota(QUOTA_FUNC, methods, QUOTA_FUNC_DEFAULT)
-        if f_quota > quota:
-            raise Exception(f'Over quota: user:{user}, {func_name}:{f_quota}>{quota}')
-        quota = get_quota(QUOTA_MODULE, [module], QUOTA_MODULE_DEFAULT)
-        if m_quota > quota:
-            raise Exception(f'Over quota: user:{user}, {module}:{quota}')
-
-    try:
-        # 当前server目录下文件，用于特别处理
-        api = __import__(f'{__package__}.server.{module}', fromlist=['*'])
-    except ModuleNotFoundError as e:
-        # 导入系统包
-        if module == __package__:
-            raise Exception(f'Not Allowed to call {__package__}')
-        api = __import__(module, fromlist=['*'])
-
     # 返回的数据包
     d = RspModel(status=200,  # status.HTTP_200_OK,
                  datetime=datetime.now().isoformat(),  # 加查询时间，缓存中也许可以判断是否过期
@@ -143,6 +109,30 @@ async def _call(user, func_name, args, kwargs, cache_expire, async_remote):
 
     methods = methods[1:]
     try:
+        m_quota_key = f'QUOTA/{user}/{module}'
+        f_quota_key = f'QUOTA/{user}/{func_name}'
+        if QUOTA_CHECK:
+            # 配额检查
+            from .config import QUOTA_MODULE, QUOTA_MODULE_DEFAULT, QUOTA_FUNC, QUOTA_FUNC_DEFAULT
+
+            m_quota = int(await async_cache_get(m_quota_key) or 0)
+            f_quota = int(await async_cache_get(f_quota_key) or 0)
+            quota = get_quota(QUOTA_FUNC, methods, QUOTA_FUNC_DEFAULT)
+            if f_quota > quota:
+                raise Exception(f'Over quota: user:{user}, {func_name}:{f_quota}>{quota}')
+            quota = get_quota(QUOTA_MODULE, [module], QUOTA_MODULE_DEFAULT)
+            if m_quota > quota:
+                raise Exception(f'Over quota: user:{user}, {module}:{quota}')
+
+        try:
+            # 当前server目录下文件，用于特别处理
+            api = __import__(f'{__package__}.server.{module}', fromlist=['*'])
+        except ModuleNotFoundError as e:
+            # 导入系统包
+            if module == __package__:
+                raise Exception(f'Not Allowed to call {__package__}')
+            api = __import__(module, fromlist=['*'])
+
         # 转成字符串，后面可能于做cache的key
         logger.info(f'Call: {func_name}\t{args}\t{kwargs}'[:200])
 

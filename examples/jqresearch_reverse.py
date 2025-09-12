@@ -28,4 +28,9 @@ async def async_main():
         print(jqr.get_fundamentals_valuation('2015-10-15'))
 
 
+# TODO WebSocket+async要加这两句，否则报错
+import revolving_asyncio
+
+revolving_asyncio.apply()
+
 asyncio.run(async_main())

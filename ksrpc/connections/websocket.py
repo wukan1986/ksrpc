@@ -17,14 +17,13 @@ from urllib.parse import urlparse
 
 from loguru import logger
 from revolving_asyncio import to_sync
+from websockets import __version__ as websockets_version
 
-from ..caller import call
 from ..model import Format, RspModel
 from ..serializer.json_ import dict_to_json, json_to_dict, dict_to_obj
 from ..serializer.pkl_gzip import serialize, deserialize
 from ..utils.check_ import check_methods
 from ..utils.notebook import clear_output
-from websockets import __version__ as websockets_version
 
 is_old = int(websockets_version.split('.')[0]) < 13
 
@@ -134,6 +133,8 @@ class WebSocketConnection:
 
     async def reverse(self, recv_timeout=True, clear_cnt=5):
         """反弹RPC的被控端"""
+        from ..caller import call
+
         recv_count = 0
         _clear_cnt = 0
         while True:

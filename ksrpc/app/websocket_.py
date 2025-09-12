@@ -14,7 +14,6 @@ WebSocket服务器
 from datetime import datetime
 from typing import List, Any, Dict, Union
 
-from IPy import IP
 from fastapi import WebSocket, WebSocketDisconnect, Depends, Query
 from fastapi import status
 from fastapi.security.utils import get_authorization_scheme_param
@@ -178,11 +177,6 @@ async def websocket_endpoint_client(websocket: WebSocket, room: str, user=Depend
         await websocket.close()
 
 
-# 两张清单数据提前处理，加快处理速度
-__IP_ALLOW__ = {IP(k): v for k, v in IP_ALLOW.items()}
-__IP_BLOCK__ = {IP(k): v for k, v in IP_BLOCK.items()}
-
-
 @app.websocket("/ws/admin")
 async def websocket_endpoint_admin(websocket: WebSocket, room: str, user=Depends(get_current_user)):
     """控制端。等待控制端接入，然后转发"""
@@ -195,6 +189,10 @@ async def websocket_endpoint_admin(websocket: WebSocket, room: str, user=Depends
             raise Exception(f'Relay offline')
 
         if IP_CHECK:
+            from IPy import IP
+            # 两张清单数据提前处理，加快处理速度
+            __IP_ALLOW__ = {IP(k): v for k, v in IP_ALLOW.items()}
+            __IP_BLOCK__ = {IP(k): v for k, v in IP_BLOCK.items()}
             host = IP(websocket.client.host)
             if not check_ip(__IP_ALLOW__, host, False):
                 raise Exception(f'IP Not Allowed, {host} not in allowlist')

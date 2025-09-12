@@ -1,0 +1,7 @@
+pandas
+httpx
+loguru
+revolving_asyncio
+pydantic
+
+websockets

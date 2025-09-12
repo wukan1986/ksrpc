@@ -1,0 +1,10 @@
+serverAddr = "12.23.34.45"
+serverPort = 7000
+auth.token = "tk_20250912"
+
+[[proxies]]
+name = "ksrpc"
+type = "tcp"
+localIP = "127.0.0.1"
+localPort = 8000
+remotePort = 7001

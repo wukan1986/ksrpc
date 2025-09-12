@@ -56,4 +56,9 @@ async def async_main():
 
 
 if __name__ == '__main__':
+    # TODO WebSocket+async要加这两句，否则报错
+    import revolving_asyncio
+
+    revolving_asyncio.apply()
+
     asyncio.run(async_main())

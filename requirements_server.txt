@@ -1,0 +1,12 @@
+pandas
+httpx
+loguru
+revolving_asyncio
+pydantic
+
+websockets
+
+uvicorn[standard]
+fastapi
+fakeredis
+python-multipart

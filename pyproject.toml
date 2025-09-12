@@ -13,26 +13,26 @@ classifiers = [
     "Programming Language :: Python"
 ]
 dependencies = [
-    'loguru',
-    'revolving_asyncio',
-    'pandas',
-    'pydantic',
-    'websockets',
-    'IPy',
-    'fakeredis',
+    "pandas",
+    "legacy-cgi; python_version >= '3.13'",
 ]
 dynamic = ["version"]
 
 [project.optional-dependencies]
 client = [
     "httpx",
+    "loguru",
+    "revolving_asyncio",
+    "pydantic",
+    "websockets",
 ]
 server = [
-    'aioredis',
-    'fakeredis',
-    'fastapi',
-    'python-multipart',
-    'uvicorn[standard]',
+    "ksrpc[client]",
+
+    "uvicorn[standard]",
+    "fastapi",
+    "fakeredis",
+    "python-multipart",
 ]
 
 [build-system]

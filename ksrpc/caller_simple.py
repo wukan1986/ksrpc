@@ -1,4 +1,6 @@
 import hashlib
+import os
+import threading
 from datetime import datetime
 
 from revolving_asyncio import to_sync
@@ -41,8 +43,10 @@ def simple_call(func_name, args, kwargs):
                 raise Exception(f'Not Allowed to call {__package__}')
             api = __import__(module, fromlist=['*'])
 
+        pid = os.getpid()
+        tid = threading.get_ident()
         # 转成字符串，后面可能于做cache的key
-        print(f'Call: {func_name}\t{args}\t{kwargs}'[:200])
+        print(f'{pid}:{tid}:\t{func_name}\t{args}\t{kwargs}'[:200])
 
         func = api
         for method in methods:

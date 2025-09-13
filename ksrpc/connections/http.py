@@ -60,7 +60,8 @@ def process_response(r):
 class HttpxConnection:
     """使用httpx实现的客户端连接支持同步和异步"""
 
-    def __init__(self, url, token=None):
+    def __init__(self, url, token=None, username=None, password=None):
+        import httpx
 
         path = urlparse(url).path
         assert path.endswith(('/get', '/post', '/file')), 'Python语言优先使用file，其它语言使用post'
@@ -72,11 +73,12 @@ class HttpxConnection:
         self._url = url
         self._token = token
         self._with = False
+        self._auth = None if username is None else httpx.BasicAuth(username, password)
 
     async def __aenter__(self):
         """异步async with"""
         import httpx
-        self._client = httpx.AsyncClient()
+        self._client = httpx.AsyncClient(auth=self._auth)
 
         await self._client.__aenter__()
         self._with = True

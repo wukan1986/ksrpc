@@ -1,10 +1,22 @@
-serverAddr = "12.23.34.45"
+serverAddr = "12.34.56.78"
 serverPort = 7000
 auth.token = "tk_20250912"
 
-[[proxies]]
-name = "ksrpc"
+[[proxies]] # 常用此方案，但提供的Web服务无安全认证
+# 用户访问http://serverAddr:remotePort
+name = "ksrpc_tcp"
 type = "tcp"
 localIP = "127.0.0.1"
 localPort = 8000
 remotePort = 7001
+
+[[proxies]] # 可为Web服务多加Basic安全认证
+# 用户访问http://customDomains:vhostHTTPPort
+name = "ksrpc_http"
+type = "http"
+localIP = "127.0.0.1"
+localPort = 8000
+# remotePort = 7002 # 没有remotePort，而是通过frps.toml的vhostHTTPPort指定
+customDomains = ["12.34.56.78"] # 这可以用域名也可以用serverAddr。也可以修改本地Hosts文件
+httpUser = "ksrpc" # 开启Basic授权，可以防止外人访问
+httpPassword = "password"

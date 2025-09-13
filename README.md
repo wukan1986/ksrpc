@@ -50,9 +50,9 @@ Keep Simple RPC。免注册远程过程调用
 
 > pip install ksrpc[server] -i https://mirrors.aliyun.com/pypi/simple --upgrade
 
-2. 直接运行`python -m ksrpc`, 观察提示的`config.py`文件路径
-2. 编辑`config.py`文件，进行`ksrpy`的功能管理。如权限配置等`ENABLE_SERVER = True`
-4. 再次运行`python -m ksrpc`或对应目录下运行`python run_app.py`
+2. 直接运行`python -m ksrpc.run_app`, 观察提示的`config.py`文件路径
+3. 编辑`config.py`文件，进行`ksrpy`的功能管理。如权限配置等`ENABLE_SERVER = True`
+4. 再次运行`python -m ksrpc.run_app`
 5. 确保服务器上防火墙已经开放对应端口
 
 ## 客户端安装
@@ -146,7 +146,7 @@ print(df)
 
 第一代有局限性，必须要在同一房间号，一次只能一个请求，如果同时发起多个请求，会出现数据混乱的情况。
 
-第二代采用更简化的方法。只搭建HTTP服务，反代工作交给第三方，如`frp`。这样免去
+第二代采用更简化的方法。只搭建HTTP服务，反代工作交给第三方，如`frp`。这样免去反代代码，库更简洁。也可以定制更多功能
 
 细节请看`examples_frp\README.md`
 

@@ -1,6 +1,8 @@
 import hashlib
 from datetime import datetime
 
+from revolving_asyncio import to_sync
+
 from ksrpc.serializer.pkl_gzip import serialize
 
 
@@ -50,7 +52,7 @@ def simple_call(func_name, args, kwargs):
         if callable(func):
             # 例如os.remove
             type_ = 'function'
-            func = func(*args, **kwargs)
+            func = to_sync(func)(*args, **kwargs)
 
         # 结果的类型名
         class_name = func.__class__.__name__

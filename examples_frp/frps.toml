@@ -1,2 +1,3 @@
 bindPort = 7000
-auth.token = "tk_20250912"
+auth.token = "tk_20250912" # 防止非法fprc连接
+vhostHTTPPort = 7002 # 开启通过域名访问HTTP协议

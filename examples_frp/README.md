@@ -21,3 +21,8 @@
 7. 个人电脑(C)安装`pip install ksrpc[client]`
     - 编辑`demo_http.py`中地址为`serverAddr`的IP,端口为`remotePort = 7001`
 8. `ksrpc.ipynb`和`frpc.ipynb`用完后一定要`重启内核`，以免长时间占用资源
+
+## 安全
+
+1. `auth.token`用于保证`frps`提供的反代服务只有认证过的`frpc`才能打洞
+2. `httpUser`和`httpPassword`可提供认证功能，防止外人访问服务

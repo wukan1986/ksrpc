@@ -1,3 +1,3 @@
-bindPort = 7000
+bindPort = 7000 # 部分内网限制了目标端口，可以绑定到80、443绕过。低于1024要root权限
 auth.token = "tk_20250912" # 防止非法fprc连接
 vhostHTTPPort = 7002 # 开启通过域名访问HTTP协议

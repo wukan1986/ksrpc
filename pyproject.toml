@@ -15,7 +15,7 @@ classifiers = [
 dependencies = [
     "pandas",
     "legacy-cgi; python_version >= '3.13'",
-    "revolving_asyncio",
+    "revolving_asyncio>=0.1.2",
 ]
 dynamic = ["version"]
 
@@ -28,7 +28,6 @@ client = [
 ]
 server = [
     "ksrpc[client]",
-
     "uvicorn[standard]",
     "fastapi",
     "fakeredis",

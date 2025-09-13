@@ -1,5 +1,5 @@
 serverAddr = "12.34.56.78"
-serverPort = 7000
+serverPort = 7000 # 某些内网限制了目标端口，可要求frps绑定到80、443绕过
 auth.token = "tk_20250912"
 
 [[proxies]] # 常用此方案，但提供的Web服务无安全认证

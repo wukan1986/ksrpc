@@ -1,7 +1,7 @@
 pandas
 httpx
 loguru
-revolving_asyncio
+revolving_asyncio>=0.1.2
 pydantic
 
 websockets

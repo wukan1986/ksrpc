@@ -30,7 +30,7 @@
 ## bindPort = 80 如何设置
 
 1. `sudo ss -tanlp` # 查看是哪个应用占用了80端口，参考应用的文档进行调整
-2. 编辑`frps.toml`中的`bindPort = 80`
+2. 编辑`frps.toml`中的`bindPort = 80`，编辑`frpc.toml`中的`serverPort = 80`
 3. `sudo ./frps -c ./frps.toml` # 进行测试
 4. `sudo nohup ./frps -c ./frps.toml > frps.log 2>&1 &` # 长期运行 
 

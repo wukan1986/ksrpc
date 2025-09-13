@@ -7,7 +7,7 @@
 
 1. 下载合适的`frp`压缩包
 2. 根据自己的实际情况配置`frpc.toml`中的`serverAddr`为公网服务器(A)`IP`即可，其他参数可按需修改
-3. 公网服务器(A)上传`frps.toml`和`frps`。防火墙开放端口`bindPort = 7000`和`remotePort = 7001`
+3. 公网服务器(A)上传`frps.toml`和`frps`。防火墙开放端口`bindPort = 7000`、`remotePort = 7001`和`vhostHTTPPort = 7002`
     - 先运行`chmod 777 frps`
     - 再运行`./frps -c ./frps.toml`
     - 试验成功后可改为`nohup ./frps -c ./frps.toml > frps.log 2>&1 &`

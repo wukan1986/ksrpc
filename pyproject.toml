@@ -15,6 +15,7 @@ classifiers = [
 dependencies = [
     "pandas",
     "legacy-cgi; python_version >= '3.13'",
+    "revolving_asyncio",
 ]
 dynamic = ["version"]
 
@@ -22,7 +23,6 @@ dynamic = ["version"]
 client = [
     "httpx",
     "loguru",
-    "revolving_asyncio",
     "pydantic",
     "websockets",
 ]

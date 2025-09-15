@@ -2,6 +2,9 @@
 全局开关
 !!!中继功能不需修改，提供服务功能需要手工开启
 """
+import os
+import threading
+
 # 是否可以调用当前服务器中的Python库
 # 为了安全，默认关闭，有需要用户请修改配置
 ENABLE_SERVER = False
@@ -125,4 +128,6 @@ RQ_PASSWORD = '12345678'
 WIND_ENABLE = False
 
 # 打印当前配置
-print('current config:', __file__)
+pid = os.getpid()
+tid = threading.get_ident()
+print(f"{pid}:{tid}: Current config:", __file__)

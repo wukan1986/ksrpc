@@ -9,6 +9,7 @@ HTTP服务+frp反代
 """
 import os
 import socketserver
+import threading
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
@@ -65,5 +66,7 @@ else:
 
 def main():
     with TCPServer((HOST, PORT), FileHTTPRequestHandler) as server:
-        print(f"Serving on port {PORT}")
+        pid = os.getpid()
+        tid = threading.get_ident()
+        print(f"{pid}:{tid}: Serving on port {PORT}")
         server.serve_forever()

@@ -48,6 +48,9 @@ class FileHTTPRequestHandler(BaseHTTPRequestHandler):
             file = form['file'].file.read()
 
             key, buf, data = simple_call(func, **deserialize(file))
+            del file
+            del form
+            del data
 
             # Begin the response
             self.send_response(200)
@@ -55,18 +58,22 @@ class FileHTTPRequestHandler(BaseHTTPRequestHandler):
             self.send_header("content-disposition", f'attachment; filename="{key}.pkl.gz"')
             self.end_headers()
             self.wfile.write(buf)
+            self.wfile.flush()
+            del buf
             return
 
 
-if hasattr(os, "fork"):
-    TCPServer = socketserver.ForkingTCPServer
-else:
-    TCPServer = socketserver.ThreadingTCPServer
+def main(fork: bool = True):
+    if hasattr(os, "fork") and fork:
+        server = socketserver.ForkingTCPServer((HOST, PORT), FileHTTPRequestHandler)
+        server.max_children = 3
+    else:
+        server = socketserver.ThreadingTCPServer((HOST, PORT), FileHTTPRequestHandler)
 
-
-def main():
-    with TCPServer((HOST, PORT), FileHTTPRequestHandler) as server:
+    try:
         pid = os.getpid()
         tid = threading.get_ident()
         print(f"{pid}:{tid}: Serving on port {PORT}")
         server.serve_forever()
+    finally:
+        server.server_close()

@@ -7,7 +7,7 @@ import threading
 
 # 是否可以调用当前服务器中的Python库
 # 为了安全，默认关闭，有需要用户请修改配置
-ENABLE_SERVER = False
+ENABLE_SERVER = True
 # 是否启用中继功能。启用此功能可实现反向RPC功能。
 # 此功能只转发请求，并不执行其中的内容，对当前中继服务器没有安全威胁
 # 鼓励有公网IP的用户开放提供此功能

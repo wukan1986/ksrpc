@@ -20,7 +20,7 @@ from fastapi.security import OAuth2PasswordBearer
 
 from .app_ import app
 from ..caller import call, before_call
-from ..model import Format, RspModel
+from ..model import Format
 from ..serializer.json_ import obj_to_dict
 from ..serializer.pkl_gzip import deserialize, serialize
 
@@ -37,7 +37,8 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
 
 @app.get("/api/get")
 async def api_get(request: Request,
-                  func: str = Query(..., min_length=1),
+                  module: str = Query(..., min_length=1),
+                  methods: str = Query(..., min_length=1),
 
                   fmt: Format = Query(Format.CSV),
                   cache_get: bool = Query(True), cache_expire: int = Query(86400, lt=86400 * 15),
@@ -53,7 +54,8 @@ async def api_post(request: Request,
                    args: List[Any] = Body([]),
                    kwargs: Dict[str, Any] = Body({}),
 
-                   func: str = Query(..., min_length=1),
+                   module: str = Query(..., min_length=1),
+                   methods: str = Query(..., min_length=1),
 
                    fmt: Format = Query(Format.CSV),
                    cache_get: bool = Query(True), cache_expire: int = Query(86400, lt=86400 * 15),
@@ -68,7 +70,8 @@ async def api_post(request: Request,
 async def api_file(request: Request,
                    file: bytes = File(...),  # file要写在最前面，否则报错
 
-                   func: str = Query(..., min_length=1),
+                   module: str = Query(..., min_length=1),
+                   methods: str = Query(..., min_length=1),
 
                    fmt: Format = Query(Format.CSV),
                    cache_get: bool = Query(True), cache_expire: int = Query(86400, lt=86400 * 15),
@@ -80,7 +83,9 @@ async def api_file(request: Request,
 
 
 async def _do(request: Request,
-              func: str,
+
+              module: str,
+              methods: str,
 
               args: List[Any] = [],
               kwargs: Dict[str, Any] = {},
@@ -93,18 +98,17 @@ async def _do(request: Request,
               ):
     """实际处理函数"""
     try:
-        before_call(request.client.host, user, func)
-        key, buf, data = await call(user, func, args, kwargs, cache_get, cache_expire, async_remote)
+        before_call(request.client.host, user, module, methods)
+        key, buf, data = await call(user, module, methods, args, kwargs, cache_get, cache_expire, async_remote)
     except Exception as e:
         # 主要是处理
         key = type(e).__name__
         # 这里没有缓存，因为这个错误是服务器内部检查
-        data = RspModel(status=status.HTTP_401_UNAUTHORIZED,
-                        datetime=datetime.now().isoformat(),
-                        func=func, args=args, kwargs=kwargs)
-        data.type = type(e).__name__
-        data.data = repr(e)
-        data = data.model_dump() if hasattr(data, 'model_dump') else data.dict()
+        data = dict(status=status.HTTP_401_UNAUTHORIZED,
+                    datetime=datetime.now().isoformat(),
+                    module=module, methods=methods, args=args, kwargs=kwargs)
+        data['type'] = type(e).__name__
+        data['data'] = repr(e)
         buf = serialize(data).read()
 
     # 直接二进制返回

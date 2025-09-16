@@ -12,8 +12,6 @@ URL = 'ws://127.0.0.1:8000/ws/bytes'
 
 def sync_main():
     with WebSocketConnection(URL, token=TOKEN) as client:
-        client.timeout = (5, 90)
-
         demo = RpcClient('demo', client, async_local=False)
         demo.cache_get = True
         demo.cache_expire = 60

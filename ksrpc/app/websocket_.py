@@ -22,7 +22,7 @@ from loguru import logger
 from .app_ import app
 from ..caller import call, before_call
 from ..config import IP_BLOCK, IP_ALLOW, ENABLE_RELAY
-from ..model import Format, RspModel
+from ..model import Format
 from ..serializer.json_ import obj_to_dict, dict_to_json
 from ..serializer.pkl_gzip import deserialize, serialize
 from ..utils.check_ import check_ip
@@ -67,7 +67,9 @@ manager = ConnectionManager()
 
 
 async def _do(ws: WebSocket,
-              func: str,
+
+              module: str,
+              methods: str,
 
               args: List[Any] = [],
               kwargs: Dict[str, Any] = {},
@@ -78,18 +80,17 @@ async def _do(ws: WebSocket,
               ):
     """实际处理函数"""
     try:
-        before_call(ws.client.host, user, func)
-        key, buf, data = await call(user, func, args, kwargs, cache_get, cache_expire, async_remote)
+        before_call(ws.client.host, user, module, methods)
+        key, buf, data = await call(user, module, methods, args, kwargs, cache_get, cache_expire, async_remote)
     except Exception as e:
         # 主要是处理
         key = type(e).__name__
         # 这里没有缓存，因为这个错误是服务器内部检查
-        data = RspModel(status=status.HTTP_401_UNAUTHORIZED,
-                        datetime=datetime.now().isoformat(),
-                        func=func, args=args, kwargs=kwargs)
-        data.type = type(e).__name__
-        data.data = repr(e)
-        data = data.model_dump() if hasattr(data, 'model_dump') else data.dict()
+        data = dict(status=status.HTTP_401_UNAUTHORIZED,
+                    datetime=datetime.now().isoformat(),
+                    module=module, methods=methods, args=args, kwargs=kwargs)
+        data['type'] = type(e).__name__
+        data['data'] = repr(e)
         buf = serialize(data).read()
 
     if fmt == Format.PKL_GZIP:

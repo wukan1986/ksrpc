@@ -8,29 +8,25 @@ from revolving_asyncio import to_sync
 from ksrpc.serializer.pkl_gzip import serialize
 
 
-def make_key(func, args, kwargs):
+def make_key(module, methods, args, kwargs):
     """生成缓存key"""
-    args_kwargs = f'{func}_{repr(args)}_{repr(kwargs)}'
+    args_kwargs = f'{module}::{methods}_{repr(args)}_{repr(kwargs)}'
     if len(args_kwargs) > 32:
         args_kwargs = hashlib.md5(args_kwargs.encode('utf-8')).hexdigest()
-    return f'{func}_{args_kwargs}'
+    return f'{module}::{methods}_{args_kwargs}'
 
 
-def simple_call(func_name, args, kwargs):
+def simple_call(module, methods, args, kwargs):
     """简版API调用。没有各种额外功能"""
-    key = make_key(func_name, args, kwargs)
-
-    methods = func_name.split('.')
-    module = methods[0]
+    key = make_key(module, methods, args, kwargs)
 
     # 返回的数据包
     d = dict(status=200,  # status.HTTP_200_OK,
              datetime=datetime.now().isoformat(),  # 加查询时间，缓存中也许可以判断是否过期
-             func=func_name,
+             module=module,
+             methods=methods,
              args=args,
              kwargs=kwargs)
-
-    methods = methods[1:]
 
     try:
 
@@ -46,10 +42,10 @@ def simple_call(func_name, args, kwargs):
         pid = os.getpid()
         tid = threading.get_ident()
         # 转成字符串，后面可能于做cache的key
-        print(f'{pid}:{tid}:\t{func_name}\t{args}\t{kwargs}'[:200])
+        print(f'{pid}:{tid}:\t{module}::{methods}\t{args}\t{kwargs}'[:200])
 
         func = api
-        for method in methods:
+        for method in methods.split('.'):
             func = getattr(func, method)
 
         # 可以调用的属性
@@ -75,16 +71,12 @@ def simple_call(func_name, args, kwargs):
 
         d['type'] = type(func).__name__
         d['data'] = data
-
-        # pkl序列化，为了能完整还源
-        buf = serialize(d).read()
-
     except Exception as e:
         d['status'] = 500  # status.HTTP_500_INTERNAL_SERVER_ERROR
         d['type'] = type(e).__name__
         d['data'] = repr(e)
 
-        # 由于错误信息也想缓存，所以这里进行编码
-        buf = serialize(d).read()
+    # 由于错误信息也想缓存，所以这里进行编码
+    buf = serialize(d).read()
 
     return key, buf, d

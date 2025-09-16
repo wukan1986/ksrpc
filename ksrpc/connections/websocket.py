@@ -19,7 +19,7 @@ from loguru import logger
 from revolving_asyncio import to_sync
 from websockets import __version__ as websockets_version
 
-from ..model import Format, RspModel
+from ..model import Format
 from ..serializer.json_ import dict_to_json, json_to_dict, dict_to_obj
 from ..serializer.pkl_gzip import serialize, deserialize
 from ..utils.check_ import check_methods
@@ -92,7 +92,7 @@ class WebSocketConnection:
         """同步with"""
         to_sync(self.__aexit__)()
 
-    async def call(self, func, args, kwargs,
+    async def call(self, module, methods, args, kwargs,
                    fmt: Format = Format.PKL_GZIP,
                    cache_get: bool = True, cache_expire: int = 3600,
                    async_remote=True,
@@ -104,7 +104,7 @@ class WebSocketConnection:
         # 如果是JSON格式可以考虑返回CSV
         rsp_fmt = self._fmt
 
-        d = dict(func=func, args=args, kwargs=kwargs,
+        d = dict(module=module, methods=methods, args=args, kwargs=kwargs,
                  fmt=rsp_fmt.value,
                  cache_get=cache_get, cache_expire=cache_expire, async_remote=async_remote)
 
@@ -169,17 +169,18 @@ class WebSocketConnection:
             # 不需要缓存
             req['cache_get'] = False
             req['cache_expire'] = 0
-            func = req['func']
+            module = req['module']
+            methods = req['methods']
             try:
                 from ..config import METHODS_ALLOW, METHODS_BLOCK, METHODS_CHECK
 
                 # 反弹RPC权限要进行限制
                 if METHODS_CHECK:
-                    methods = func.split('.')
+                    methods_list = module.split('.') + methods.split('.')
                     if not check_methods(METHODS_ALLOW, methods, False):
-                        raise Exception(f'Method Not Allowed, {func} not in allowlist')
+                        raise Exception(f'Method Not Allowed, {module}::{methods} not in allowlist')
                     if not check_methods(METHODS_BLOCK, methods, True):
-                        raise Exception(f'Method Not Allowed, {func} in blocklist')
+                        raise Exception(f'Method Not Allowed, {module}::{methods} in blocklist')
                 # 每个连上去的都分别使用了自己的用户名，这里不需要用户名即可操作
                 user = 'reverse'
                 key, buf, data = await call(user, **req)
@@ -187,12 +188,11 @@ class WebSocketConnection:
                 # 主要是处理
                 key = type(e).__name__
                 # 这里没有缓存，因为这个错误是服务器内部检查
-                data = RspModel(status=401,  # status.HTTP_401_UNAUTHORIZED,
-                                datetime=datetime.now().isoformat(),
-                                func=func, args=req['args'], kwargs=req['kwargs'])
-                data.type = type(e).__name__
-                data.data = repr(e)
-                data = data.model_dump() if hasattr(data, 'model_dump') else data.dict()
+                data = dict(status=401,  # status.HTTP_401_UNAUTHORIZED,
+                            datetime=datetime.now().isoformat(),
+                            module=module, methods=methods, args=req['args'], kwargs=req['kwargs'])
+                data['type'] = type(e).__name__
+                data['data'] = repr(e)
                 buf = serialize(data).read()
 
             # 释放内存

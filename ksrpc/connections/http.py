@@ -97,7 +97,7 @@ class HttpxConnection:
         """同步with"""
         to_sync(self.__aexit__)()
 
-    async def call(self, func, args, kwargs,
+    async def call(self, module, methods, args, kwargs,
                    fmt: Format = Format.PKL_GZIP,
                    cache_get: bool = True, cache_expire: int = 3600,
                    async_remote=True,
@@ -106,7 +106,9 @@ class HttpxConnection:
 
         Parameters
         ----------
-        func: str
+        module: str
+            模块名
+        methods: str
             函数全名
         args: tuple
             函数位置参数
@@ -132,7 +134,7 @@ class HttpxConnection:
         rsp_fmt = self._fmt
 
         # httpx解析枚举有问题，只能提前转成value，而requests没有此问题
-        params = dict(func=func, fmt=rsp_fmt.value,
+        params = dict(module=module, methods=methods, fmt=rsp_fmt.value,
                       cache_get=cache_get, cache_expire=cache_expire, async_remote=async_remote)
         data = {'args': args, 'kwargs': kwargs}
         headers = None if self._token is None else {"Authorization": f"Bearer {self._token}"}

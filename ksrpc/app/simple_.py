@@ -37,7 +37,8 @@ class FileHTTPRequestHandler(BaseHTTPRequestHandler):
         if self.path.startswith('/api/file'):
             parsed_path = urlparse(self.path)
             query_params = parse_qs(parsed_path.query)
-            func = query_params['func'][0]
+            module = query_params['module'][0]
+            methods = query_params['methods'][0]
 
             # Parse the form data posted
             form = cgi.FieldStorage(
@@ -47,7 +48,7 @@ class FileHTTPRequestHandler(BaseHTTPRequestHandler):
             )
             file = form['file'].file.read()
 
-            key, buf, data = simple_call(func, **deserialize(file))
+            key, buf, data = simple_call(module, methods, **deserialize(file))
             del file
             del form
             del data

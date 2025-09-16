@@ -11,19 +11,19 @@ class Format(str, Enum):
     CSV = 'csv'  # 响应是DataFrame时，返回CSV格式。其它语言解析时可能比较容易
 
 
-class RspModel(BaseModel):
-    # 状态
-    status: int = 200  # status.HTTP_200_OK
-    # 发生时间
-    datetime: str = 'now'
-    # #请求信息
-    func: str = 'call'
-    args: List[Any] = []
-    kwargs: Dict[str, Any] = {}
-
-    # #响应信息
-    type: str = ''
-    data: Any = None
+# class RspModel(BaseModel):
+#     # 状态
+#     status: int = 200  # status.HTTP_200_OK
+#     # 发生时间
+#     datetime: str = 'now'
+#     # #请求信息
+#     func: str = 'call'
+#     args: List[Any] = []
+#     kwargs: Dict[str, Any] = {}
+#
+#     # #响应信息
+#     type: str = ''
+#     data: Any = None
 
 
 class ReqModel(BaseModel):

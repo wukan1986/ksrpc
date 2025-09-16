@@ -30,13 +30,9 @@ def serialize(obj):
     b1 = BytesIO()
     pickle.dump(obj, b1)
     b1.seek(0)
-    b2 = BytesIO(gzip.compress(b1.read()))
-    return b2
+    return BytesIO(gzip.compress(b1.read()))
 
 
 def deserialize(buf):
     """反序列化"""
-    b1 = gzip.decompress(buf)
-    b2 = BytesIO(b1)
-    bb = pickle.load(b2)
-    return bb
+    return pickle.load(BytesIO(gzip.decompress(buf)))

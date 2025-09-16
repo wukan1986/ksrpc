@@ -21,6 +21,7 @@
 7. 个人电脑(C)安装`pip install ksrpc[client]`
     - 编辑`demo_http.py`中地址为`serverAddr`的IP,端口为`remotePort = 7001`
 8. `ksrpc.ipynb`和`frpc.ipynb`用完后一定要`重启内核`，以免长时间占用资源
+9. 配置好，以后可以只运行`ksrpc_frpc.ipynb`，它启动了两个子进程
 
 ## 安全
 

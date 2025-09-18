@@ -1,0 +1,101 @@
+import multiprocessing
+import time
+from typing import Dict, Any
+
+from IPython.display import clear_output
+
+from ksrpc.utils.process import run_command, ProcessManager
+
+
+def callback(process_name, stream_type, line, shared_time, shared_count, clear_count):
+    # 更新共享变量
+    with shared_time.get_lock():
+        shared_time.value = time.perf_counter()
+    with shared_count.get_lock():
+        i = shared_count.value + 1
+        shared_count.value = i
+
+    # 定义颜色代码
+    RESET = "\033[0m"
+    BOLD = "\033[1m"
+    RED = "\033[31m"
+    GREEN = "\033[32m"
+    CYAN = "\033[36m"
+
+    # 根据流类型设置颜色
+    if stream_type == "stdout":
+        color = GREEN
+    elif stream_type == "stderr":
+        color = RED
+    else:
+        color = CYAN
+
+    # 创建带颜色的输出
+    colored_line = f"{BOLD}{color}[{stream_type}]{RESET} {process_name}: {line}"
+
+    # 每N条清屏一次
+    if i % clear_count == 0:
+        clear_output(wait=True)
+
+    print(colored_line)
+
+
+def main(commands: Dict[str, Any], idle_timeout: int = 60 * 5, clear_count: int = 40):
+    """
+
+    Parameters
+    ----------
+    commands:
+        命令
+    idle_timeout: int
+        空闲多少秒后停止服务
+    clear_count: int
+        输出多少行后清屏
+
+    """
+    # 创建共享变量 (使用'd'表示双精度浮点数)
+    shared_time = multiprocessing.Value('d', time.perf_counter())
+    shared_count = multiprocessing.Value('i', 0)
+
+    # 创建新回调函数绑定共享变量
+    def wrapped_callback(*args):
+        callback(*args, shared_time, shared_count, clear_count)
+
+    processes = []
+    for k, v in commands.items():
+        p = multiprocessing.Process(target=run_command, name=k,
+                                    args=(v, wrapped_callback))
+        processes.append(p)
+
+    try:
+
+        print(f"!!!注意：空闲 {idle_timeout} 秒后，应用将退出!!!")
+        with ProcessManager(*processes):
+            while True:
+                current_time = time.perf_counter()
+                # 读取共享变量值
+                with shared_time.get_lock():
+                    last_activity = shared_time.value
+
+                print(f"最后活动时间: {last_activity:.0f}, "
+                      f"当前时间: {current_time:.0f}, "
+                      f"空闲时间: {current_time - last_activity:-3.0f}/{idle_timeout}")
+
+                if current_time - last_activity > idle_timeout:
+                    print("!!!空闲时间到，退出!!!")
+                    break
+                time.sleep(15)
+    except KeyboardInterrupt:
+        print("主进程已中断")
+    except Exception as e:
+        print("主进程错误: ", e)
+    finally:
+        print("结束服务")
+
+
+if __name__ == '__main__':
+    commands = {
+        "ksrpc": ["python", "-u", "-m", "ksrpc.run_app"],
+        "frpc": ["./frpc", "-c", "./frpc.toml"],
+    }
+    main(commands, idle_timeout=300, clear_count=35)

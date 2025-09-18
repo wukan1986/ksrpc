@@ -33,5 +33,10 @@
 1. `sudo ss -tanlp` # 查看是哪个应用占用了80端口，参考应用的文档进行调整
 2. 编辑`frps.toml`中的`bindPort = 80`，编辑`frpc.toml`中的`serverPort = 80`
 3. `sudo ./frps -c ./frps.toml` # 进行测试
-4. `sudo nohup ./frps -c ./frps.toml > frps.log 2>&1 &` # 长期运行 
+4. `sudo nohup ./frps -c ./frps.toml > frps.log 2>&1 &` # 长期运行
+
+## 内存崩溃问题
+
+1. 在使用过程中会出现内存占用过多而崩溃的情况。如何正确释放内存还需调试
+2. `ksrpc_frpc.ipynb`中的脚本会在子进程崩溃时重新启动
 

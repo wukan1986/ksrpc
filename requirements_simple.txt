@@ -1,3 +1,0 @@
-pandas
-legacy-cgi; python_version >= '3.13'
-revolving_asyncio>=0.1.2

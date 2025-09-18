@@ -4,7 +4,7 @@
 import asyncio
 import time
 
-import pandas as pd
+import numpy as np
 
 
 def sync_say_hi(name):
@@ -21,26 +21,45 @@ def div(a, b):
     return a / b
 
 
-def test(i):
-    pd._testing._N = 10000
-    pd._testing._K = 26
-    return pd._testing.makeTimeDataFrame()
+def test():
+    import pandas as pd
+    df = pd.DataFrame()
+    return df
 
 
-## 以下为python 3.6下module不支持__getattr__的处理方法，请按实际情况进行设置
-import sys
+def create_1d_array(target_mb: int = 100):
+    """
+    创建指定内存大小的一维 NumPy 数组
+
+    参数:
+    target_mb -- 目标内存大小 (MB)，默认为 100MB
+    dtype -- 数组数据类型，默认为 np.float64
+
+    返回:
+    ndarray -- 创建的 NumPy 一维数组
+    """
+    dtype = np.float64
+    # 计算目标字节数
+    target_bytes = target_mb * 1024 * 1024
+
+    # 获取数据类型大小
+    element_size = np.dtype(dtype).itemsize
+
+    # 计算所需元素数量
+    num_elements = target_bytes // element_size
+
+    # 创建随机数组
+    arr = np.random.rand(num_elements).astype(dtype)
+
+    # 验证并打印结果
+    actual_mb = arr.nbytes / (1024 * 1024)
+    print(f"创建成功: {actual_mb:.2f} MB 一维数组")
+    print(f"数据类型: {arr.dtype}")
+    print(f"元素数量: {arr.size:,}")
+
+    return arr
 
 
-class Wrapper(object):
-    def __init__(self, wrapped):
-        self.wrapped = wrapped
-
-    def __getattr__(self, name):
-        # Perform custom logic here
-        try:
-            return getattr(self.wrapped, name)
-        except AttributeError as e:
-            raise e
-
-
-sys.modules[__name__] = Wrapper(sys.modules[__name__])
+def test_array():
+    arr = create_1d_array()
+    return arr[:100]

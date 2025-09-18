@@ -3,42 +3,34 @@
 """
 import asyncio
 
-from ksrpc.connections.http import HttpxConnection
-from ksrpc.rpc_client import RpcClient
+from ksrpc.client import RpcClient
+from ksrpc.connections.http import HttpConnection
 
-URL = 'http://127.0.0.1:8000/api/file'
-
-
-def sync_main():
-    with HttpxConnection(URL, username="ksrpc", password="password") as conn:
-        demo = RpcClient('demo', conn, async_local=False)
-        demo.cache_get = True
-        demo.cache_expire = 0
-        print(demo.sync_say_hi("AA"))
-        print(demo.test())
-        print(demo.sync_say_hi("AA"))
-
-        demo = RpcClient('config', conn, async_local=False)
-        demo.cache_get = True
-        demo.cache_expire = 60
-        print(demo.JQ_USERNAME())
-        demo = RpcClient('ksrpc.config', conn, async_local=False)
-        demo.cache_get = True
-        demo.cache_expire = 60
-        print(demo.JQ_USERNAME())
-
-
-sync_main()
+URL = 'http://127.0.0.1:8080/api/file'
 
 
 async def async_main():
-    async with HttpxConnection(URL, username="ksrpc", password="password") as conn:
-        demo = RpcClient('demo', conn, async_local=True)
-        demo.cache_get = True
-        demo.cache_expire = 60
+    async with HttpConnection(URL, username="admin", password="password123") as conn:
+        demo = RpcClient('demo', conn)
 
-        ret = await asyncio.gather(demo.sync_say_hi("AA"), demo.async_say_hi("BB"), demo.sync_say_hi("CC"))
+        print(await demo.test())
+
+        # gather中不能这么用
+        ret = await asyncio.gather(demo.sync_say_hi("AA"),
+                                   demo.async_say_hi("BB"),
+                                   demo.sync_say_hi("CC"))
         print(ret)
+
+        ret = await asyncio.gather(RpcClient('demo', conn).sync_say_hi("AA"),
+                                   RpcClient('demo', conn).async_say_hi("BB"),
+                                   RpcClient('demo', conn).sync_say_hi("CC"))
+        print(ret)
+
+        ret = await demo.test_array()
+        print(ret)
+
+        # ret = await demo.create_1d_array(1024 * 32)
+        # print(ret)
 
 
 asyncio.run(async_main())

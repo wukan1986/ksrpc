@@ -1,7 +1,0 @@
-pandas
-httpx
-loguru
-revolving_asyncio>=0.1.2
-pydantic
-
-websockets

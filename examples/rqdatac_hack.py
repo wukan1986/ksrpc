@@ -1,9 +1,9 @@
 # 创建客户连接
-from ksrpc import RpcClient
-from ksrpc.connections.http import HttpxConnection
+from ksrpc.client import RpcClient
+from ksrpc.connections.http import HttpConnection
 
-conn = HttpxConnection('http://127.0.0.1:8000/api/file')
-client = RpcClient('rqdatac', conn, async_local=False)
+conn = HttpConnection('http://127.0.0.1:8000/api/file')
+client = RpcClient('rqdatac', conn)
 client.cache_get = True
 client.cache_expire = 86400
 

@@ -12,26 +12,13 @@ classifiers = [
     "Development Status :: 4 - Beta",
     "Programming Language :: Python"
 ]
-dependencies = [
-    "pandas",
-    "legacy-cgi; python_version >= '3.13'",
-    "revolving_asyncio>=0.1.2",
-]
 dynamic = ["version"]
 
-[project.optional-dependencies]
-client = [
-    "httpx",
+dependencies = [
+    "pandas",
+    "aiohttp",
     "loguru",
-    "pydantic",
-    "websockets",
-]
-server = [
-    "ksrpc[client]",
-    "uvicorn[standard]",
-    "fastapi",
-    "fakeredis",
-    "python-multipart",
+    "psutil",
 ]
 
 [build-system]

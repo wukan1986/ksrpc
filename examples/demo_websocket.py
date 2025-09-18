@@ -3,37 +3,17 @@
 """
 import asyncio
 
+from ksrpc.client import RpcClient
 from ksrpc.connections.websocket import WebSocketConnection
-from ksrpc.rpc_client import RpcClient
 
-TOKEN = 'secret-token-2'
-URL = 'ws://127.0.0.1:8000/ws/bytes'
-
-
-def sync_main():
-    with WebSocketConnection(URL, token=TOKEN) as client:
-        demo = RpcClient('demo', client, async_local=False)
-        demo.cache_get = True
-        demo.cache_expire = 60
-        print(demo.sync_say_hi("AA"))
-        print(demo.test())
-
-
-sync_main()
+URL = 'ws://127.0.0.1:8080/ws/file'
 
 
 async def async_main():
-    async with WebSocketConnection(URL, token=TOKEN) as conn:
-        demo = RpcClient('demo', conn, async_local=False)
-        demo.cache_get = True
-        demo.cache_expire = 60
-        print(demo.sync_say_hi("AA"))
-        print(demo.test())
+    async with WebSocketConnection(URL, username="admin", password="password123") as conn:
+        demo = RpcClient('demo', conn)
+        print(await demo.sync_say_hi("AA"))
+        print(await demo.test())
 
-
-# TODO WebSocket+async要加这两句，否则报错
-import revolving_asyncio
-
-revolving_asyncio.apply()
 
 asyncio.run(async_main())

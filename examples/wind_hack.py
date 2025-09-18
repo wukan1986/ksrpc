@@ -1,10 +1,10 @@
 # 创建客户连接
-from ksrpc import RpcClient
-from ksrpc.connections.http import HttpxConnection
+from ksrpc.client import RpcClient
+from ksrpc.connections.http import HttpConnection
 from ksrpc.hack.WindPy import hack
 
-conn = HttpxConnection('http://127.0.0.1:8000/api/file')
-client = RpcClient('WindPy', conn, async_local=False)
+conn = HttpConnection('http://127.0.0.1:8000/api/file')
+client = RpcClient('WindPy', conn)
 client.cache_get = True
 client.cache_expire = 86400
 

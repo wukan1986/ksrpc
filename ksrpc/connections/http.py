@@ -31,9 +31,12 @@ class HttpConnection(BaseConnection):
 
     def __init__(self, url, username=None, password=None):
         self._url = url
-        self._auth = aiohttp.BasicAuth(login=username, password=password, encoding="utf-8")
-        self._timeout = aiohttp.ClientTimeout(total=60)
         self._client = None
+        self._timeout = aiohttp.ClientTimeout(total=60)
+        if username and password:
+            self._auth = aiohttp.BasicAuth(login=username, password=password, encoding="utf-8")
+        else:
+            self._auth = None
 
     async def __aenter__(self):
         """异步async with"""

@@ -80,7 +80,9 @@ async def websocket_handler(request: web.Request) -> web.StreamResponse:
 
 def sync_app(argv):
     # uv run python -m aiohttp.web -H 0.0.0.0 -P 8080 ksrpc.run_app:sync_app
-    app = web.Application(middlewares=[basic_auth_middleware])
+    app = web.Application(middlewares=[
+        basic_auth_middleware,  # 注释此行屏蔽Baisc认证
+    ])
     app.add_routes([
         web.post("/api/file", handle),
         web.get("/ws/file", websocket_handler),

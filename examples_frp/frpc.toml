@@ -19,4 +19,4 @@ localPort = 8080
 # remotePort = 7002 # 没有remotePort，而是通过frps.toml的vhostHTTPPort指定
 customDomains = ["12.34.56.78"] # 这可以用域名也可以用serverAddr。也可以修改本地Hosts文件
 httpUser = "ksrpc" # 开启Basic授权，可以防止外人访问
-httpPassword = "password"
+httpPassword = "password" # 注意：与ksrpc内置的Basic只保留一种

@@ -10,23 +10,24 @@
 3. 公网服务器(A)上传`frps.toml`和`frps`。防火墙开放端口`bindPort = 7000`、`remotePort = 7001`和`vhostHTTPPort = 7002`
     - 先运行`chmod 777 frps`
     - 再运行`./frps -c ./frps.toml`
-    - 试验成功后可改为`nohup ./frps -c ./frps.toml > frps.log 2>&1 &`
+    - ~~试验成功后可改为`nohup ./frps -c ./frps.toml > frps.log 2>&1 &`~~
 4. 内网服务器(B)上传`frpc.toml`和`frpc`,以及`ksrpc.ipynb`和`frpc.ipynb`
 5. 内网服务器(B)`Jupyter Notebook`中打开`ksrpc.ipynb`
     - 先运行`!pip install ksrpc --user --upgrade`
-    - 再运行后面的单元格
+    - 再运行`!python -m ksrpc.run_app`
 6. 内网服务器(B)`Jupyter Notebook`中打开`frpc.ipynb`
     - 先运行`!chmod 777 frpc`
     - 再运行`!./frpc -c ./frpc.toml`
-7. 个人电脑(C)安装`pip install ksrpc[client]`
+7. 个人电脑(C)安装`pip install ksrpc`
     - 编辑`demo_http.py`中地址为`serverAddr`的IP,端口为`remotePort = 7001`
 8. `ksrpc.ipynb`和`frpc.ipynb`用完后一定要`重启内核`，以免长时间占用资源
-9. 配置好，以后可以只运行`ksrpc_frpc.ipynb`，它启动了两个子进程
+9. 配置好，推荐以后只运行`ksrpc_frpc.ipynb`，它启动了两个子进程并维护
 
 ## 安全
 
 1. `auth.token`用于保证`frps`提供的反代服务只有认证过的`frpc`才能打洞
-2. `httpUser`和`httpPassword`可提供认证功能，防止外人访问服务
+2. `httpUser`和`httpPassword`提供`Basic`认证功能，防止外人访问服务
+3. `ksrpc`也提供了`Basic`认证，支持多用户。（推荐）
 
 ## bindPort = 80 如何设置
 

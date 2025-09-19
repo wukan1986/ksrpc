@@ -2,18 +2,21 @@
 演示函数
 """
 import asyncio
+import random
 import time
 
 import numpy as np
 
 
 def sync_say_hi(name):
-    time.sleep(1)
+    n = random.randint(1, 3)
+    time.sleep(n)
     return f'Hello {name}'
 
 
 async def async_say_hi(name):
-    await asyncio.sleep(1)
+    n = random.randint(1, 3)
+    await asyncio.sleep(n)
     return f'Hello {name}'
 
 

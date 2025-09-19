@@ -1,3 +1,5 @@
+import asyncio
+
 import aiohttp
 
 from ksrpc.connections import BaseConnection
@@ -27,11 +29,15 @@ async def process_response(r):
 
 
 class HttpConnection(BaseConnection):
-    """使用aiohttp实现的客户端连接支持同步和异步"""
+    """HTTP请求响应模式
+    1. 比WebSocket协议开销较高，延迟较高
+    2. 一个请求一个连接。并发时会自动建立多个连接
+    """
 
     def __init__(self, url, username=None, password=None):
         self._url = url
         self._client = None
+        self._lock = asyncio.Lock()
         self._timeout = aiohttp.ClientTimeout(total=60)
         if username and password:
             self._auth = aiohttp.BasicAuth(login=username, password=password, encoding="utf-8")
@@ -44,19 +50,22 @@ class HttpConnection(BaseConnection):
 
     async def __aexit__(self, exc_type=None, exc_val=None, exc_tb=None):
         """异步async with"""
-        if self._client:
-            await self._client.__aexit__(exc_type, exc_val, exc_tb)
+        async with self._lock:
+            if self._client:
+                await self._client.__aexit__(exc_type, exc_val, exc_tb)
 
     async def connect(self):
-        if self._client is not None:
-            return
-        self._client = aiohttp.ClientSession(auth=self._auth, timeout=self._timeout)
+        async with self._lock:
+            if self._client is not None:
+                return
+            self._client = aiohttp.ClientSession(auth=self._auth, timeout=self._timeout)
 
     async def reset(self):
-        if self._client is None:
-            return
-        await self._client.close()
-        self._client = None
+        async with self._lock:
+            if self._client is None:
+                return
+            await self._client.close()
+            self._client = None
 
     async def call(self, module, methods, args, kwargs):
         """调用函数

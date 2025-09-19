@@ -55,10 +55,10 @@ class WebSocketConnection(BaseConnection):
             await self._ws.close()
             self._ws = None
 
-    async def call(self, module, methods, args, kwargs):
+    async def call(self, modules_method, args, kwargs):
         await self.connect()
 
-        d = dict(module=module, methods=methods, args=args, kwargs=kwargs)
+        d = dict(modules_method=modules_method, args=args, kwargs=kwargs)
         b = serialize(d).read()
 
         async with self._lock:

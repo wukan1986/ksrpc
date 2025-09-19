@@ -67,15 +67,13 @@ class HttpConnection(BaseConnection):
             await self._client.close()
             self._client = None
 
-    async def call(self, module, methods, args, kwargs):
+    async def call(self, modules_method, args, kwargs):
         """调用函数
 
         Parameters
         ----------
-        module: str
-            模块名
-        methods: str
-            函数全名
+        modules_method: str
+            多层模块名+一个方法名
         args: tuple
             函数位置参数
         kwargs: dict
@@ -84,7 +82,7 @@ class HttpConnection(BaseConnection):
         """
         await self.connect()
 
-        d = dict(module=module, methods=methods, args=args, kwargs=kwargs)
+        d = dict(modules_method=modules_method, args=args, kwargs=kwargs)
         files = dict(file=serialize(d).read())
         r = await self._client.post(self._url, data=files)
 

@@ -66,3 +66,6 @@ def create_1d_array(target_mb: int = 100):
 def test_array():
     arr = create_1d_array()
     return arr[:100]
+
+
+PASSWORD = 123456

@@ -2,6 +2,7 @@ import hashlib
 import inspect
 import sys
 from datetime import datetime
+from importlib import import_module
 
 from loguru import logger
 
@@ -13,42 +14,54 @@ logger.add(sys.stderr,
            level="INFO", colorize=True)
 
 
-def make_key(module, methods, args, kwargs):
+def make_key(modules_method, args, kwargs):
     """生成缓存key"""
-    args_kwargs = f'{module}::{methods}_{repr(args)}_{repr(kwargs)}'
+    args_kwargs = f'{modules_method}_{repr(args)}_{repr(kwargs)}'
     if len(args_kwargs) > 32:
         args_kwargs = hashlib.md5(args_kwargs.encode('utf-8')).hexdigest()
-    return f'{module}::{methods}_{args_kwargs}'
+    return f'{modules_method}_{args_kwargs}'
 
 
-async def async_call(module, methods, args, kwargs):
+async def async_call(modules_method, args, kwargs):
     """简版API调用。没有各种额外功能"""
-    key = make_key(module, methods, args, kwargs)
+    key = make_key(modules_method, args, kwargs)
 
     # 返回的数据包
     d = dict(status=200,  # status.HTTP_200_OK,
              datetime=datetime.now().isoformat(),  # 加查询时间，缓存中也许可以判断是否过期
-             module=module,
-             methods=methods,
+             modules_method=modules_method,
              args=args,
              kwargs=kwargs)
-
     try:
-        try:
-            # 当前server目录下文件，用于特别处理
-            api = __import__(f'{__package__}.server.{module}', fromlist=['*'])
-        except ModuleNotFoundError as e:
-            # 导入系统包
-            if module == __package__:
-                raise Exception(f'Not Allowed to call {__package__}')
-            api = __import__(module, fromlist=['*'])
+        # 多层模块名+一个方法名
+        modules, method = modules_method.rsplit('.', 1)
+        # 内置在约定目录下的包
+        server_modules = f'{__package__}.server.{modules}'
+        # 同时存在三个: ksrpc ksrpc.server ksrpc.server.demo
+        m = sys.modules.get(server_modules, None) or sys.modules.get(modules, None)
+
+        if m is None:
+            try:
+                # 当前server目录下文件，用于特别处理
+                m = import_module(server_modules)
+            except ModuleNotFoundError as e:
+                # 导入系统包，自动注册多层到sys.modules
+                m = import_module(modules)
+
+            # # 一定要将顶层模块存到globals，这样后面用法就与习惯完全一样。但这处只是为了演示，可跳过
+            # top_module = m.__name__.split('.', 1)[0]
+            # globals()[top_module] = sys.modules[top_module]
+        else:
+            # 模块之前已经加载过了
+            pass
 
         # 转成字符串，后面可能于做cache的key
-        logger.info(f'{module}::{methods}\t{args}\t{kwargs}'[:200])
+        logger.info(f'{modules_method}\t{args}\t{kwargs}'[:200])
 
-        func = api
-        for method in methods.split('.'):
-            func = getattr(func, method)
+        func = getattr(m, method)
+        # # 其实前面全是模块，就最后一个是方法
+        # for method in methods.split('.'):
+        #     func = getattr(func, method)
 
         # 可以调用的属性
         if callable(func):

@@ -9,7 +9,7 @@ from ksrpc.connections import BaseConnection
 
 
 class RpcClient:
-    """根据函数调用生成网络请求
+    """根据调用生成网络请求
 
     Warnings
     --------
@@ -17,28 +17,28 @@ class RpcClient:
     """
 
     def __init__(self,
-                 module: str,
+                 top_module: str,
                  connection: BaseConnection,
                  ):
         """初始化
 
         Parameters
         ----------
-        module: str
-            模块名
+        top_module: str
+            顶层模块名
         connection: Connection
             连接对象
 
         """
-        self._module = module
+        self._top_module = top_module
         self._connection = connection
-        self._methods = []
+        self._names = [top_module]
         self._lock = threading.Lock()
 
-    def __getattr__(self, method):
+    def __getattr__(self, name):
         with self._lock:
             # 同一对象在asyncio.gather中使用会混乱，请用独立对象
-            self._methods.append(method)
+            self._names.append(name)
             return self
 
     def __len__(self):
@@ -50,21 +50,21 @@ class RpcClient:
 
     async def __call__(self, *args, **kwargs):
         with self._lock:
-            methods_str = '.'.join(self._methods)
+            modules_method = '.'.join(self._names)
             # 用完后得重置，否则第二次用时不正确了
-            self._methods = []
+            self._names = [self._top_module]
 
         # 排序，参数顺序统一后，排序生成key便不会浪费了
         kwargs = dict(sorted(kwargs.items()))
         try:
-            return await self._connection.call(self._module, methods_str, args, kwargs)
+            return await self._connection.call(modules_method, args, kwargs)
         except asyncio.TimeoutError:
             await self._connection.reset()  # 重置
-            logger.warning(f'{self._module}::{methods_str} timeout')
+            logger.warning(f'{modules_method} timeout')
             raise
         except Exception as e:
             await self._connection.reset()  # 重置
-            logger.warning(f'{self._module}::{methods_str} error, {e}')
+            logger.warning(f'{modules_method} error, {e}')
             raise
 
 
@@ -78,24 +78,24 @@ class RpcProxy:
     """
 
     def __init__(self,
-                 module: str,
+                 top_module: str,
                  connection: BaseConnection,
                  ):
         """初始化
 
         Parameters
         ----------
-        module: str
-            模块名
+        top_module: str
+            顶层模块名
         connection: Connection
             连接对象
         """
-        self._module = module
+        self._top_module = top_module
         self._connection = connection
 
-    def __getattr__(self, method):
+    def __getattr__(self, name):
         # 第一个方法调用用来生成新RpcClient对象，用来解决不能并发的问题
-        return RpcClient(self._module, self._connection).__getattr__(method)
+        return RpcClient(self._top_module, self._connection).__getattr__(name)
 
     def __del__(self):
         self._connection = None

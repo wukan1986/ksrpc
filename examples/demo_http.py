@@ -13,6 +13,9 @@ async def async_main():
     async with HttpConnection(URL, username="admin", password="password123") as conn:
         demo = RpcClient('demo', conn)
 
+        print(await demo.PASSWORD())
+        print(await demo.__file__())
+
         print(await demo.test())
 
         ret = await demo.test_array()

@@ -1,6 +1,4 @@
 import multiprocessing
-import os
-import signal
 import subprocess
 import time
 
@@ -64,6 +62,38 @@ def run_command(args, callback):
             time.sleep(2)
 
 
+def kill_subprocess(pid):
+    # 清除子程序的功能
+    parent = psutil.Process(pid)
+    for p in parent.children():
+        if not p.is_running():
+            continue
+        print(f"Terminating subprocess: {p.name()} (PID: {p.pid})")
+        p.terminate()
+        p.wait(timeout=5)
+
+        if not p.is_running():
+            continue
+        print(f"Force killing subprocess: {p.name()} (PID: {p.pid})")
+        p.kill()
+        p.wait()
+
+
+def kill_process(p):
+    # 清除程序的功能
+    if not p.is_alive():
+        return
+    print(f"Terminating process: {p.name} (PID: {p.pid})")
+    p.terminate()
+    p.join(timeout=5)
+
+    if not p.is_alive():
+        return
+    print(f"Force killing process: {p.name} (PID: {p.pid})")
+    p.kill()
+    p.join()
+
+
 class ProcessManager:
     def __init__(self, *processes):
         self.processes = processes
@@ -77,19 +107,7 @@ class ProcessManager:
     def __exit__(self, exc_type, exc_val, exc_tb):
         print("Terminating processes...")
         for p in self.processes:
-            # 添加清除子程序的功能
-            parent = psutil.Process(p.pid)
-            for c in parent.children():
-                print(f"Force killing children: {c.name()} (PID: {c.pid})")
-                os.kill(c.pid, signal.SIGKILL)
-
-            if p.is_alive():
-                print(f"Terminating {p.name} (PID: {p.pid})")
-                p.terminate()  # 发送SIGTERM
-                p.join(timeout=5)  # 等待5秒
-                if p.is_alive():
-                    print(f"Force killing {p.name} (PID: {p.pid})")
-                    os.kill(p.pid, signal.SIGKILL)  # 强制终止
-                    p.join()
+            kill_subprocess(p.pid)
+            kill_process(p)
         print("All processes terminated")
         return False  # 不抑制异常

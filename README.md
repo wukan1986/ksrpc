@@ -65,13 +65,14 @@ async def async_main():
 asyncio.run(async_main())
 ```
 
-更多代码参考`examples`目录
+更多代码参考[examples](https://github.com/wukan1986/ksrpc/tree/main/examples)
 
-内网反代参考`examples_frp\README.md`
+内网反代参考[examples_frp](https://github.com/wukan1986/ksrpc/tree/main/examples_frp)
 
 ## 参考项目
 
 开发到一定阶段后才发现与`rpyc`这个免注册暴露函数的功能类似，大家也可以去学习一下
+
 https://github.com/tomerfiliba-org/rpyc
 
 ## 声明

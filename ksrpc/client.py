@@ -8,6 +8,13 @@ from ksrpc.connections import BaseConnection
 
 
 class RpcClient:
+    """根据函数调用生成网络请求
+
+    Warnings
+    --------
+    不能在`asyncio.gather`中使用
+    """
+
     def __init__(self,
                  module: str,
                  connection: BaseConnection,
@@ -25,10 +32,9 @@ class RpcClient:
         self._module = module
         self._connection = connection
         self._methods = []
-        self._lock = asyncio.Lock()
 
     def __getattr__(self, method):
-        # TODO 同一对象在asyncio.gather中使用会混乱
+        # 同一对象在asyncio.gather中使用会混乱，请用独立对象
         self._methods.append(method)
         return self
 
@@ -54,3 +60,33 @@ class RpcClient:
             await self._connection.reset()  # 重置
             logger.warning(f'{self._module}::{methods_str} error, {e}')
             raise
+
+
+class RpcProxy:
+    """根据函数调用生成RpcClient对象
+
+    Notes
+    --------
+    可以在`asyncio.gather`中使用
+
+    """
+
+    def __init__(self,
+                 module: str,
+                 connection: BaseConnection,
+                 ):
+        """初始化
+
+        Parameters
+        ----------
+        module: str
+            模块名
+        connection: Connection
+            连接对象
+        """
+        self._module = module
+        self._connection = connection
+
+    def __getattr__(self, method):
+        # 第一个方法调用用来生成新RpcClient对象，用来解决不能并发的问题
+        return RpcClient(self._module, self._connection).__getattr__(method)

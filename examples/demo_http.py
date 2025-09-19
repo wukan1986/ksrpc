@@ -3,7 +3,7 @@
 """
 import asyncio
 
-from ksrpc.client import RpcClient
+from ksrpc.client import RpcClient, RpcProxy
 from ksrpc.connections.http import HttpConnection
 
 URL = 'http://127.0.0.1:8080/api/file'
@@ -15,22 +15,21 @@ async def async_main():
 
         print(await demo.test())
 
-        # gather中不能这么用
+        ret = await demo.test_array()
+        print(ret)
+
+        # gather中不能用RpcClient，methods会混乱
         ret = await asyncio.gather(demo.sync_say_hi("AA"),
                                    demo.async_say_hi("BB"),
                                    demo.sync_say_hi("CC"))
         print(ret)
 
-        ret = await asyncio.gather(RpcClient('demo', conn).sync_say_hi("AA"),
-                                   RpcClient('demo', conn).async_say_hi("BB"),
-                                   RpcClient('demo', conn).sync_say_hi("CC"))
+        # gather中要换成RpcProxy
+        demo = RpcProxy('demo', conn)
+        ret = await asyncio.gather(demo.sync_say_hi("AA"),
+                                   demo.async_say_hi("BB"),
+                                   demo.sync_say_hi("CC"))
         print(ret)
-
-        ret = await demo.test_array()
-        print(ret)
-
-        # ret = await demo.create_1d_array(1024 * 32)
-        # print(ret)
 
 
 asyncio.run(async_main())

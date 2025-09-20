@@ -85,7 +85,7 @@ class HttpConnection(BaseConnection):
         await self.connect()
 
         d = dict(module=module, name=name, args=args, kwargs=kwargs)
-        files = dict(file=serialize(d).read())
+        files = dict(file=serialize(d))
         r = await self._client.post(self.get_url(), data=files)
 
         return await process_response(r)

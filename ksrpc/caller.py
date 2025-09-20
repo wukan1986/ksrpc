@@ -1,5 +1,6 @@
 import hashlib
 import inspect
+import pickle
 import sys
 from datetime import datetime
 from importlib import import_module
@@ -84,6 +85,6 @@ async def async_call(module, name, args, kwargs):
         d['data'] = repr(e)
 
     # 由于错误信息也想缓存，所以这里进行编码
-    buf = serialize(d).read()
+    buf = pickle.dumps(d)
 
     return key, buf, d

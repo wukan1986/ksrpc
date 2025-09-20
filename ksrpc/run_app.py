@@ -1,4 +1,6 @@
 import base64
+import pickle
+import zlib
 
 from aiohttp import web
 from multidict import MultiDict
@@ -6,6 +8,7 @@ from multidict import MultiDict
 from ksrpc.caller import async_call
 from ksrpc.config import USER_CREDENTIALS, check_url_path
 from ksrpc.serializer.pkl_gzip import deserialize
+from ksrpc.utils.chunks import send_in_chunks
 
 
 @web.middleware
@@ -55,7 +58,7 @@ async def handle(request: web.Request) -> web.StreamResponse:
     key, buf, data = await async_call(**deserialize(file))
     del file
     del data
-    rsp = web.Response(body=buf, headers=MultiDict({'CONTENT-DISPOSITION': f"{key}.pkl.gz"}))
+    rsp = web.Response(body=zlib.compress(buf), headers=MultiDict({'CONTENT-DISPOSITION': f"{key}.pkl.gz"}))
     del buf
     del key
     return rsp
@@ -67,18 +70,24 @@ async def websocket_handler(request: web.Request) -> web.StreamResponse:
     ws = web.WebSocketResponse()
     await ws.prepare(request)
 
+    buffer = bytearray()
     async for msg in ws:
         if msg.type is web.WSMsgType.BINARY:
-            key, buf, data = await async_call(**deserialize(msg.data))
-            del key
-            del data
-            await ws.send_bytes(buf)
-            del buf
+            buffer.extend(zlib.decompress(msg.data))
+        elif msg.type == web.WSMsgType.TEXT:
+            if msg.data == "EOF":
+                key, buf, data = await async_call(**pickle.loads(buffer))
+                buffer.clear()
+                del data
+                await send_in_chunks(ws, buf)
+                del buf
+                del key
         elif msg.type == web.WSMsgType.ERROR:
-            print('ws connection closed with exception %s' % ws.exception())
+            print('Server WebSocket connection closed with exception %s' % ws.exception())
         elif msg.type is web.WSMsgType.CLOSE:
+            print('Server WebSocket connection closed')
             break
-
+    print("End of websocket_handler")
     return ws
 
 

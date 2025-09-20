@@ -19,6 +19,7 @@ dependencies = [
     "aiohttp",
     "loguru",
     "psutil",
+    "tqdm",
 ]
 
 [build-system]

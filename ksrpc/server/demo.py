@@ -69,3 +69,14 @@ def test_array():
 
 
 PASSWORD = 123456
+LIST = [1, 2, 3, 4, 5]
+
+
+class A:
+    class B:
+        C = [11, 22, 33, 44, 55]
+
+    D = B
+
+
+CLASS = A

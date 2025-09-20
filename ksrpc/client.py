@@ -17,22 +17,22 @@ class RpcClient:
     """
 
     def __init__(self,
-                 top_module: str,
+                 module: str,
                  connection: BaseConnection,
                  ):
         """初始化
 
         Parameters
         ----------
-        top_module: str
+        module: str
             顶层模块名
         connection: Connection
             连接对象
 
         """
-        self._top_module = top_module
+        self._module = module
         self._connection = connection
-        self._names = [top_module]
+        self._names = []
         self._lock = threading.Lock()
 
     def __getattr__(self, name):
@@ -41,30 +41,30 @@ class RpcClient:
             self._names.append(name)
             return self
 
-    def __len__(self):
-        # 不知怎么回事，被主动调用了
-        return 0
+    # def __len__(self):
+    #     # 不知怎么回事，被主动调用了
+    #     return 0
 
     def __del__(self):
         self._connection = None
 
     async def __call__(self, *args, **kwargs):
         with self._lock:
-            modules_method = '.'.join(self._names)
+            name = '.'.join(self._names)
             # 用完后得重置，否则第二次用时不正确了
-            self._names = [self._top_module]
+            self._names = []
 
         # 排序，参数顺序统一后，排序生成key便不会浪费了
         kwargs = dict(sorted(kwargs.items()))
         try:
-            return await self._connection.call(modules_method, args, kwargs)
+            return await self._connection.call(self._module, name, args, kwargs)
         except asyncio.TimeoutError:
             await self._connection.reset()  # 重置
-            logger.warning(f'{modules_method} timeout')
+            logger.warning(f'{self._module}::{name} timeout')
             raise
         except Exception as e:
             await self._connection.reset()  # 重置
-            logger.warning(f'{modules_method} error, {e}')
+            logger.warning(f'{self._module}::{name} error, {e}')
             raise
 
 
@@ -97,5 +97,10 @@ class RpcProxy:
         # 第一个方法调用用来生成新RpcClient对象，用来解决不能并发的问题
         return RpcClient(self._top_module, self._connection).__getattr__(name)
 
+    async def __call__(self, *args, **kwargs):
+        return await RpcClient(self._top_module, self._connection)()
     def __del__(self):
         self._connection = None
+
+
+

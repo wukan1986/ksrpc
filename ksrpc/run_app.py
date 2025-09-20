@@ -4,7 +4,7 @@ from aiohttp import web
 from multidict import MultiDict
 
 from ksrpc.caller import async_call
-from ksrpc.config import USER_CREDENTIALS
+from ksrpc.config import USER_CREDENTIALS, check_url_path
 from ksrpc.serializer.pkl_gzip import deserialize
 
 
@@ -46,7 +46,9 @@ def unauthorized_response():
 
 
 async def handle(request: web.Request) -> web.StreamResponse:
-    form = await request.post()  # 小心大文件
+    check_url_path(request.match_info.get('path', "tmp"))
+
+    form = await request.post()  # 小心提交大文件导致内存溢出
     file = form['file'].file.read()
     del form
 
@@ -60,6 +62,8 @@ async def handle(request: web.Request) -> web.StreamResponse:
 
 
 async def websocket_handler(request: web.Request) -> web.StreamResponse:
+    check_url_path(request.match_info.get('path', "tmp"))
+
     ws = web.WebSocketResponse()
     await ws.prepare(request)
 
@@ -84,8 +88,8 @@ def sync_app(argv):
         basic_auth_middleware,  # 注释此行屏蔽Baisc认证
     ])
     app.add_routes([
-        web.post("/api/file", handle),
-        web.get("/ws/file", websocket_handler),
+        web.post("/api/{path}", handle),
+        web.get("/ws/{path}", websocket_handler),
     ])
     return app
 

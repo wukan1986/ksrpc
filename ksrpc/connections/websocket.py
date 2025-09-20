@@ -20,7 +20,7 @@ class WebSocketConnection(BaseConnection):
     """
 
     def __init__(self, url: str, username=None, password=None):
-        self._url = url
+        super().__init__(url)
         self._ws = None
         self._lock = asyncio.Lock()
         self._timeout = aiohttp.ClientTimeout(total=60)
@@ -46,7 +46,7 @@ class WebSocketConnection(BaseConnection):
         async with self._lock:
             if self._ws is not None:
                 return
-            self._ws = await self._session.ws_connect(self._url).__aenter__()
+            self._ws = await self._session.ws_connect(self.get_url()).__aenter__()
 
     async def reset(self):
         async with self._lock:
@@ -55,10 +55,10 @@ class WebSocketConnection(BaseConnection):
             await self._ws.close()
             self._ws = None
 
-    async def call(self, modules_method, args, kwargs):
+    async def call(self, module, name, args, kwargs):
         await self.connect()
 
-        d = dict(modules_method=modules_method, args=args, kwargs=kwargs)
+        d = dict(module=module, name=name, args=args, kwargs=kwargs)
         b = serialize(d).read()
 
         async with self._lock:

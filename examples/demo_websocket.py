@@ -11,11 +11,8 @@ URL = 'ws://127.0.0.1:8080/ws/file'
 
 async def async_main():
     async with WebSocketConnection(URL, username="admin", password="password123") as conn:
-        demo = RpcClient('demo', conn)
-
-        print(await demo.test())
-
-        ret = await demo.test_array()
+        demo = RpcClient('ksrpc.server.demo', conn)
+        ret = await demo.test()
         print(ret)
 
         # gather中不能用RpcClient，methods会混乱
@@ -25,7 +22,7 @@ async def async_main():
         print(ret)
 
         # gather中要换成RpcProxy
-        demo = RpcProxy('demo', conn)
+        demo = RpcProxy('ksrpc.server.demo', conn)
         ret = await asyncio.gather(demo.sync_say_hi("AA"),
                                    demo.async_say_hi("BB"),
                                    demo.sync_say_hi("CC"))

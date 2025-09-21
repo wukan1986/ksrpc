@@ -6,7 +6,7 @@ from aiohttp import web
 
 from ksrpc.caller import async_call
 from ksrpc.config import USER_CREDENTIALS, check_url_path
-from ksrpc.utils.chunks import send_in_chunks
+from ksrpc.utils.chunks import send_in_chunks, data_sender
 
 
 @web.middleware
@@ -50,23 +50,23 @@ async def handle(request: web.Request) -> web.StreamResponse:
     check_url_path(request.match_info.get('path', "tmp"))
 
     buffer = bytearray()
-    async for chunk in request.content.iter_chunked(1024 * 64):
-        buffer.extend(chunk)
+    buf = bytearray()
+    async for chunk, end_of_http_chunk in request.content.iter_chunks():
+        buf.extend(chunk)
+        if end_of_http_chunk:
+            if len(buf) == 0:
+                continue
+            buffer.extend(zlib.decompress(buf))
+            buf.clear()
 
     key, data = await async_call(**pickle.loads(buffer))
     buffer.clear()
 
-    deflate = True
-    if deflate:
-        body = zlib.compress(pickle.dumps(data))
-        headers = {'CONTENT-DISPOSITION': f"{key}.pkl.zip",
-                   'Content-Encoding': 'deflate'}
-    else:
-        body = pickle.dumps(data)
-        headers = {'CONTENT-DISPOSITION': f"{key}.pkl"}
+    body = pickle.dumps(data)
+    headers = {'Content-Disposition': f"{key}.pkl.chunked.zip"}
 
     del data
-    return web.Response(body=body, headers=headers)
+    return web.Response(body=data_sender(body), headers=headers)
 
 
 async def websocket_handler(request: web.Request) -> web.StreamResponse:

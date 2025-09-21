@@ -1,10 +1,22 @@
 # 发送端分块
 import sys
 import zlib
+from io import BytesIO
+
+
+async def data_sender(data=None, chunk_size=1024 * 128):
+    print(f'加载数据: {len(data)} ', end='', file=sys.stderr)
+    data = BytesIO(data)
+    chunk = data.read(chunk_size)
+    while chunk:
+        yield zlib.compress(chunk)
+        print('=', end='', file=sys.stderr)
+        chunk = data.read(chunk_size)
+    print(' 加载完成', file=sys.stderr)
 
 
 async def send_in_chunks(ws, data, chunk_size=1024 * 32):  # 32KB
-    # 64KB时，某宽发送的大数据无法zlib解压
+    # 64KB时，某宽发出的大数据无法zlib解压，所以改成了32KB
     # 将数据分块发送
     print(f'发送数据: {len(data)} ', end='', file=sys.stderr)
 

@@ -48,7 +48,10 @@ class WebSocketConnection(BaseConnection):
         async with self._lock:
             if self._ws is not None:
                 return
-            self._ws = await self._session.ws_connect(self.get_url()).__aenter__()
+            self._ws = await self._session.ws_connect(
+                self.get_url(),
+                # proxy="http://192.168.31.33:9000",
+            ).__aenter__()
 
     async def reset(self):
         async with self._lock:

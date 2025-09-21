@@ -5,14 +5,15 @@ import zlib
 import aiohttp
 
 from ksrpc.connections import BaseConnection
+from ksrpc.utils.chunks import data_sender
 
 
-async def process_response(r):
+async def process_response(response):
     """处理HTTP响应。根据不同的响应分别处理
 
     Parameters
     ----------
-    r: Response
+    response: Response
 
     Returns
     -------
@@ -21,19 +22,25 @@ async def process_response(r):
     csv
 
     """
-    if r.status != 200:
-        raise Exception(f'{r.status}, {await r.text()}')
+    if response.status != 200:
+        raise Exception(f'{response.status}, {await response.text()}')
 
-    # 只要标记了deflate，就会自动解压
     buffer = bytearray()
-    async for chunk in r.content.iter_chunked(1024 * 64):
-        buffer.extend(chunk)
+    buf = bytearray()
+    async for chunk, end_of_http_chunk in response.content.iter_chunks():
+        # print(len(chunk), end_of_http_chunk)
+        buf.extend(chunk)
+        if end_of_http_chunk:
+            if len(buf) == 0:
+                continue
+            buffer.extend(zlib.decompress(buf))
+            buf.clear()
 
-    data = pickle.loads(buffer)
+    rsp = pickle.loads(buffer)
     buffer.clear()
-    if data['status'] == 200:
-        return data['data']
-    return data
+    if rsp['status'] == 200:
+        return rsp['data']
+    return rsp
 
 
 class HttpConnection(BaseConnection):
@@ -94,19 +101,15 @@ class HttpConnection(BaseConnection):
 
         d = dict(module=module, name=name, args=args, kwargs=kwargs)
 
-        deflate = True
-        if deflate:
-            # 发送端手工压缩，头部含deflate时接收端自动解压
-            files = zlib.compress(pickle.dumps(d))
-            headers = {'Content-Encoding': 'deflate'}
-        else:
-            files = pickle.dumps(d)
-            headers = {}
+        data = pickle.dumps(d)
+        headers = {}
 
-        r = await self._client.post(
-            self.get_url(), data=files,
+        response = await self._client.post(
+            self.get_url(),
+            # data=data,
+            data=data_sender(data),
             headers=headers,
             # proxy="http://192.168.31.33:9000",
         )
 
-        return await process_response(r)
+        return await process_response(response)

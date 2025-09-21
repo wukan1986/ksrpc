@@ -11,21 +11,23 @@ from ksrpc.connections.http import HttpConnection
 
 
 class ChoiceURL:
-    url = 'http://127.0.0.1:8080/api/{}'
+    def __init__(self, url: str = 'http://127.0.0.1:8080/api/{}'):
+        self._url = url
 
     def __call__(self, *args, **kwargs):
         import random
-        _url = self.url.format(random.choice(['file', 'test']))
+        _url = self._url.format(random.choice(['file', 'test']))
         print(_url)
         return _url
 
 
 class TimeURL:
-    url = 'http://127.0.0.1:8080/api/{}'
+    def __init__(self, url: str = 'ws://127.0.0.1:8080/ws/{}'):
+        self._url = url
 
     def __call__(self, *args, **kwargs):
         import time
-        _url = self.url.format(int(time.time()))
+        _url = self._url.format(int(time.time()))
         print(_url)
         return _url
 

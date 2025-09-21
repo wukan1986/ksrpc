@@ -3,11 +3,9 @@ import pickle
 import zlib
 
 from aiohttp import web
-from multidict import MultiDict
 
 from ksrpc.caller import async_call
 from ksrpc.config import USER_CREDENTIALS, check_url_path
-from ksrpc.serializer.pkl_gzip import deserialize
 from ksrpc.utils.chunks import send_in_chunks
 
 
@@ -51,17 +49,24 @@ def unauthorized_response():
 async def handle(request: web.Request) -> web.StreamResponse:
     check_url_path(request.match_info.get('path', "tmp"))
 
-    form = await request.post()  # 小心提交大文件导致内存溢出
-    file = form['file'].file.read()
-    del form
+    buffer = bytearray()
+    async for chunk in request.content.iter_chunked(1024 * 64):
+        buffer.extend(chunk)
 
-    key, buf, data = await async_call(**deserialize(file))
-    del file
+    key, data = await async_call(**pickle.loads(buffer))
+    buffer.clear()
+
+    deflate = True
+    if deflate:
+        body = zlib.compress(pickle.dumps(data))
+        headers = {'CONTENT-DISPOSITION': f"{key}.pkl.zip",
+                   'Content-Encoding': 'deflate'}
+    else:
+        body = pickle.dumps(data)
+        headers = {'CONTENT-DISPOSITION': f"{key}.pkl"}
+
     del data
-    rsp = web.Response(body=zlib.compress(buf), headers=MultiDict({'CONTENT-DISPOSITION': f"{key}.pkl.gz"}))
-    del buf
-    del key
-    return rsp
+    return web.Response(body=body, headers=headers)
 
 
 async def websocket_handler(request: web.Request) -> web.StreamResponse:
@@ -76,12 +81,10 @@ async def websocket_handler(request: web.Request) -> web.StreamResponse:
             buffer.extend(zlib.decompress(msg.data))
         elif msg.type == web.WSMsgType.TEXT:
             if msg.data == "EOF":
-                key, buf, data = await async_call(**pickle.loads(buffer))
+                key, data = await async_call(**pickle.loads(buffer))
                 buffer.clear()
+                await send_in_chunks(ws, pickle.dumps(data))
                 del data
-                await send_in_chunks(ws, buf)
-                del buf
-                del key
         elif msg.type == web.WSMsgType.ERROR:
             print('Server WebSocket connection closed with exception %s' % ws.exception())
         elif msg.type is web.WSMsgType.CLOSE:

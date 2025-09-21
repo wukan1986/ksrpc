@@ -1,9 +1,10 @@
 import asyncio
+import pickle
+import zlib
 
 import aiohttp
 
 from ksrpc.connections import BaseConnection
-from ksrpc.serializer.pkl_gzip import deserialize, serialize
 
 
 async def process_response(r):
@@ -22,7 +23,14 @@ async def process_response(r):
     """
     if r.status != 200:
         raise Exception(f'{r.status}, {await r.text()}')
-    data = deserialize(await r.content.read())
+
+    # 只要标记了deflate，就会自动解压
+    buffer = bytearray()
+    async for chunk in r.content.iter_chunked(1024 * 64):
+        buffer.extend(chunk)
+
+    data = pickle.loads(buffer)
+    buffer.clear()
     if data['status'] == 200:
         return data['data']
     return data
@@ -85,7 +93,20 @@ class HttpConnection(BaseConnection):
         await self.connect()
 
         d = dict(module=module, name=name, args=args, kwargs=kwargs)
-        files = dict(file=serialize(d))
-        r = await self._client.post(self.get_url(), data=files)
+
+        deflate = True
+        if deflate:
+            # 发送端手工压缩，头部含deflate时接收端自动解压
+            files = zlib.compress(pickle.dumps(d))
+            headers = {'Content-Encoding': 'deflate'}
+        else:
+            files = pickle.dumps(d)
+            headers = {}
+
+        r = await self._client.post(
+            self.get_url(), data=files,
+            headers=headers,
+            # proxy="http://192.168.31.33:9000",
+        )
 
         return await process_response(r)

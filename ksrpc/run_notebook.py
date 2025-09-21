@@ -37,7 +37,10 @@ def callback(process_name, stream_type, line, shared_time, shared_count, clear_c
     if i % clear_count == 0:
         clear_output(wait=True)
 
-    print(colored_line)
+    if stream_type == 'stderr':
+        print(line)
+    else:
+        print(colored_line)
 
 
 def main(commands: Dict[str, Any], idle_timeout: int = 60 * 5, clear_count: int = 40):

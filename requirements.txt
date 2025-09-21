@@ -2,4 +2,3 @@ pandas
 aiohttp
 loguru
 psutil
-tqdm

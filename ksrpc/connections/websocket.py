@@ -1,5 +1,6 @@
 import asyncio
 import pickle
+import sys
 import zlib
 
 import aiohttp
@@ -67,13 +68,16 @@ class WebSocketConnection(BaseConnection):
         async with self._lock:
             await send_in_chunks(self._ws, b)
 
+            print(f'接收数据: ', end='', file=sys.stderr)
             buffer = bytearray()
             async for msg in self._ws:
                 if msg.type is web.WSMsgType.BINARY:
+                    print('>', end='', file=sys.stderr)
                     buffer.extend(zlib.decompress(msg.data))
+                    print('\b=', end='', file=sys.stderr)
                 elif msg.type == web.WSMsgType.TEXT:
                     if msg.data == "EOF":
-                        # 处理完整数据
+                        print(f' 接收完成 {len(buffer)}', file=sys.stderr)
                         rsp = pickle.loads(buffer)
                         buffer.clear()
                         return process_response(rsp)

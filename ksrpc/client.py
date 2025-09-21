@@ -78,27 +78,27 @@ class RpcProxy:
     """
 
     def __init__(self,
-                 top_module: str,
+                 module: str,
                  connection: BaseConnection,
                  ):
         """初始化
 
         Parameters
         ----------
-        top_module: str
+        module: str
             顶层模块名
         connection: Connection
             连接对象
         """
-        self._top_module = top_module
+        self._module = module
         self._connection = connection
 
     def __getattr__(self, name):
         # 第一个方法调用用来生成新RpcClient对象，用来解决不能并发的问题
-        return RpcClient(self._top_module, self._connection).__getattr__(name)
+        return RpcClient(self._module, self._connection).__getattr__(name)
 
     async def __call__(self, *args, **kwargs):
-        return await RpcClient(self._top_module, self._connection)()
+        return await RpcClient(self._module, self._connection)()
     def __del__(self):
         self._connection = None
 

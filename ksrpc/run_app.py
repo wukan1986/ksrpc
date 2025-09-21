@@ -4,7 +4,8 @@ import zlib
 
 from aiohttp import web
 
-from ksrpc.caller import async_call
+from ksrpc import config
+from ksrpc.caller import async_call, process_call
 from ksrpc.config import USER_CREDENTIALS, check_url_path
 from ksrpc.utils.chunks import send_in_chunks, data_sender
 
@@ -59,7 +60,8 @@ async def handle(request: web.Request) -> web.StreamResponse:
             buffer.extend(zlib.decompress(buf))
             buf.clear()
 
-    key, data = await async_call(**pickle.loads(buffer))
+    # key, data = await async_call(**pickle.loads(buffer))
+    key, data = await process_call(**pickle.loads(buffer))
     buffer.clear()
 
     body = pickle.dumps(data)
@@ -81,7 +83,8 @@ async def websocket_handler(request: web.Request) -> web.StreamResponse:
             buffer.extend(zlib.decompress(msg.data))
         elif msg.type == web.WSMsgType.TEXT:
             if msg.data == "EOF":
-                key, data = await async_call(**pickle.loads(buffer))
+                # key, data = await async_call(**pickle.loads(buffer))
+                key, data = await process_call(**pickle.loads(buffer))
                 buffer.clear()
                 await send_in_chunks(ws, pickle.dumps(data), print)
                 del data
@@ -113,4 +116,5 @@ async def async_app():
 
 
 if __name__ == '__main__':
+    print(f"Current config:", config.__file__)
     web.run_app(sync_app([]))

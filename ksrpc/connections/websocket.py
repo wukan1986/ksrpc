@@ -71,7 +71,7 @@ class WebSocketConnection(BaseConnection):
             await send_in_chunks(self._ws, pickle.dumps(d), muted_print)
 
             file = sys.stderr
-            print(f'接收数据: ', end='', file=file)
+            print(f'接收数据: [', end='', file=file)
             buffer = bytearray()
             buf = bytearray()
             i = -1
@@ -85,7 +85,7 @@ class WebSocketConnection(BaseConnection):
                         i += 1
                         update_progress(i, print, file=file)
                     elif msg.data == "EOF":
-                        print(f' 接收完成 {len(buffer)}', file=file)
+                        print(f'] 接收完成 ({len(buffer)} bytes)', file=file)
                         rsp = pickle.loads(buffer)
                         buffer.clear()
                         return process_response(rsp)

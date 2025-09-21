@@ -1,6 +1,8 @@
+import asyncio
 import hashlib
 import inspect
 import sys
+from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
 from importlib import import_module
 
@@ -32,7 +34,7 @@ def get_func(module, name):
 
 
 async def async_call(module, name, args, kwargs):
-    """简版API调用。没有各种额外功能"""
+    """简版异步API调用。没有各种额外功能"""
     key = make_key(module, name, args, kwargs)
 
     # 返回的数据包
@@ -82,3 +84,24 @@ async def async_call(module, name, args, kwargs):
         d['data'] = repr(e)
 
     return key, d
+
+
+def async_wrapper(*args, **kwargs):
+    try:
+        # 尝试使用 Python 3.7+ 的 asyncio.run()
+        return asyncio.run(async_call(*args, **kwargs))
+    except AttributeError:
+        # 回退到手动事件循环管理
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            return loop.run_until_complete(async_call(*args, **kwargs))
+        finally:
+            loop.close()
+
+
+async def process_call(module, name, args, kwargs):
+    """进程版API调用。释放内存"""
+    with ProcessPoolExecutor(max_workers=1) as executor:
+        future = executor.submit(async_wrapper, module, name, args, kwargs)
+        return future.result()

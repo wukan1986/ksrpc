@@ -19,4 +19,4 @@ def check_url_path(path):
     # assert abs(time.time() - int(path)) < 10, "时间误差大"
 
 
-print(f"Current config:", __file__)
+

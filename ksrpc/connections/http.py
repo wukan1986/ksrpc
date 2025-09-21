@@ -28,7 +28,7 @@ async def process_response(response):
         raise Exception(f'{response.status}, {await response.text()}')
 
     file = sys.stderr
-    print(f'接收数据: ', end='', file=file)
+    print(f'接收数据: [', end='', file=file)
     buffer = bytearray()
     buf = bytearray()
     i = -1
@@ -44,7 +44,7 @@ async def process_response(response):
             i += 1
             update_progress(i, print, file=file)
 
-    print(f' 接收完成 {len(buffer)}', file=file)
+    print(f'] 接收完成 ({len(buffer)} bytes)', file=file)
     rsp = pickle.loads(buffer)
     buffer.clear()
     if rsp['status'] == 200:

@@ -1,11 +1,13 @@
 import asyncio
 import pickle
+import sys
 import zlib
 
 import aiohttp
 
 from ksrpc.connections import BaseConnection
 from ksrpc.utils.chunks import data_sender
+from ksrpc.utils.tqdm import update_progress, muted_print
 
 
 async def process_response(response):
@@ -25,9 +27,13 @@ async def process_response(response):
     if response.status != 200:
         raise Exception(f'{response.status}, {await response.text()}')
 
+    file = sys.stderr
+    print(f'接收数据: ', end='', file=file)
     buffer = bytearray()
     buf = bytearray()
+    i = -1
     async for chunk, end_of_http_chunk in response.content.iter_chunks():
+
         # print(len(chunk), end_of_http_chunk)
         buf.extend(chunk)
         if end_of_http_chunk:
@@ -35,7 +41,10 @@ async def process_response(response):
                 continue
             buffer.extend(zlib.decompress(buf))
             buf.clear()
+            i += 1
+            update_progress(i, print, file=file)
 
+    print(f' 接收完成 {len(buffer)}', file=file)
     rsp = pickle.loads(buffer)
     buffer.clear()
     if rsp['status'] == 200:
@@ -106,8 +115,7 @@ class HttpConnection(BaseConnection):
 
         response = await self._client.post(
             self.get_url(),
-            # data=data,
-            data=data_sender(data),
+            data=data_sender(data, muted_print),
             headers=headers,
             # proxy="http://192.168.31.33:9000",
         )

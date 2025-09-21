@@ -7,6 +7,7 @@ import aiohttp
 
 from ksrpc.connections import BaseConnection
 from ksrpc.utils.chunks import send_in_chunks
+from ksrpc.utils.tqdm import update_progress, muted_print
 
 
 def process_response(data):
@@ -67,18 +68,24 @@ class WebSocketConnection(BaseConnection):
 
         # gather时会出错，只能用lock保证一次只能一个请求和响应
         async with self._lock:
-            await send_in_chunks(self._ws, pickle.dumps(d))
+            await send_in_chunks(self._ws, pickle.dumps(d), muted_print)
 
-            print(f'接收数据: ', end='', file=sys.stderr)
+            file = sys.stderr
+            print(f'接收数据: ', end='', file=file)
             buffer = bytearray()
+            buf = bytearray()
+            i = -1
             async for msg in self._ws:
                 if msg.type is aiohttp.WSMsgType.BINARY:
-                    print('>', end='', file=sys.stderr)
-                    buffer.extend(zlib.decompress(msg.data))
-                    print('\b=', end='', file=sys.stderr)
+                    buf.extend(msg.data)
                 elif msg.type == aiohttp.WSMsgType.TEXT:
-                    if msg.data == "EOF":
-                        print(f' 接收完成 {len(buffer)}', file=sys.stderr)
+                    if msg.data == "\r\n":
+                        buffer.extend(zlib.decompress(buf))
+                        buf.clear()
+                        i += 1
+                        update_progress(i, print, file=file)
+                    elif msg.data == "EOF":
+                        print(f' 接收完成 {len(buffer)}', file=file)
                         rsp = pickle.loads(buffer)
                         buffer.clear()
                         return process_response(rsp)

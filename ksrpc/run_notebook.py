@@ -8,7 +8,7 @@ from ksrpc.utils.process import run_command, ProcessManager
 
 
 def callback(process_name, stream_type, line, shared_time, shared_count, clear_count):
-    # 更新共享变量
+    # 使用控制台输出清屏，但异步发送数据时，进度条直接显示完成了。所以要多留一些空闲时间
     with shared_time.get_lock():
         shared_time.value = time.perf_counter()
     with shared_count.get_lock():
@@ -43,7 +43,7 @@ def callback(process_name, stream_type, line, shared_time, shared_count, clear_c
         print(colored_line)
 
 
-def main(commands: Dict[str, Any], idle_timeout: int = 60 * 5, clear_count: int = 40):
+def main(commands: Dict[str, Any], idle_timeout: int = 60 * 10, clear_count: int = 40):
     """
 
     Parameters
@@ -51,7 +51,7 @@ def main(commands: Dict[str, Any], idle_timeout: int = 60 * 5, clear_count: int 
     commands:
         命令
     idle_timeout: int
-        空闲多少秒后停止服务
+        空闲多少秒后停止服务。利用的控制台输出，发送大数据时，发送进度条已经走完，但数据还在发送中，过短可能导致服务中断
     clear_count: int
         输出多少行后清屏
 

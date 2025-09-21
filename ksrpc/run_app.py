@@ -66,7 +66,7 @@ async def handle(request: web.Request) -> web.StreamResponse:
     headers = {'Content-Disposition': f"{key}.pkl.chunked.zip"}
 
     del data
-    return web.Response(body=data_sender(body), headers=headers)
+    return web.Response(body=data_sender(body, print), headers=headers)
 
 
 async def websocket_handler(request: web.Request) -> web.StreamResponse:
@@ -83,7 +83,7 @@ async def websocket_handler(request: web.Request) -> web.StreamResponse:
             if msg.data == "EOF":
                 key, data = await async_call(**pickle.loads(buffer))
                 buffer.clear()
-                await send_in_chunks(ws, pickle.dumps(data))
+                await send_in_chunks(ws, pickle.dumps(data), print)
                 del data
         elif msg.type == web.WSMsgType.ERROR:
             print('Server WebSocket connection closed with exception %s' % ws.exception())

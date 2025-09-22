@@ -10,6 +10,9 @@ class BaseURL:
 
     def __init__(self, url: str = 'http://127.0.0.1:8080/api/file'):
         self._url = url
+        self._path = self._url.split('?', 1)[0]
+        self._path = self._path.rsplit('/', 1)[1]
+        pass
 
     def __call__(self, *args, **kwargs):
         """由客户端使用"""
@@ -18,7 +21,7 @@ class BaseURL:
     def check(self, request: web.Request):
         """由服务端使用"""
         path = request.match_info.get('path', '')
-        assert path == 'file'
+        assert path == self._path
 
 
 class TimeURL(BaseURL):

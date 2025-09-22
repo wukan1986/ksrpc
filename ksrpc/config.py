@@ -1,4 +1,6 @@
-import time  # noqa
+import os
+
+from ksrpc.utils.urls import BaseURL, TimeURL  # noqa
 
 """
 TODO Basic认证。一定要修改账号，不要使用默认值
@@ -9,14 +11,16 @@ USER_CREDENTIALS = {
     "user": "secret",
 }
 
+"""
+TODO 在新进程中调用开关，可以手工设置为True/False
 
-def check_url_path(path):
-    """TODO 为防路径扫描，这里可以使用其他路径。甚至可以搞规则判断。多条规则，只能留一条
-    """
-    # 1.因为本项目是模拟HTTP文件上传和下载，为反映其特点，所以约定file
-    assert path == 'file', "未授权路径"
-    # 2. 客户端与服务端时间差不能超过10秒
-    # assert abs(time.time() - int(path)) < 10, "时间误差大"
+启动新进程会消耗一点时间，但相对网络传输大数据可以忽略不计
+获得的好处是新进程会自动退出释放内存减少崩溃，适合在云服务器中运行
+"""
+CALL_IN_NEW_PROCESS = hasattr(os, 'fork')
+print(f"CALL_IN_NEW_PROCESS = {CALL_IN_NEW_PROCESS}")
 
-
-
+"""
+TODO 为防路径扫描，可以使用动态路径
+"""
+URL_CHECKER = BaseURL()  # BaseURL(), TimeURL()

@@ -22,7 +22,7 @@ class WebSocketConnection(BaseConnection):
     2. 同一连接中，请求不能并行。如需并发要分别建立连接
     """
 
-    def __init__(self, url: str, username=None, password=None):
+    def __init__(self, url, username=None, password=None):
         super().__init__(url)
         self._ws = None
         self._lock = asyncio.Lock()

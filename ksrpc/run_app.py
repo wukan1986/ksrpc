@@ -5,8 +5,8 @@ import zlib
 from aiohttp import web
 
 from ksrpc import config
-from ksrpc.caller import async_call, process_call
-from ksrpc.config import USER_CREDENTIALS, check_url_path
+from ksrpc.caller import switch_call
+from ksrpc.config import USER_CREDENTIALS, URL_CHECKER
 from ksrpc.utils.chunks import send_in_chunks, data_sender
 
 
@@ -47,9 +47,17 @@ def unauthorized_response():
     )
 
 
-async def handle(request: web.Request) -> web.StreamResponse:
-    check_url_path(request.match_info.get('path', "tmp"))
+@web.middleware
+async def url_check_middleware(request, handler):
+    try:
+        URL_CHECKER.check(request)
+    except (AssertionError, ValueError):
+        return web.HTTPForbidden()
 
+    return await handler(request)
+
+
+async def handle(request: web.Request) -> web.StreamResponse:
     buffer = bytearray()
     buf = bytearray()
     async for chunk, end_of_http_chunk in request.content.iter_chunks():
@@ -60,8 +68,7 @@ async def handle(request: web.Request) -> web.StreamResponse:
             buffer.extend(zlib.decompress(buf))
             buf.clear()
 
-    # key, data = await async_call(**pickle.loads(buffer))
-    key, data = await process_call(**pickle.loads(buffer))
+    key, data = await switch_call(**pickle.loads(buffer))
     buffer.clear()
 
     body = pickle.dumps(data)
@@ -72,8 +79,6 @@ async def handle(request: web.Request) -> web.StreamResponse:
 
 
 async def websocket_handler(request: web.Request) -> web.StreamResponse:
-    check_url_path(request.match_info.get('path', "tmp"))
-
     ws = web.WebSocketResponse()
     await ws.prepare(request)
 
@@ -83,8 +88,7 @@ async def websocket_handler(request: web.Request) -> web.StreamResponse:
             buffer.extend(zlib.decompress(msg.data))
         elif msg.type == web.WSMsgType.TEXT:
             if msg.data == "EOF":
-                # key, data = await async_call(**pickle.loads(buffer))
-                key, data = await process_call(**pickle.loads(buffer))
+                key, data = await switch_call(**pickle.loads(buffer))
                 buffer.clear()
                 await send_in_chunks(ws, pickle.dumps(data), print)
                 del data
@@ -101,6 +105,7 @@ def sync_app(argv):
     # uv run python -m aiohttp.web -H 0.0.0.0 -P 8080 ksrpc.run_app:sync_app
     app = web.Application(middlewares=[
         basic_auth_middleware,  # 注释此行屏蔽Baisc认证
+        url_check_middleware,
     ])
     app.add_routes([
         web.post("/api/{path}", handle),

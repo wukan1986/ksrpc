@@ -8,6 +8,8 @@ from importlib import import_module
 
 from loguru import logger
 
+from ksrpc.config import CALL_IN_NEW_PROCESS
+
 logger.remove()
 logger.add(sys.stderr,
            format="<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <level>{level:<8}</level> | PID:{process.id} | TID:{thread.id} | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
@@ -53,7 +55,6 @@ async def async_call(module, name, args, kwargs):
         # 可以调用的属性
         if callable(func):
             # 例如os.remove
-            type_ = 'function'
             if inspect.iscoroutinefunction(func):
                 output = await func(*args, **kwargs)
             else:
@@ -86,22 +87,36 @@ async def async_call(module, name, args, kwargs):
     return key, d
 
 
-def async_wrapper(*args, **kwargs):
+def async_wrapper(func, *args, **kwargs):
     try:
         # 尝试使用 Python 3.7+ 的 asyncio.run()
-        return asyncio.run(async_call(*args, **kwargs))
+        return asyncio.run(func(*args, **kwargs))
     except AttributeError:
         # 回退到手动事件循环管理
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
-            return loop.run_until_complete(async_call(*args, **kwargs))
+            return loop.run_until_complete(func(*args, **kwargs))
         finally:
             loop.close()
 
 
 async def process_call(module, name, args, kwargs):
-    """进程版API调用。释放内存"""
+    """进程版API调用。结束后进程退出自动释放内存
+
+    Notes
+    =====
+    启动了一个新进程速度显著下降，但与网络传输大数据相比可以忽略不计。
+    获得好处是释放了内存，适合内存有限的平台
+
+    """
     with ProcessPoolExecutor(max_workers=1) as executor:
-        future = executor.submit(async_wrapper, module, name, args, kwargs)
+        future = executor.submit(async_wrapper, async_call, module, name, args, kwargs)
         return future.result()
+
+
+async def switch_call(module, name, args, kwargs):
+    if CALL_IN_NEW_PROCESS:
+        return await process_call(module, name, args, kwargs)
+    else:
+        return await async_call(module, name, args, kwargs)

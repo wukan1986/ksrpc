@@ -1,5 +1,3 @@
-# 客户端，用于处理请求
-# 需要选择到底是http还是ws，还是nng一类的
 import asyncio
 import threading
 
@@ -9,11 +7,14 @@ from ksrpc.connections import BaseConnection
 
 
 class RpcClient:
-    """根据调用生成网络请求
+    """
+    RpcClient根据调用生成网络请求
 
     Warnings
     --------
-    不能在`asyncio.gather`中使用
+    先调用一到多个`__getattr__`，然后`__call__`收集`__getattr__`的结果。
+    并行时`__getattr__`的调用先后不可控，所以不能在`asyncio.gather`中使用
+
     """
 
     def __init__(self,
@@ -41,9 +42,10 @@ class RpcClient:
             self._names.append(name)
             return self
 
-    # def __len__(self):
-    #     # 不知怎么回事，被主动调用了
-    #     return 0
+    @property
+    def __doc__(self):
+        # 比较特殊，默认是调用`RpcClient.__doc__`，这样写才行
+        return self.__getattr__('__doc__')
 
     def __del__(self):
         self._connection = None
@@ -69,11 +71,11 @@ class RpcClient:
 
 
 class RpcProxy:
-    """每次调用都生成一个RpcClient对象，占用资源略多于RpcClient
+    """每次调用都生成一个`RpcClient`对象，占用资源略多于`RpcClient`
 
     Notes
     --------
-    可以在`asyncio.gather`中并行使用
+    `__getattr__`后就已经是一个独立的`RpcClient`对象，可以在`asyncio.gather`中并行使用
 
     """
 
@@ -97,10 +99,12 @@ class RpcProxy:
         # 第一个方法调用用来生成新RpcClient对象，用来解决不能并发的问题
         return RpcClient(self._module, self._connection).__getattr__(name)
 
+    @property
+    def __doc__(self):
+        return self.__getattr__('__doc__')
+
     async def __call__(self, *args, **kwargs):
         return await RpcClient(self._module, self._connection)()
+
     def __del__(self):
         self._connection = None
-
-
-

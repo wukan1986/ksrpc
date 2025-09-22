@@ -75,17 +75,19 @@ class WebSocketConnection(BaseConnection):
             buffer = bytearray()
             buf = bytearray()
             i = -1
+            size = 0
             async for msg in self._ws:
                 if msg.type is aiohttp.WSMsgType.BINARY:
                     buf.extend(msg.data)
                 elif msg.type == aiohttp.WSMsgType.TEXT:
                     if msg.data == "\r\n":
+                        size += len(buf)
                         buffer.extend(zlib.decompress(buf))
                         buf.clear()
                         i += 1
                         update_progress(i, print, file=file)
                     elif msg.data == "EOF":
-                        print(f'] 接收完成 ({len(buffer)} bytes)', file=file)
+                        print(f'] 解压完成 ({size:,}/{len(buffer):,} bytes)', file=file)
                         rsp = pickle.loads(buffer)
                         buffer.clear()
                         return process_response(rsp)

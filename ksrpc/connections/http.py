@@ -32,19 +32,19 @@ async def process_response(response):
     buffer = bytearray()
     buf = bytearray()
     i = -1
+    size = 0
     async for chunk, end_of_http_chunk in response.content.iter_chunks():
-
-        # print(len(chunk), end_of_http_chunk)
         buf.extend(chunk)
         if end_of_http_chunk:
             if len(buf) == 0:
                 continue
+            size += len(buf)
             buffer.extend(zlib.decompress(buf))
             buf.clear()
             i += 1
             update_progress(i, print, file=file)
 
-    print(f'] 接收完成 ({len(buffer)} bytes)', file=file)
+    print(f'] 解压完成 ({size:,}/{len(buffer):,} bytes)', file=file)
     rsp = pickle.loads(buffer)
     buffer.clear()
     if rsp['status'] == 200:

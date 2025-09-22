@@ -1,17 +1,18 @@
 import multiprocessing
 import subprocess
+import sys
 import time
 
 import psutil
 import select
 
 
-def callback(process_name, stream_type, line):
+def callback(process_name, is_stderr, line):
     # 根据流类型添加不同前缀
-    if stream_type == "stderr":
-        print(f"[ERROR] {process_name}: {line}")
+    if is_stderr:
+        print(f"[ERROR] {process_name}: {line}", file=sys.stderr)
     else:
-        print(f"[INFO] {process_name}: {line}")
+        print(f"[INFO] {process_name}: {line}", file=sys.stdout)
 
 
 def run_command(args, callback):
@@ -36,22 +37,16 @@ def run_command(args, callback):
                 for stream in rlist:
                     line = stream.readline()
                     if line:
-                        # 判断是 stdout 还是 stderr
-                        if stream is process.stdout:
-                            stream_type = "stdout"
-                        elif stream is process.stderr:
-                            stream_type = "stderr"
-                        else:
-                            stream_type = "unknown"
-
-                        callback(process_name, stream_type, line.strip())
+                        callback(process_name, stream == process.stderr, line.strip())
 
             # 等待进程结束
             exit_code = process.wait()
             # 如果正常退出（退出码为0），则跳出循环
             if exit_code == 0:
-                print(args, "正常退出")
+                print(args, "正常退出", exit_code)
                 break
+            else:
+                print(args, "异常退出", exit_code)
         except KeyboardInterrupt:
             print(args, "已中断")
             break

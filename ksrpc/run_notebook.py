@@ -7,7 +7,7 @@ from IPython.display import clear_output
 from ksrpc.utils.process import run_command, ProcessManager
 
 
-def callback(process_name, stream_type, line, shared_time, shared_count, clear_count):
+def callback(process_name, is_stderr, line, shared_time, shared_count, clear_count):
     # 使用控制台输出清屏，但异步发送数据时，进度条直接显示完成了。所以要多留一些空闲时间
     with shared_time.get_lock():
         shared_time.value = time.perf_counter()
@@ -20,24 +20,21 @@ def callback(process_name, stream_type, line, shared_time, shared_count, clear_c
     BOLD = "\033[1m"
     RED = "\033[31m"
     GREEN = "\033[32m"
-    CYAN = "\033[36m"
 
     # 根据流类型设置颜色
-    if stream_type == "stdout":
-        color = GREEN
-    elif stream_type == "stderr":
+    if is_stderr:
         color = RED
     else:
-        color = CYAN
+        color = GREEN
 
     # 创建带颜色的输出
-    colored_line = f"{BOLD}{color}[{stream_type}]{RESET} {process_name}: {line}"
+    colored_line = f"{BOLD}{color}[{process_name}]{RESET}: {line}"
 
     # 每N条清屏一次
     if i % clear_count == 0:
         clear_output(wait=True)
 
-    if stream_type == 'stderr':
+    if is_stderr:
         print(line)
     else:
         print(colored_line)

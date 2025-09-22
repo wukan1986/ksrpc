@@ -1,4 +1,5 @@
 import multiprocessing
+import sys
 import time
 from typing import Dict, Any
 
@@ -35,9 +36,9 @@ def callback(process_name, is_stderr, line, shared_time, shared_count, clear_cou
         clear_output(wait=True)
 
     if is_stderr:
-        print(line)
+        print(line, file=sys.stderr)
     else:
-        print(colored_line)
+        print(colored_line, file=sys.stdout)
 
 
 def main(commands: Dict[str, Any], idle_timeout: int = 60 * 10, clear_count: int = 40):

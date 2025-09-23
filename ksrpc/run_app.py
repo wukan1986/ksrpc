@@ -26,6 +26,19 @@ def import_module_from_path(module_name, file_path):
     return module
 
 
+def main(config=None):
+    if config:
+        import_module_from_path("ksrpc.config", config)
+
+    from ksrpc.app import start_server
+    from ksrpc.utils.async_ import async_wrapper
+
+    try:
+        async_wrapper(start_server)
+    except KeyboardInterrupt:
+        pass
+
+
 if __name__ == '__main__':
     import argparse
 
@@ -35,10 +48,4 @@ if __name__ == '__main__':
     parser.add_argument("--config", type=str, help="配置文件路径", nargs="?")
     args = parser.parse_args()
 
-    if args.config:
-        config = import_module_from_path("ksrpc.config", args.config)
-
-    from aiohttp import web
-    from ksrpc.app import create_app
-
-    web.run_app(create_app([]))
+    main(args.config)

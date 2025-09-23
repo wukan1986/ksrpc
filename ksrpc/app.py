@@ -122,4 +122,8 @@ async def start_server():
     await site.start()
     print(f"Server started at http://{HOST}:{PORT}")
     # 保持服务器运行，直到被中断
-    await asyncio.Future()  # 永久等待
+    try:
+        await asyncio.Future()  # 永久等待
+    finally:
+        print("Cleanup server")
+        await runner.cleanup()

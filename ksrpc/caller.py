@@ -1,4 +1,3 @@
-import asyncio
 import hashlib
 import inspect
 import sys
@@ -9,6 +8,7 @@ from importlib import import_module
 from loguru import logger
 
 from ksrpc.config import CALL_IN_NEW_PROCESS
+from ksrpc.utils.async_ import async_wrapper
 
 logger.remove()
 logger.add(sys.stderr,
@@ -85,20 +85,6 @@ async def async_call(module, name, args, kwargs):
         d['data'] = repr(e)
 
     return key, d
-
-
-def async_wrapper(func, *args, **kwargs):
-    try:
-        # 尝试使用 Python 3.7+ 的 asyncio.run()
-        return asyncio.run(func(*args, **kwargs))
-    except AttributeError:
-        # 回退到手动事件循环管理
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        try:
-            return loop.run_until_complete(func(*args, **kwargs))
-        finally:
-            loop.close()
 
 
 async def process_call(module, name, args, kwargs):

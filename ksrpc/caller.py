@@ -1,6 +1,7 @@
 import hashlib
 import inspect
 import sys
+import types
 from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
 from importlib import import_module
@@ -52,8 +53,14 @@ async def async_call(module, name, args, kwargs):
 
         func = get_func(module, name)
 
+        if isinstance(func, type):
+            # print(ksrpc.server.demo.p.__class__)
+            output = func
+        elif name.endswith(".__func__"): # isinstance(func, types.FunctionType) # 不行
+            # print(ksrpc.server.demo.p.__format__.__func__)
+            output = func
         # 可以调用的属性
-        if callable(func):
+        elif callable(func):
             # 例如os.remove
             if inspect.iscoroutinefunction(func):
                 output = await func(*args, **kwargs)
@@ -62,23 +69,8 @@ async def async_call(module, name, args, kwargs):
         else:
             output = func
 
-        # 结果的类型名
-        class_name = output.__class__.__name__
-
-        # 不可调用的直接返回
-        if class_name == 'module':
-            # 例如os.path，但用法为os.path()
-            data = repr(output)
-        elif class_name in ('dict_keys', 'dict_values'):
-            # 无法序列化，只能强行转换
-            # 例如：sys.modules.keys()
-            data = list(output)
-        else:
-            # 例如math.pi，但得加()才能触发，math.pi()
-            data = output
-
         d['type'] = type(output).__name__
-        d['data'] = data
+        d['data'] = output
     except Exception as e:
         d['status'] = 500  # status.HTTP_500_INTERNAL_SERVER_ERROR
         d['type'] = type(e).__name__

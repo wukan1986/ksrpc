@@ -32,14 +32,20 @@ async def async_main():
         sys = RpcClient('sys', conn)
         print(await sys.path.insert(0, "/kan"))
         print(await sys.path())
+        print(await sys.modules.keys())
 
-        demo = RpcClient('ksrpc.server.demo', conn)
-        print(await demo.create_1d_array.__doc__())
-        print(await demo.__doc__())
+        math = RpcClient('math', conn)
+        print(await math.pi())
 
         demo = RpcProxy('ksrpc.server.demo', conn)
         print(await demo.create_1d_array.__doc__())
         print(await demo.__doc__.__len__())
+        print(await demo.__dict__())
+        print(await demo.p.__format__("p"))
+        print(await demo.p.__module__())
+        print(await demo.p.__class__())
+        print(await demo.p.__format__.__func__())
+        print(await demo.p.__format__.__func__.__name__())
 
 
 asyncio.run(async_main())

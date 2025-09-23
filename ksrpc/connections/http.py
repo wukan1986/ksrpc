@@ -1,9 +1,9 @@
 import asyncio
-import pickle
 import sys
 import zlib
 
 import aiohttp
+import dill as pickle
 
 from ksrpc.connections import BaseConnection
 from ksrpc.utils.chunks import data_sender

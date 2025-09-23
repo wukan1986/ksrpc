@@ -62,6 +62,28 @@ def create_1d_array(target_mb: int = 100):
 
     return arr
 
+class Point:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def __format__(self, format_spec):
+        # 如果没有提供格式说明符或为空，使用默认表示
+        if format_spec == "":
+            return f"({self.x}, {self.y})"
+        # 根据不同的格式说明符返回不同的格式
+        elif format_spec == "c":
+            return f"({self.x}, {self.y})"
+        elif format_spec == "p":
+            return f"Point({self.x}, {self.y})"
+        elif format_spec == "r":  # 例如，保留两位小数
+            return f"({round(self.x, 2)}, {round(self.y, 2)})"
+        else:
+            # 对于无法识别的格式说明符，可以返回默认表示或抛出异常
+            return f"({self.x}, {self.y})"
+
+# 使用示例
+p = Point(3.14159, 2.71828)
 
 def test_array():
     arr = create_1d_array()

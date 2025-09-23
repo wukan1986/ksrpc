@@ -36,19 +36,14 @@ class RpcClient:
         self._names = []
         self._lock = threading.Lock()
 
+    def __del__(self):
+        self._connection = None
+
     def __getattr__(self, name):
         with self._lock:
             # 同一对象在asyncio.gather中使用会混乱，请用独立对象
             self._names.append(name)
             return self
-
-    @property
-    def __doc__(self):
-        # 比较特殊，默认是调用`RpcClient.__doc__`，这样写才行
-        return self.__getattr__('__doc__')
-
-    def __del__(self):
-        self._connection = None
 
     async def __call__(self, *args, **kwargs):
         with self._lock:
@@ -69,8 +64,49 @@ class RpcClient:
             logger.warning(f'{self._module}::{name} error, {e}')
             raise
 
+    @property
+    def __class__(self):
+        return self.__getattr__('__class__')
 
-class RpcProxy:
+    @property
+    def __dict__(self):
+        return self.__getattr__('__dict__')
+
+    @property
+    def __dir__(self):
+        return self.__getattr__('__dir__')
+
+    @property
+    def __doc__(self):
+        return self.__getattr__('__doc__')
+
+    @property
+    def __format__(self, format_spe: str = ""):
+        # 这里=""不能省
+        return self.__getattr__('__format__')
+
+    @property
+    def __hash__(self):
+        return self.__getattr__('__hash__')
+
+    @property
+    def __module__(self):
+        return self.__getattr__('__module__')
+
+    @property
+    def __repr__(self):
+        return self.__getattr__('__repr__')
+
+    @property
+    def __sizeof__(self):
+        return self.__getattr__('__sizeof__')
+
+    @property
+    def __str__(self):
+        return self.__getattr__('__str__')
+
+
+class RpcProxy(RpcClient):
     """每次调用都生成一个`RpcClient`对象，占用资源略多于`RpcClient`
 
     Notes
@@ -79,32 +115,14 @@ class RpcProxy:
 
     """
 
-    def __init__(self,
-                 module: str,
-                 connection: BaseConnection,
-                 ):
-        """初始化
-
-        Parameters
-        ----------
-        module: str
-            顶层模块名
-        connection: Connection
-            连接对象
-        """
-        self._module = module
-        self._connection = connection
-
     def __getattr__(self, name):
         # 第一个方法调用用来生成新RpcClient对象，用来解决不能并发的问题
         return RpcClient(self._module, self._connection).__getattr__(name)
 
-    @property
-    def __doc__(self):
-        return self.__getattr__('__doc__')
-
     async def __call__(self, *args, **kwargs):
         return await RpcClient(self._module, self._connection)()
 
-    def __del__(self):
-        self._connection = None
+    @property
+    def __doc__(self):
+        # 比较特殊
+        return self.__getattr__('__doc__')

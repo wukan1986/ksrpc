@@ -1,8 +1,8 @@
 import asyncio
 import base64
-import pickle
 import zlib
 
+import dill as pickle
 from aiohttp import web
 
 from ksrpc.caller import switch_call

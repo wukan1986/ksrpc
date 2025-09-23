@@ -54,6 +54,7 @@ def main(commands: Dict[str, Any], idle_timeout: int = 60 * 10, clear_count: int
         输出多少行后清屏
 
     """
+    print('注意：子进程模式下，通过管道获取标准输出，进度条是一次性打印', file=sys.stderr)
     # 创建共享变量 (使用'd'表示双精度浮点数)
     shared_time = multiprocessing.Value('d', time.perf_counter())
     shared_count = multiprocessing.Value('i', 0)
@@ -90,7 +91,8 @@ def main(commands: Dict[str, Any], idle_timeout: int = 60 * 10, clear_count: int
 
 if __name__ == '__main__':
     commands = {
-        "ksrpc": ["python", "-u", "-m", "ksrpc.run_app"],
-        "frpc": ["./frpc", "-c", "./frpc.toml"],
+        # "ksrpc": ["python", "-u", "-m", "ksrpc.run_app"],
+        # "frpc": ["./frpc", "-c", "./frpc.toml"],
+        "ksrpc": ["uv", "run", "python", "-u", "-m", "ksrpc.run_app"],
     }
     main(commands, idle_timeout=300, clear_count=35)

@@ -1,10 +1,10 @@
 import multiprocessing
 import subprocess
 import sys
+import threading
 import time
 
 import psutil
-import select
 
 
 def callback(process_name, is_stderr, line, *args, **kwargs):
@@ -21,6 +21,7 @@ def run_command(cmds, callback, *args, **kwargs):
     TODO 目前我还没解决 print('\b')，只能整行确定后再打印
     """
     process_name = multiprocessing.current_process().name
+    is_win = (sys.platform == 'win32')
 
     while True:
         # 子进程崩溃后可重启
@@ -31,18 +32,38 @@ def run_command(cmds, callback, *args, **kwargs):
                 cmds,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                universal_newlines=True,
+                # universal_newlines=True,
             )
             print(cmds, f"启动子进程(PID:{process.pid})")
 
-            # 实时输出日志
-            while process.poll() is None:
-                # 检查 stdout/stderr 是否有数据
-                rlist, _, _ = select.select([process.stdout, process.stderr], [], [], 0.1)
-                for stream in rlist:
+            # 定义从流中读取内容并调用回调函数的辅助函数
+            def read_stream(stream, is_stderr):
+                while True:
                     line = stream.readline()
-                    if line:
-                        callback(process_name, stream == process.stderr, line.strip(), *args, **kwargs)
+                    if not line:  # 遇到EOF（通常是进程结束）
+                        break
+                    if is_win:
+                        line = line.decode('gbk', errors='replace').strip()
+                    else:
+                        line = line.decode('utf-8', errors='replace').strip()
+
+                    # 调用回调函数处理内容
+                    callback(process_name, is_stderr, line.strip(), *args, **kwargs)
+
+            # 为 stdout 和 stderr 创建单独的线程进行读取
+            stdout_thread = threading.Thread(target=read_stream, args=(process.stdout, False))
+            stderr_thread = threading.Thread(target=read_stream, args=(process.stderr, True))
+
+            # 启动线程
+            stdout_thread.start()
+            stderr_thread.start()
+
+            # 等待进程结束
+            exit_code = process.wait()
+
+            # 等待读取线程结束（确保所有输出都被处理）
+            stdout_thread.join()
+            stderr_thread.join()
 
             # 等待进程结束
             exit_code = process.wait()

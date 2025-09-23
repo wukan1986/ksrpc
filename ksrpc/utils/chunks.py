@@ -21,7 +21,7 @@ async def data_sender(data, print, chunk_size=1024 * 128):
         update_progress(i, print, file=file)
         chunk = data.read(chunk_size)
     # 会快速的显示到此处，但实际数据还在发送中，建议与客户端接收进度一起看
-    print(f'] 压缩完成 ({size:,} bytes)', file=file)
+    print(f'] 压缩完成 ({size:,} bytes) | 底层异步发送中，请勿立即退出！', file=file)
 
 
 async def send_in_chunks(ws, data, print, chunk_size=1024 * 128):  # 32KB

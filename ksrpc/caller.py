@@ -48,7 +48,7 @@ async def async_call(module, name, args, kwargs):
              kwargs=kwargs)
     try:
         # 转成字符串，后面可能于做cache的key
-        logger.info(f'{module}::{name}\t{args}\t{kwargs}'[:200])
+        logger.info(f'{module}::{name}\t{args}\t{kwargs}'[:300])
 
         func = get_func(module, name)
 

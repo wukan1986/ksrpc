@@ -7,7 +7,7 @@ import psutil
 import select
 
 
-def callback(process_name, is_stderr, line):
+def callback(process_name, is_stderr, line, *args, **kwargs):
     # 根据流类型添加不同前缀
     if is_stderr:
         print(f"[ERROR] {process_name}: {line}", file=sys.stderr)
@@ -15,7 +15,7 @@ def callback(process_name, is_stderr, line):
         print(f"[INFO] {process_name}: {line}", file=sys.stdout)
 
 
-def run_command(args, callback):
+def run_command(cmds, callback, *args, **kwargs):
     """运行子程序
 
     TODO 目前我还没解决 print('\b')，只能整行确定后再打印
@@ -28,12 +28,12 @@ def run_command(args, callback):
         try:
             # 使用 subprocess 运行外部命令
             process = subprocess.Popen(
-                args,
+                cmds,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 universal_newlines=True,
             )
-            print(args, f"启动子进程(PID:{process.pid})")
+            print(cmds, f"启动子进程(PID:{process.pid})")
 
             # 实时输出日志
             while process.poll() is None:
@@ -42,26 +42,26 @@ def run_command(args, callback):
                 for stream in rlist:
                     line = stream.readline()
                     if line:
-                        callback(process_name, stream == process.stderr, line.strip())
+                        callback(process_name, stream == process.stderr, line.strip(), *args, **kwargs)
 
             # 等待进程结束
             exit_code = process.wait()
             # 如果正常退出（退出码为0），则跳出循环
             if exit_code == 0:
-                print(args, "子进程正常退出", exit_code)
+                print(cmds, "子进程正常退出", exit_code)
                 break
             else:
-                print(args, "子进程异常退出", exit_code, file=sys.stderr)
+                print(cmds, "子进程异常退出", exit_code, file=sys.stderr)
         except KeyboardInterrupt:
-            print(args, "已中断")
+            print(cmds, "已中断")
             break
         except Exception as e:
-            print(args, "运行失败", e, file=sys.stderr)
+            print(cmds, "运行失败", e, file=sys.stderr)
         finally:
-            print(args, "已结束")
+            print(cmds, "已结束")
             t = time.perf_counter() - start_time
             if t < 10:
-                print(args, f"子进程启动后 {t:.3f} 秒退出。小于10秒，结束循环，等待人工处理", file=sys.stderr)
+                print(cmds, f"子进程启动后 {t:.3f} 秒退出。小于10秒，结束循环，等待人工处理", file=sys.stderr)
                 break
             time.sleep(2)
 

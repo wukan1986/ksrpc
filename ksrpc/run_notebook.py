@@ -58,19 +58,13 @@ def main(commands: Dict[str, Any], idle_timeout: int = 60 * 10, clear_count: int
     shared_time = multiprocessing.Value('d', time.perf_counter())
     shared_count = multiprocessing.Value('i', 0)
 
-    # 创建新回调函数绑定共享变量
-    def wrapped_callback(*args):
-        callback(*args, shared_time, shared_count, clear_count)
-
     processes = []
     for k, v in commands.items():
-        p = multiprocessing.Process(target=run_command, name=k,
-                                    args=(v, wrapped_callback))
+        p = multiprocessing.Process(target=run_command, name=k, args=(v, callback, shared_time, shared_count, clear_count))
         processes.append(p)
 
     try:
-
-        print(f"!!!注意：空闲 {idle_timeout} 秒后，应用将退出!!!")
+        print(f"!!!注意：空闲 {idle_timeout} 秒后，应用将退出!!!", file=sys.stderr)
         with ProcessManager(*processes):
             while True:
                 current_time = time.perf_counter()

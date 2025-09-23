@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import pickle
 import zlib
@@ -5,7 +6,7 @@ import zlib
 from aiohttp import web
 
 from ksrpc.caller import switch_call
-from ksrpc.config import USER_CREDENTIALS, URL_CHECKER
+from ksrpc.config import USER_CREDENTIALS, URL_CHECKER, HOST, PORT
 from ksrpc.utils.chunks import send_in_chunks, data_sender
 
 
@@ -100,7 +101,7 @@ async def websocket_handler(request: web.Request) -> web.StreamResponse:
     return ws
 
 
-def sync_app(argv):
+def create_app(argv):
     # uv run python -m aiohttp.web -H 0.0.0.0 -P 8080 ksrpc.run_app:sync_app
     app = web.Application(middlewares=[
         basic_auth_middleware,  # 注释此行屏蔽Baisc认证
@@ -113,7 +114,12 @@ def sync_app(argv):
     return app
 
 
-async def async_app(argv):
-    # gunicorn ksrpc.run_app:async_app --bind 0.0.0.0:8080 --worker-class aiohttp.GunicornWebWorker
-    app = sync_app(argv)
-    return app
+async def start_server():
+    app = create_app([])
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, HOST, PORT)  # 可选：指定端口
+    await site.start()
+    print(f"Server started at http://{HOST}:{PORT}")
+    # 保持服务器运行，直到被中断
+    await asyncio.Future()  # 永久等待

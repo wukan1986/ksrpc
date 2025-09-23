@@ -3,6 +3,12 @@ import os
 from ksrpc.utils.urls import BaseURL, TimeURL  # noqa
 
 """
+Web服务配置
+"""
+HOST = "0.0.0.0"
+PORT = 8080
+
+"""
 TODO Basic认证。一定要修改账号，不要使用默认值
 """
 USER_CREDENTIALS = {
@@ -24,3 +30,5 @@ print(f"CALL_IN_NEW_PROCESS = {CALL_IN_NEW_PROCESS}")
 TODO 为防路径扫描，可以使用动态路径
 """
 URL_CHECKER = BaseURL()  # BaseURL(), TimeURL()
+
+print(f"Current config:", __file__)

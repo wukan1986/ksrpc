@@ -93,6 +93,6 @@ if __name__ == '__main__':
     commands = {
         # "ksrpc": ["python", "-u", "-m", "ksrpc.run_app"],
         # "frpc": ["./frpc", "-c", "./frpc.toml"],
-        "ksrpc": ["uv", "run", "python", "-u", "-m", "ksrpc.run_app"],
+        "ksrpc": ["uv", "run", "python", "-u", "-m", "ksrpc.run_app", "--config", r"./config.py"],
     }
     main(commands, idle_timeout=300, clear_count=35)

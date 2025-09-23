@@ -16,10 +16,15 @@ def callback(process_name, is_stderr, line):
 
 
 def run_command(args, callback):
+    """运行子程序
+
+    TODO 目前我还没解决 print('\b')，只能整行确定后再打印
+    """
     process_name = multiprocessing.current_process().name
 
     while True:
         # 子进程崩溃后可重启
+        start_time = time.perf_counter()
         try:
             # 使用 subprocess 运行外部命令
             process = subprocess.Popen(
@@ -43,17 +48,21 @@ def run_command(args, callback):
             exit_code = process.wait()
             # 如果正常退出（退出码为0），则跳出循环
             if exit_code == 0:
-                print(args, "正常退出", exit_code)
+                print(args, "子进程正常退出", exit_code)
                 break
             else:
-                print(args, "异常退出", exit_code)
+                print(args, "子进程异常退出", exit_code, file=sys.stderr)
         except KeyboardInterrupt:
             print(args, "已中断")
             break
         except Exception as e:
-            print(args, "运行失败", e)
+            print(args, "运行失败", e, file=sys.stderr)
         finally:
             print(args, "已结束")
+            t = time.perf_counter() - start_time
+            if t < 10:
+                print(args, f"子进程启动后 {t:.3f} 秒退出。小于10秒，结束循环，等待人工处理", file=sys.stderr)
+                break
             time.sleep(2)
 
 
@@ -69,7 +78,7 @@ def kill_subprocess(pid):
 
         if not p.is_running():
             continue
-        print(f"Force killing subprocess: {p.name()} (PID: {p.pid})")
+        print(f"Force killing subprocess: {p.name()} (PID: {p.pid})", file=sys.stderr)
         p.kill()
         p.wait()
 
@@ -84,7 +93,7 @@ def kill_process(p):
 
     if not p.is_alive():
         return
-    print(f"Force killing process: {p.name} (PID: {p.pid})")
+    print(f"Force killing process: {p.name} (PID: {p.pid})", file=sys.stderr)
     p.kill()
     p.join()
 

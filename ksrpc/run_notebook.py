@@ -83,13 +83,13 @@ def main(commands: Dict[str, Any], idle_timeout: int = 60 * 10, clear_count: int
                       f"空闲时间: {current_time - last_activity:-3.0f}/{idle_timeout}")
 
                 if current_time - last_activity > idle_timeout:
-                    print("!!!空闲时间到，退出!!!")
+                    print("!!!空闲时间到，退出!!!", file=sys.stderr)
                     break
                 time.sleep(15)
     except KeyboardInterrupt:
         print("主进程已中断")
     except Exception as e:
-        print("主进程错误: ", e)
+        print("主进程错误: ", e, file=sys.stderr)
     finally:
         print("结束服务")
 

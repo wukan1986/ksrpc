@@ -3,14 +3,13 @@
 """
 import asyncio
 
+from examples.config import USERNAME, PASSWORD, URL_HTTP, URL_WS  # noqa
 from ksrpc.client import RpcClient, RpcProxy
 from ksrpc.connections.http import HttpConnection
 
-URL = 'http://127.0.0.1:8080/api/file'
-
 
 async def async_main():
-    async with HttpConnection(URL, username="admin", password="password123") as conn:
+    async with HttpConnection(URL_HTTP, username=USERNAME, password=PASSWORD) as conn:
         demo = RpcClient('ksrpc.server.demo', conn)
         ret = await demo.test()
         print(ret)

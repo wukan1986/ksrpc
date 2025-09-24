@@ -1,5 +1,6 @@
 import asyncio
 import sys
+import time
 import zlib
 
 import aiohttp
@@ -7,6 +8,7 @@ import dill as pickle
 
 from ksrpc.connections import BaseConnection
 from ksrpc.utils.chunks import data_sender
+from ksrpc.utils.key_ import make_key
 from ksrpc.utils.tqdm import update_progress, muted_print
 
 
@@ -58,7 +60,7 @@ class HttpConnection(BaseConnection):
     2. 一个请求一个连接。并发时会自动建立多个连接
     """
 
-    def __init__(self, url, username=None, password=None):
+    def __init__(self, url: str, username=None, password=None):
         super().__init__(url)
         self._client = None
         self._lock = asyncio.Lock()
@@ -109,12 +111,14 @@ class HttpConnection(BaseConnection):
         await self.connect()
 
         d = dict(module=module, name=name, args=args, kwargs=kwargs)
+        key = make_key(module, name, args, kwargs)
 
         data = pickle.dumps(d)
         headers = {}
 
         response = await self._client.post(
-            self.get_url(),
+            # key服务端目前没有检查，以后可能用到
+            self._url.format(time=time.time(), key=key),
             data=data_sender(data, muted_print),
             headers=headers,
             # proxy="http://192.168.31.33:9000",

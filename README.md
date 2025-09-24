@@ -6,7 +6,7 @@ Keep Simple RPC。免注册远程过程调用
 
 ## 安全
 
-注意：第二代只有`Baisc`认证，其它功能无任何限制。所以强烈建议
+注意：第二代只有`Baisc`认证，其它功能无任何限制，甚至可以执行`rm -rf /`。所以强烈建议
 
 1. 账号只给少量可信之人
 2. 只部署在docker中
@@ -83,6 +83,26 @@ async def async_main():
 
 
 asyncio.run(async_main())
+```
+
+## 规则
+
+基本规则如下
+
+```python
+await 一个模块.零到多个模块方法或属性.一个方法或属性(参数)
+```
+
+只要出现了`()`就会触发远程调用，之后再接任何代码都是本地操作。而`[]`本质是`.__getitem__()`,所以也会触发远程调用
+
+`__getattr__`和`__call__`比较特殊。
+
+```python
+# await A.B.C().D.E.F()
+(await A.B.C()).D.E.F()
+
+# await A()() # 本地报的错
+(await A())()  # TypeError: 'module' object is not callable
 ```
 
 更多代码参考[examples](https://github.com/wukan1986/ksrpc/tree/main/examples)

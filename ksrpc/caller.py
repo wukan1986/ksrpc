@@ -1,7 +1,5 @@
-import hashlib
 import inspect
 import sys
-import types
 from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
 from importlib import import_module
@@ -17,19 +15,16 @@ logger.add(sys.stderr,
            level="INFO", colorize=True)
 
 
-def make_key(module, name, args, kwargs):
-    """生成缓存key"""
-    key = f'{module}::{name}_{repr(args)}_{repr(kwargs)}'
-    return hashlib.md5(key.encode('utf-8')).hexdigest()
-
-
 def get_func(module, name):
     # ksrpc.server.demo.CLASS.B.__getitem__(3)，这种格式只能确信第一个是模块，最后一个是方法，其他都不确定
     m = import_module(module)
     for n in name.split('.'):
         if len(n) == 0:
             continue
-        if hasattr(m, n):
+        if n == "__call__":
+            # 默认 __call__ 是传不到服务端的，除非用户主动发起 __getattr__('__call__')
+            continue
+        elif hasattr(m, n):
             m = getattr(m, n)
         else:
             m = import_module(f"{m.__name__}.{n}")
@@ -38,8 +33,6 @@ def get_func(module, name):
 
 async def async_call(module, name, args, kwargs):
     """简版异步API调用。没有各种额外功能"""
-    key = make_key(module, name, args, kwargs)
-
     # 返回的数据包
     d = dict(status=200,  # status.HTTP_200_OK,
              datetime=datetime.now().isoformat(),  # 加查询时间，缓存中也许可以判断是否过期
@@ -56,12 +49,12 @@ async def async_call(module, name, args, kwargs):
         if isinstance(func, type):
             # print(ksrpc.server.demo.p.__class__)
             output = func
-        elif name.endswith(".__func__"): # isinstance(func, types.FunctionType) # 不行
+        elif name.endswith("__func__"):  # isinstance(func, types.FunctionType) # 不行
             # print(ksrpc.server.demo.p.__format__.__func__)
             output = func
         # 可以调用的属性
-        elif callable(func):
-            # 例如os.remove
+        elif callable(func) or name.endswith("__call__"):
+            # __call__不合语法，但与本地报错效果一致了
             if inspect.iscoroutinefunction(func):
                 output = await func(*args, **kwargs)
             else:
@@ -76,7 +69,7 @@ async def async_call(module, name, args, kwargs):
         d['type'] = type(e).__name__
         d['data'] = repr(e)
 
-    return key, d
+    return d
 
 
 async def process_call(module, name, args, kwargs):

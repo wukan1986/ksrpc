@@ -64,6 +64,10 @@ class RpcClient:
             logger.warning(f'{self._module}::{name} error, {e}')
             raise
 
+    def __getitem__(self, item):
+        # 语法糖，让RpcClient支持[]
+        return self.__getattr__("__getitem__")(item)
+
     @property
     def __class__(self):
         return self.__getattr__('__class__')

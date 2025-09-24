@@ -1,5 +1,6 @@
 import asyncio
 import sys
+import time
 import zlib
 
 import aiohttp
@@ -50,7 +51,7 @@ class WebSocketConnection(BaseConnection):
             if self._ws is not None:
                 return
             self._ws = await self._session.ws_connect(
-                self.get_url(),
+                self._url.format(time=time.time()),
                 # proxy="http://192.168.31.33:9000",
             ).__aenter__()
 

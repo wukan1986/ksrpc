@@ -1,13 +1,68 @@
 import asyncio
 import base64
+import time
 import zlib
 
 import dill as pickle
 from aiohttp import web
 
 from ksrpc.caller import switch_call
-from ksrpc.config import USER_CREDENTIALS, URL_CHECKER, HOST, PORT
+from ksrpc.config import USER_CREDENTIALS, HOST, PORT
 from ksrpc.utils.chunks import send_in_chunks, data_sender
+from ksrpc.utils.key_ import make_key
+
+
+async def handle(request: web.Request) -> web.StreamResponse:
+    buffer = bytearray()
+    buf = bytearray()
+    async for chunk, end_of_http_chunk in request.content.iter_chunks():
+        buf.extend(chunk)
+        if end_of_http_chunk:
+            if len(buf) == 0:
+                continue
+            buffer.extend(zlib.decompress(buf))
+            buf.clear()
+
+    d = pickle.loads(buffer)
+    key = make_key(**d)
+
+    # TOOD 检查key的功能暂时屏蔽
+    # if request.match_info.get("key", "") != key:
+    #     return web.HTTPForbidden()
+
+    data = await switch_call(**d)
+    buffer.clear()
+
+    body = pickle.dumps(data)
+    headers = {'Content-Disposition': f"{key}.pkl.chunked.zip"}
+
+    del data
+    return web.Response(body=data_sender(body, print), headers=headers)
+
+
+async def websocket_handler(request: web.Request) -> web.StreamResponse:
+    # print(request.url)
+
+    ws = web.WebSocketResponse()
+    await ws.prepare(request)
+
+    buffer = bytearray()
+    async for msg in ws:
+        if msg.type is web.WSMsgType.BINARY:
+            buffer.extend(zlib.decompress(msg.data))
+        elif msg.type == web.WSMsgType.TEXT:
+            if msg.data == "EOF":
+                data = await switch_call(**pickle.loads(buffer))
+                buffer.clear()
+                await send_in_chunks(ws, pickle.dumps(data), print)
+                del data
+        elif msg.type == web.WSMsgType.ERROR:
+            print('Server WebSocket connection closed with exception %s' % ws.exception())
+        elif msg.type is web.WSMsgType.CLOSE:
+            print('Server WebSocket connection closed')
+            break
+    print("End of websocket_handler")
+    return ws
 
 
 @web.middleware
@@ -49,67 +104,26 @@ def unauthorized_response():
 
 @web.middleware
 async def url_check_middleware(request, handler):
-    try:
-        URL_CHECKER.check(request)
-    except (AssertionError, ValueError):
+    # URL动态变化，防止重放攻击
+    t1 = time.time()
+    t2 = float(request.match_info.get("time", "0"))
+    if abs(t1 - t2) > 15:
+        print("HTTPForbidden:", t1, t2, t1 - t2)
         return web.HTTPForbidden()
 
     return await handler(request)
 
 
-async def handle(request: web.Request) -> web.StreamResponse:
-    buffer = bytearray()
-    buf = bytearray()
-    async for chunk, end_of_http_chunk in request.content.iter_chunks():
-        buf.extend(chunk)
-        if end_of_http_chunk:
-            if len(buf) == 0:
-                continue
-            buffer.extend(zlib.decompress(buf))
-            buf.clear()
-
-    key, data = await switch_call(**pickle.loads(buffer))
-    buffer.clear()
-
-    body = pickle.dumps(data)
-    headers = {'Content-Disposition': f"{key}.pkl.chunked.zip"}
-
-    del data
-    return web.Response(body=data_sender(body, print), headers=headers)
-
-
-async def websocket_handler(request: web.Request) -> web.StreamResponse:
-    ws = web.WebSocketResponse()
-    await ws.prepare(request)
-
-    buffer = bytearray()
-    async for msg in ws:
-        if msg.type is web.WSMsgType.BINARY:
-            buffer.extend(zlib.decompress(msg.data))
-        elif msg.type == web.WSMsgType.TEXT:
-            if msg.data == "EOF":
-                key, data = await switch_call(**pickle.loads(buffer))
-                buffer.clear()
-                await send_in_chunks(ws, pickle.dumps(data), print)
-                del data
-        elif msg.type == web.WSMsgType.ERROR:
-            print('Server WebSocket connection closed with exception %s' % ws.exception())
-        elif msg.type is web.WSMsgType.CLOSE:
-            print('Server WebSocket connection closed')
-            break
-    print("End of websocket_handler")
-    return ws
-
-
 def create_app(argv):
     # uv run python -m aiohttp.web -H 0.0.0.0 -P 8080 ksrpc.run_app:sync_app
     app = web.Application(middlewares=[
+        url_check_middleware,  # 时间检验
         basic_auth_middleware,  # 注释此行屏蔽Baisc认证
-        url_check_middleware,
     ])
     app.add_routes([
-        web.post("/api/{path}", handle),
-        web.get("/ws/{path}", websocket_handler),
+        # TODO 路径按需修改，更安全
+        web.post("/api/v1/{time}", handle),
+        web.get("/ws/v1/{time}", websocket_handler),
     ])
     return app
 

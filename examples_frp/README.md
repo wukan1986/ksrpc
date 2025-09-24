@@ -21,7 +21,10 @@
 7. 个人电脑(C)安装`pip install ksrpc`
     - 编辑`demo_http.py`中地址为`serverAddr`的IP,端口为`remotePort = 7001`
 8. `ksrpc.ipynb`和`frpc.ipynb`用完后一定要`重启内核`，以免长时间占用资源
-9. 配置好，推荐以后只运行`ksrpc_frpc.ipynb`，它启动了两个子进程并维护
+
+## 推荐
+
+推荐以后只运行`ksrpc_frpc.ipynb`，它启动了两个子进程并维护。含自动重启和闲时关闭功能
 
 ## 安全
 
@@ -34,7 +37,7 @@
 1. `sudo ss -tanlp` # 查看是哪个应用占用了80端口，参考应用的文档进行调整
 2. 编辑`frps.toml`中的`bindPort = 80`，编辑`frpc.toml`中的`serverPort = 80`
 3. `sudo ./frps -c ./frps.toml` # 进行测试
-4. `sudo nohup ./frps -c ./frps.toml > frps.log 2>&1 &` # 长期运行
+4. `sudo nohup ./frps -c ./frps.toml &` # 长期运行
 
 ## 内存崩溃问题
 

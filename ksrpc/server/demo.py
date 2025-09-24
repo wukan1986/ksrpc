@@ -26,7 +26,7 @@ def div(a, b):
 
 def test():
     import pandas as pd
-    df = pd.DataFrame()
+    df = pd.DataFrame({'A': [1, 2, 3, 4, 5]})
     return df
 
 
@@ -62,6 +62,7 @@ def create_1d_array(target_mb: int = 100):
 
     return arr
 
+
 class Point:
     def __init__(self, x, y):
         self.x = x
@@ -82,8 +83,10 @@ class Point:
             # 对于无法识别的格式说明符，可以返回默认表示或抛出异常
             return f"({self.x}, {self.y})"
 
+
 # 使用示例
 p = Point(3.14159, 2.71828)
+
 
 def test_array():
     arr = create_1d_array()

@@ -3,14 +3,13 @@
 """
 import asyncio
 
+from examples.config import USERNAME, PASSWORD, URL_HTTP, URL_WS  # noqa
 from ksrpc.client import RpcProxy, RpcClient
 from ksrpc.connections.websocket import WebSocketConnection
 
-URL = 'ws://127.0.0.1:8080/ws/file'
-
 
 async def async_main():
-    async with WebSocketConnection(URL, username="admin", password="password123") as conn:
+    async with WebSocketConnection(URL_WS, username=USERNAME, password=PASSWORD) as conn:
         demo = RpcClient('ksrpc.server.demo', conn)
         ret = await demo.test()
         print(ret)

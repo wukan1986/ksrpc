@@ -1,7 +1,5 @@
 import os
 
-from ksrpc.utils.urls import BaseURL, TimeURL  # noqa
-
 """
 Web服务配置
 """
@@ -25,10 +23,3 @@ TODO 在新进程中调用开关，可以手工设置为True/False
 """
 CALL_IN_NEW_PROCESS = hasattr(os, 'fork')
 print(f"CALL_IN_NEW_PROCESS = {CALL_IN_NEW_PROCESS}")
-
-"""
-TODO 为防路径扫描，可以使用动态路径
-"""
-URL_CHECKER = BaseURL()  # BaseURL(), TimeURL()
-
-print(f"Current config:", __file__)

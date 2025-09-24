@@ -72,14 +72,17 @@ import asyncio
 from ksrpc.client import RpcClient
 from ksrpc.connections.http import HttpConnection
 
-URL = 'http://127.0.0.1:8080/api/file'
+# 动态URL
+URL = 'http://127.0.0.1:8080/api/v1/{time}'
+USERNAME = 'admin'
+PASSWORD = 'password123'
 
 
 async def async_main():
-    async with HttpConnection(URL, username="admin", password="password123") as conn:
-        demo = RpcClient('ksrpc.server.demo', conn)
+   async with HttpConnection(URL, username=USERNAME, password=PASSWORD) as conn:
+      demo = RpcClient('ksrpc.server.demo', conn)
 
-        print(await demo.test())
+      print(await demo.test())
 
 
 asyncio.run(async_main())

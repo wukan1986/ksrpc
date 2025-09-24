@@ -105,3 +105,16 @@ class A:
 
 
 CLASS = A
+
+
+def sync_counter():
+    n = 1
+    while n <= 3:
+        yield n
+        n += 1
+
+async def async_counter():
+    n = 1
+    while n <= 3:
+        yield n
+        n += 1

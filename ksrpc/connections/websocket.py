@@ -11,10 +11,7 @@ from ksrpc.utils.chunks import send_in_chunks
 from ksrpc.utils.tqdm import update_progress, muted_print
 
 
-def process_response(data):
-    if data['status'] == 200:
-        return data['data']
-    return data
+
 
 
 class WebSocketConnection(BaseConnection):
@@ -24,14 +21,10 @@ class WebSocketConnection(BaseConnection):
     """
 
     def __init__(self, url, username=None, password=None):
-        super().__init__(url)
+        super().__init__(url, username, password)
         self._ws = None
         self._lock = asyncio.Lock()
         self._timeout = aiohttp.ClientTimeout(total=60)
-        if username and password:
-            self._auth = aiohttp.BasicAuth(login=username, password=password, encoding="utf-8")
-        else:
-            self._auth = None
         self._session = aiohttp.ClientSession(auth=self._auth, timeout=self._timeout)
 
     async def __aenter__(self):
@@ -62,10 +55,10 @@ class WebSocketConnection(BaseConnection):
             await self._ws.close()
             self._ws = None
 
-    async def call(self, module, name, args, kwargs):
+    async def call(self, module, name, args, kwargs, ref_id):
         await self.connect()
 
-        d = dict(module=module, name=name, args=args, kwargs=kwargs)
+        d = dict(module=module, name=name, args=args, kwargs=kwargs, ref_id=ref_id)
 
         # gather时会出错，只能用lock保证一次只能一个请求和响应
         async with self._lock:
@@ -91,7 +84,7 @@ class WebSocketConnection(BaseConnection):
                         print(f'] 解压完成 ({size:,}/{len(buffer):,} bytes)', file=file)
                         rsp = pickle.loads(buffer)
                         buffer.clear()
-                        return process_response(rsp)
+                        return rsp
                 # elif msg.type is aiohttp.WSMsgType.PING:
                 #     await self._ws.pong()
                 # elif msg.type is aiohttp.WSMsgType.PONG:

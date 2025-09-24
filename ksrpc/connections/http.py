@@ -49,8 +49,6 @@ async def process_response(response):
     print(f'] 解压完成 ({size:,}/{len(buffer):,} bytes)', file=file)
     rsp = pickle.loads(buffer)
     buffer.clear()
-    if rsp['status'] == 200:
-        return rsp['data']
     return rsp
 
 
@@ -61,14 +59,10 @@ class HttpConnection(BaseConnection):
     """
 
     def __init__(self, url: str, username=None, password=None):
-        super().__init__(url)
+        super().__init__(url, username, password)
         self._client = None
         self._lock = asyncio.Lock()
         self._timeout = aiohttp.ClientTimeout(total=60)
-        if username and password:
-            self._auth = aiohttp.BasicAuth(login=username, password=password, encoding="utf-8")
-        else:
-            self._auth = None
 
     async def __aenter__(self):
         """异步async with"""
@@ -93,7 +87,7 @@ class HttpConnection(BaseConnection):
             await self._client.close()
             self._client = None
 
-    async def call(self, module, name, args, kwargs):
+    async def call(self, module, name, args, kwargs, ref_id):
         """调用函数
 
         Parameters
@@ -106,12 +100,13 @@ class HttpConnection(BaseConnection):
             函数位置参数
         kwargs: dict
             函数命名参数
+        ref_id
 
         """
         await self.connect()
 
-        d = dict(module=module, name=name, args=args, kwargs=kwargs)
-        key = make_key(module, name, args, kwargs)
+        d = dict(module=module, name=name, args=args, kwargs=kwargs, ref_id=ref_id)
+        key = make_key(module, name, args, kwargs, ref_id)
 
         data = pickle.dumps(d)
         headers = {}

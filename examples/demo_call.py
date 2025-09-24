@@ -38,11 +38,11 @@ async def async_main():
         await builtins.eval("__import__('os').system('calc')")  # 单行。不支持import
         await builtins.exec("import os;os.system('calc')")  # 多行。支持import
         await builtins.exec("""
-        def greet(name):
-            return f"Hello, {name}!"
+def greet(name):
+    return f"Hello, {name}!"
 
-        # 一定到存到globals才能给下一个函数使用。本地开发不需这一步
-        globals()["greet"] = greet
+# 一定到存到globals才能给下一个函数使用。本地开发不需这一步
+globals()["greet"] = greet
         """)
         print(await builtins.eval("greet('World')"))  # 调用上一步保存在globals中的方法
 
@@ -62,6 +62,16 @@ async def async_main():
         print(await demo.p.__class__())  # ksrpc.server.demo.p.__class__
         print(await demo.p.__format__.__func__())  # ksrpc.server.demo.p.__format__.__func__
         print(await demo.p.__format__.__func__.__name__())  # ksrpc.server.demo.p.__format__.__func__.__name__
+
+        # gen = await demo.sync_counter()  # gen = sync_counter()
+        # print(await gen.__next__())  # print(next(gen))
+        # print(await gen.__next__())  # print(next(gen))
+        # print(await gen.__next__())  # print(next(gen))
+        # print(await gen.__next__())  # print(next(gen))
+        # print(await gen.__next__())  # print(next(gen))
+
+        # async for gen in await demo.async_counter():
+        #     print(await gen)
 
         # 注意：如果语句过于复杂，建议在服务器上放一个文件，直接调用模块中封装好的函数。
         # 如果服务器放文件不容易，可以用exec+eval

@@ -20,6 +20,7 @@ class RpcClient:
     def __init__(self,
                  module: str,
                  connection: BaseConnection,
+                 ref_id: id = 0,
                  ):
         """初始化
 
@@ -29,10 +30,13 @@ class RpcClient:
             顶层模块名
         connection: Connection
             连接对象
+        ref_id:
+            服务端的对象id。用于迭代器，生成器等
 
         """
         self._module = module
         self._connection = connection
+        self._ref_id = ref_id
         self._names = []
         self._lock = threading.Lock()
 
@@ -46,15 +50,25 @@ class RpcClient:
             return self
 
     async def __call__(self, *args, **kwargs):
+
         with self._lock:
             name = '.'.join(self._names)
             # 用完后得重置，否则第二次用时不正确了
             self._names = []
-
+        # print("__call__", name)
         # 排序，参数顺序统一后，排序生成key便不会浪费了
         kwargs = dict(sorted(kwargs.items()))
         try:
-            return await self._connection.call(self._module, name, args, kwargs)
+            rsp = await self._connection.call(self._module, name, args, kwargs, self._ref_id)
+            ref_id = rsp['ref_id']
+            if rsp['status'] != 200:
+                # 迭代器可能用它来停止，但效果不行
+                # raise rsp['data']
+                # 直接反回错误字典，不会报异常
+                return rsp
+            if ref_id != 0:
+                return RpcClient(self._module, self._connection, ref_id=ref_id)
+            return rsp['data']
         except asyncio.TimeoutError:
             await self._connection.reset()  # 重置
             logger.warning(f'{self._module}::{name} timeout')
@@ -109,6 +123,25 @@ class RpcClient:
     def __str__(self):
         return self.__getattr__('__str__')
 
+    # === 生成器和迭代器都有问题，不要用
+    def __next__(self):
+        # TODO 这里为何还要加一个()才可以？与我的理解不同呀
+        print("__next__")
+        return self.__getattr__("__next__")()
+
+    async def __anext__(self):
+        # 特殊之处，需要传对象id
+        print("__anext__")
+        return self.__getattr__("__anext__")()
+
+    def __iter__(self):
+        print("__iter__")
+        return self.__getattr__("__iter__")
+
+    def __aiter__(self):
+        print("__aiter__")
+        return self
+
 
 class RpcProxy(RpcClient):
     """每次调用都生成一个`RpcClient`对象，占用资源略多于`RpcClient`
@@ -121,10 +154,10 @@ class RpcProxy(RpcClient):
 
     def __getattr__(self, name):
         # 第一个方法调用用来生成新RpcClient对象，用来解决不能并发的问题
-        return RpcClient(self._module, self._connection).__getattr__(name)
+        return RpcClient(self._module, self._connection, self._ref_id).__getattr__(name)
 
     async def __call__(self, *args, **kwargs):
-        return await RpcClient(self._module, self._connection)()
+        return await RpcClient(self._module, self._connection, self._ref_id)()
 
     @property
     def __doc__(self):

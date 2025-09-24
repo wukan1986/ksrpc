@@ -1,5 +1,6 @@
 import inspect
 import sys
+import types
 from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
 from importlib import import_module
@@ -24,6 +25,9 @@ def get_func(module, name):
         if n == "__call__":
             # 默认 __call__ 是传不到服务端的，除非用户主动发起 __getattr__('__call__')
             continue
+        if n in ("__iter__", "__aiter__"):
+            # 需要约定处理
+            continue
         elif hasattr(m, n):
             m = getattr(m, n)
         else:
@@ -31,7 +35,7 @@ def get_func(module, name):
     return m
 
 
-async def async_call(module, name, args, kwargs):
+async def async_call(module, name, args, kwargs, ref_id):
     """简版异步API调用。没有各种额外功能"""
     # 返回的数据包
     d = dict(status=200,  # status.HTTP_200_OK,
@@ -39,40 +43,68 @@ async def async_call(module, name, args, kwargs):
              module=module,
              name=name,
              args=args,
-             kwargs=kwargs)
+             kwargs=kwargs,
+             ref_id=0)
     try:
         # 转成字符串，后面可能于做cache的key
         logger.info(f'{module}::{name}\t{args}\t{kwargs}'[:300])
 
-        func = get_func(module, name)
-
-        if isinstance(func, type):
-            # print(ksrpc.server.demo.p.__class__)
-            output = func
-        elif name.endswith("__func__"):  # isinstance(func, types.FunctionType) # 不行
-            # print(ksrpc.server.demo.p.__format__.__func__)
-            output = func
-        # 可以调用的属性
-        elif callable(func) or name.endswith("__call__"):
-            # __call__不合语法，但与本地报错效果一致了
-            if inspect.iscoroutinefunction(func):
-                output = await func(*args, **kwargs)
-            else:
-                output = func(*args, **kwargs)
+        if name.endswith("__next__"):
+            # 不管模块了，直接引用全局变量中的对象
+            try:
+                output = globals()[ref_id].__next__()
+            except StopIteration:
+                # 迭代完成，移出
+                globals().pop(ref_id, None)
+                raise
+            except KeyError:
+                raise StopIteration()
+        elif name.endswith("__anext__"):
+            # 不管模块了，直接引用全局变量中的对象
+            try:
+                output = await globals()[ref_id].__anext__()
+            except StopAsyncIteration:
+                # 迭代完成，移出
+                globals().pop(ref_id, None)
+                raise
+            except KeyError:
+                raise StopAsyncIteration()
         else:
-            output = func
+            func = get_func(module, name)
+            if name.endswith("__func__"):  # isinstance(func, types.FunctionType) # 不行
+                # print(ksrpc.server.demo.p.__format__.__func__)
+                output = func
+            elif isinstance(func, type):
+                # print(ksrpc.server.demo.p.__class__)
+                output = func
+            # 可以调用的属性
+            elif callable(func) or name.endswith("__call__"):
+                # __call__不合语法，但与本地报错效果一致了
+                if inspect.iscoroutinefunction(func):
+                    output = await func(*args, **kwargs)
+                else:
+                    output = func(*args, **kwargs)
+            else:
+                output = func
+
+        if isinstance(output, (types.GeneratorType, types.AsyncGeneratorType)):
+            # 生成器
+            ref_id = id(output)
+            globals()[ref_id] = output  # 一定要记得释放
+            d['ref_id'] = ref_id
+            output = None  # 生成器不可序列化
 
         d['type'] = type(output).__name__
         d['data'] = output
     except Exception as e:
         d['status'] = 500  # status.HTTP_500_INTERNAL_SERVER_ERROR
         d['type'] = type(e).__name__
-        d['data'] = repr(e)
+        d['data'] = e
 
     return d
 
 
-async def process_call(module, name, args, kwargs):
+async def process_call(module, name, args, kwargs, ref_id):
     """进程版API调用。结束后进程退出自动释放内存
 
     Notes
@@ -82,12 +114,12 @@ async def process_call(module, name, args, kwargs):
 
     """
     with ProcessPoolExecutor(max_workers=1) as executor:
-        future = executor.submit(async_wrapper, async_call, module, name, args, kwargs)
+        future = executor.submit(async_wrapper, async_call, module, name, args, kwargs, ref_id)
         return future.result()
 
 
-async def switch_call(module, name, args, kwargs):
+async def switch_call(module, name, args, kwargs, ref_id):
     if CALL_IN_NEW_PROCESS:
-        return await process_call(module, name, args, kwargs)
+        return await process_call(module, name, args, kwargs, ref_id)
     else:
-        return await async_call(module, name, args, kwargs)
+        return await async_call(module, name, args, kwargs, ref_id)

@@ -2,7 +2,7 @@
 
 Keep Simple RPC。免注册远程过程调用
 
-!!! 注意：已经修剪成第二代。第一代请参考[fastapi](https://github.com/wukan1986/ksrpc/tree/fastapi)分支
+!!! 注意：已经迭代成第二代。第一代请参考[fastapi](https://github.com/wukan1986/ksrpc/tree/fastapi)分支
 
 ## 安全
 
@@ -36,6 +36,8 @@ Keep Simple RPC。免注册远程过程调用
 2. 客户端将API调用封装，然后向`Web`服务器请求，等待返回
 3. 返回结果解包成`Python`对象
 4. 反代时`frp`需要公网有服务器进行转发。当然你也可以使用其他组网工具，如`easytier`等
+
+内网反代参考[examples_frp](https://github.com/wukan1986/ksrpc/tree/main/examples_frp)
 
 ## 传输方式
 
@@ -79,10 +81,10 @@ PASSWORD = 'password123'
 
 
 async def async_main():
-   async with HttpConnection(URL, username=USERNAME, password=PASSWORD) as conn:
-      demo = RpcClient('ksrpc.server.demo', conn)
+    async with HttpConnection(URL, username=USERNAME, password=PASSWORD) as conn:
+        demo = RpcClient('ksrpc.server.demo', conn)
 
-      print(await demo.test())
+        print(await demo.test())
 
 
 asyncio.run(async_main())
@@ -93,24 +95,28 @@ asyncio.run(async_main())
 基本规则如下
 
 ```python
-await 一个模块.零到多个模块方法或属性.一个方法或属性(参数)
+await 一个模块.零到多个模块或方法或属性.一个方法或属性(参数)
 ```
 
-只要出现了`()`就会触发远程调用，之后再接任何代码都是本地操作。而`[]`本质是`.__getitem__()`,所以也会触发远程调用
+1. 对象后`.`英文句号后接的`字符串`，如果存在会直接返回，反之调用`__getattr__`。利用它收集完整的方法链条
+2. 函数后接`()`就会触发远程调用`__call__`，利用它向服务端发起请求。它返回结果后任何操作都是本地
+3. 而`[]`本质是`.__getitem__(item)`,内部会调整成`.__getattr__("__getitem__").__call__(item)`，所以也会触发远程调用
 
-`__getattr__`和`__call__`比较特殊。
-
+建议先写原始代码测试通过，然后改成魔术方法版测试通过，最后才是远程异步版。例如：
 ```python
-# await A.B.C().D.E.F()
-(await A.B.C()).D.E.F()
+from ksrpc.server import demo
 
-# await A()() # 本地报的错
-(await A())()  # TypeError: 'module' object is not callable
+print(len(demo.__file__))  # 1. 在服务端或本地测试是否通过
+print(demo.__file__.__len__())  # 2. 翻译成魔术方法版。看是否正常
+
+demo = RpcClient('ksrpc.server.demo', conn)
+print(await demo.__file__.__len__())  # 3. 改成远程异步版
+
+print(demo.__doc__)  # 取的其实是RpcClient的__doc__
+print(await demo.__getattr__('__doc__')())  # 取的远程ksrpc.server.demo.__doc__
 ```
 
-更多代码参考[examples](https://github.com/wukan1986/ksrpc/tree/main/examples)
-
-内网反代参考[examples_frp](https://github.com/wukan1986/ksrpc/tree/main/examples_frp)
+更多调用方式参考[examples/demo_call.py](https://github.com/wukan1986/ksrpc/blob/main/examples/demo_call.py)
 
 ## 配置
 

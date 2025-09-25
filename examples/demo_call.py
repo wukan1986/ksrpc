@@ -57,8 +57,10 @@ globals()["greet"] = greet
         # print(await math.__getattr__('__call__')())  # math()  # 非法，但服务端报错与本地报错一致
 
         demo = RpcClient('ksrpc.server.demo', conn)
-        print(await demo.create_1d_array.__doc__())  # ksrpc.server.demo.create_1d_array.__doc__
-        print(await demo.__doc__.__len__())  # len(ksrpc.server.demo.__doc__)
+        print(demo.__doc__) # 取的其实是RpcClient的__doc__
+        print(await demo.__getattr__('__doc__')()) # 取的远程ksrpc.server.demo.__doc__
+
+        demo = RpcClient('ksrpc.server.demo', conn)
         print(await demo.p.__format__("p"))  # format(ksrpc.server.demo.p, "p")
         print(await demo.p.__format__.__func__())  # ksrpc.server.demo.p.__format__.__func__
         print(await demo.p.__format__.__func__.__name__())  # ksrpc.server.demo.p.__format__.__func__.__name__

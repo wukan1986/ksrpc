@@ -94,18 +94,14 @@ class RpcClient:
         # 语法糖，让RpcClient支持[]
         return self.__getattr__("__getitem__")(item)
 
-    @property
-    def __doc__(self):
-        return self.__getattr__('__doc__')
+    # @property
+    # def __doc__(self):
+    #     return self.__getattr__('__doc__')
 
     @property
     def __format__(self, format_spe: str = ""):
         # 这里""不能省
         return self.__getattr__('__format__')
-
-    @property
-    def __sizeof__(self):
-        return self.__getattr__('__sizeof__')
 
     def __next__(self):
         return self.__getattr__("__next__")

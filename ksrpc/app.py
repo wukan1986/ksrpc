@@ -7,7 +7,7 @@ import dill as pickle
 from aiohttp import web
 
 from ksrpc.caller import switch_call
-from ksrpc.config import USER_CREDENTIALS, HOST, PORT
+from ksrpc.config import USER_CREDENTIALS, HOST, PORT, PATH_HTTP, PATH_WS
 from ksrpc.utils.chunks import send_in_chunks, data_sender
 from ksrpc.utils.key_ import make_key
 
@@ -122,8 +122,8 @@ def create_app(argv):
     ])
     app.add_routes([
         # TODO 路径按需修改，更安全
-        web.post("/api/v1/{time}", handle),
-        web.get("/ws/v1/{time}", websocket_handler),
+        web.post(PATH_HTTP, handle),
+        web.get(PATH_WS, websocket_handler),
     ])
     return app
 

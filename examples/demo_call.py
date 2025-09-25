@@ -4,13 +4,13 @@
 import asyncio
 
 from examples.config import USERNAME, PASSWORD, URL_HTTP, URL_WS  # noqa
-from ksrpc.client import RpcClient, RpcProxy
+from ksrpc.client import RpcProxy, rpc_iterator
 from ksrpc.connections.http import HttpConnection
 
 
 async def async_main():
     async with HttpConnection(URL_HTTP, username=USERNAME, password=PASSWORD) as conn:
-        server = RpcClient('ksrpc.server', conn)
+        server = RpcProxy('ksrpc.server', conn)
         print(await server.demo.test())  # ksrpc.server.demo.test()
         print(await server())  # ksrpc.server
         print(await server.__file__())  # ksrpc.server.__file__
@@ -46,26 +46,30 @@ globals()["greet"] = greet
         """)
         print(await builtins.eval("greet('World')"))  # 调用上一步保存在globals中的方法
 
-        math = RpcClient('math', conn)
+        math = RpcProxy('math', conn)
         print(await math.pi())  # math.pi
-        print(await math.__dict__.__getitem__("pi"))  # getattr(math, 'pi')
-        print(await math.__dict__["pi"])  # 提供的语法糖, 本质是math.__dict__.__getitem__("pi")
         print(await math.pi.__round__(4))  # round(math.pi, 4)
         # print(await math.__getattr__('__call__')())  # math()  # 非法，但服务端报错与本地报错一致
 
         demo = RpcProxy('ksrpc.server.demo', conn)
         print(await demo.create_1d_array.__doc__())  # ksrpc.server.demo.create_1d_array.__doc__
         print(await demo.__doc__.__len__())  # len(ksrpc.server.demo.__doc__)
-        print(await demo.__dict__())  # vars(ksrpc.server.demo)
         print(await demo.p.__format__("p"))  # format(ksrpc.server.demo.p, "p")
-        print(await demo.p.__module__())  # ksrpc.server.demo.p.__module__
-        print(await demo.p.__class__())  # ksrpc.server.demo.p.__class__
         print(await demo.p.__format__.__func__())  # ksrpc.server.demo.p.__format__.__func__
         print(await demo.p.__format__.__func__.__name__())  # ksrpc.server.demo.p.__format__.__func__.__name__
 
         gen = await demo.sync_counter()  # gen = sync_counter()
+        # 为何要两层
         print(await gen.__next__()())  # print(next(gen))
         print(await gen.__next__()())  # print(next(gen))
+
+        demo = RpcProxy('ksrpc.server.demo', conn, reraise=True)
+
+        async for it in rpc_iterator(demo.async_counter()):
+            print(it)
+
+        async for it in rpc_iterator(demo.sync_counter()):
+            print(it)
 
         # 注意：如果语句过于复杂，建议在服务器上放一个文件，直接调用模块中封装好的函数。
         # 如果服务器放文件不容易，可以用exec+eval

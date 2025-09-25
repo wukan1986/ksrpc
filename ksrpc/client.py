@@ -4,15 +4,22 @@ from loguru import logger
 
 from ksrpc.connections import BaseConnection
 
+__all__ = ['RpcProxy', 'rpc_iterator']
 
-class RpcClient:
+
+class _RpcClient:
     """
-    RpcClient根据调用生成网络请求
+    RpcClient根据调用生成网络请求。
+    不建议用户直接使用，请用RpcProxy
 
     Warnings
     --------
     先调用一到多个`__getattr__`，然后`__call__`收集`__getattr__`的结果。
     并行时`__getattr__`的调用先后不可控，所以不能在`asyncio.gather`中使用
+
+    Notes
+    -----
+    __hash__ __module__ __class__ __dict__ __dir__ 与调试有关，所以请使用__getattr__('__hash__')等代替
 
     """
 
@@ -47,17 +54,18 @@ class RpcClient:
         self._connection = None
 
     def __getattr__(self, name):
+        # 注意：调试时，由于被调试工具调用，会改列表
         with self._lock:
             # 同一对象在asyncio.gather中使用会混乱，请用独立对象
             self._names.append(name)
             return self
 
     async def __call__(self, *args, **kwargs):
-
         with self._lock:
             name = '.'.join(self._names)
             # 用完后得重置，否则第二次用时不正确了
             self._names = []
+
         # print("__call__", name)
         # 排序，参数顺序统一后，排序生成key便不会浪费了
         kwargs = dict(sorted(kwargs.items()))
@@ -74,7 +82,10 @@ class RpcClient:
                     # 直接反回错误字典，不会报异常
                     return rsp
             if ref_id != 0:
-                return RpcClient(self._module, self._connection, ref_id, self._reraise)
+                client = _RpcClient(self._module, self._connection, ref_id, self._reraise)
+                # TODO 等待更合适的写法
+                client._names = [rsp['name']]
+                return client
             return rsp['data']
         except Exception as e:
             # 服务端异常，直接抛出
@@ -91,18 +102,6 @@ class RpcClient:
         return self.__getattr__("__getitem__")(item)
 
     @property
-    def __class__(self):
-        return self.__getattr__('__class__')
-
-    @property
-    def __dict__(self):
-        return self.__getattr__('__dict__')
-
-    @property
-    def __dir__(self):
-        return self.__getattr__('__dir__')
-
-    @property
     def __doc__(self):
         return self.__getattr__('__doc__')
 
@@ -110,14 +109,6 @@ class RpcClient:
     def __format__(self, format_spe: str = ""):
         # 这里=""不能省
         return self.__getattr__('__format__')
-
-    @property
-    def __hash__(self):
-        return self.__getattr__('__hash__')
-
-    @property
-    def __module__(self):
-        return self.__getattr__('__module__')
 
     @property
     def __repr__(self):
@@ -131,24 +122,27 @@ class RpcClient:
     def __str__(self):
         return self.__getattr__('__str__')
 
-    # === 生成器和迭代器都有问题，不要用
     def __next__(self):
         return self.__getattr__("__next__")
 
     async def __anext__(self):
-        # 特殊之处，需要传对象id
         return self.__getattr__("__anext__")
 
     def __iter__(self):
+        # 本项目全是异步，理论上本句不会被调用
         # return self.__getattr__("__iter__")
         return self
 
     def __aiter__(self):
+        # ksrpc.server.demo::async_counter.__aiter__.__anext__
         # return self.__getattr__("__aiter__")
+
+        # TODO 取巧办法，等更好方案
+        # ksrpc.server.demo::async_counter.__anext__
         return self
 
 
-class RpcProxy(RpcClient):
+class RpcProxy(_RpcClient):
     """每次调用都生成一个`RpcClient`对象，占用资源略多于`RpcClient`
 
     Notes
@@ -159,10 +153,10 @@ class RpcProxy(RpcClient):
 
     def __getattr__(self, name):
         # 第一个方法调用用来生成新RpcClient对象，用来解决不能并发的问题
-        return RpcClient(self._module, self._connection, self._ref_id).__getattr__(name)
+        return _RpcClient(self._module, self._connection, self._ref_id).__getattr__(name)
 
     async def __call__(self, *args, **kwargs):
-        return await RpcClient(self._module, self._connection, self._ref_id)()
+        return await _RpcClient(self._module, self._connection, self._ref_id)()
 
     @property
     def __doc__(self):
@@ -181,7 +175,7 @@ async def rpc_iterator(generator):
     --------
     ```python
     # 一定要抛出异常，否则
-    demo = RpcClient('ksrpc.server.demo', conn, reraise=True)
+    demo = RpcProxy('ksrpc.server.demo', conn, reraise=True)
 
     async for it in rpc_iterator(demo.async_counter()):
         print(it)

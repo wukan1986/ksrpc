@@ -25,13 +25,14 @@ def get_func(module, name):
         if n == "__call__":
             # 默认 __call__ 是传不到服务端的，除非用户主动发起 __getattr__('__call__')
             continue
-        if n in ("__iter__", "__aiter__"):
-            # 需要约定处理
-            continue
         elif hasattr(m, n):
             m = getattr(m, n)
         else:
-            m = import_module(f"{m.__name__}.{n}")
+            if n in ("__iter__", "__aiter__", '__next__', '__anext__'):
+                # 需要特别处理
+                continue
+            else:
+                m = import_module(f"{m.__name__}.{n}")
     return m
 
 
@@ -48,6 +49,11 @@ async def async_call(module, name, args, kwargs, ref_id):
     try:
         # 转成字符串，后面可能于做cache的key
         logger.info(f'{module}::{name}\t{args}\t{kwargs}'[:300])
+
+        # ksrpc.server.demo::async_counter 这里产生的generator，ref_id传到了RpcClient
+        # ksrpc.server.demo::async_counter.__aiter__.__anext__ 居然这里将错就错，用上了上次的对象 TODO 这里以后一定要改
+
+        func = get_func(module, name)
 
         if name.endswith(("__next__", "__anext__")):
             # 不管模块了，直接引用全局变量中的对象
@@ -66,7 +72,6 @@ async def async_call(module, name, args, kwargs, ref_id):
             except KeyError:
                 raise StopAsyncIteration()
         else:
-            func = get_func(module, name)
             if name.endswith("__func__"):  # isinstance(func, types.FunctionType) # 不行
                 # print(ksrpc.server.demo.p.__format__.__func__)
                 output = func
@@ -84,18 +89,18 @@ async def async_call(module, name, args, kwargs, ref_id):
                 output = func
 
         if isinstance(output, (types.GeneratorType, types.AsyncGeneratorType)):
-            # 生成器
+            # 处理生成器。需要传引用ref_id,提供给__next__使用
             ref_id = id(output)
             globals()[ref_id] = output  # 一定要记得释放
             d['ref_id'] = ref_id
-            output = None  # 生成器不可序列化
+            output = None  # 生成器不可序列化，传空过去
 
         d['type'] = type(output).__name__
         d['data'] = output
     except Exception as e:
         d['status'] = 500  # status.HTTP_500_INTERNAL_SERVER_ERROR
         d['type'] = type(e).__name__
-        d['data'] = e
+        d['data'] = e  # 是否有无法序列化的异常?
 
     return d
 

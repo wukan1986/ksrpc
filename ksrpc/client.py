@@ -1,13 +1,13 @@
-import threading
+from typing import List
 
 from loguru import logger
 
 from ksrpc.connections import BaseConnection
 
-__all__ = ['RpcProxy', 'rpc_iterator']
+__all__ = ['RpcClient', 'rpc_iterator']
 
 
-class _RpcClient:
+class RpcClient:
     """
     RpcClient根据调用生成网络请求。
     不建议用户直接使用，请用RpcProxy
@@ -20,6 +20,7 @@ class _RpcClient:
     Notes
     -----
     __hash__ __module__ __class__ __dict__ __dir__ 与调试有关，所以请使用__getattr__('__hash__')等代替
+    __str__ __repr__ 断点时RuntimeWarning，所以也使用__getattr__('__repr__')等代替
 
     """
 
@@ -28,6 +29,7 @@ class _RpcClient:
                  connection: BaseConnection,
                  ref_id: id = 0,
                  reraise: bool = True,
+                 names: List[str] = []
                  ):
         """初始化
 
@@ -41,31 +43,25 @@ class _RpcClient:
             服务端的对象id。用于迭代器，生成器等
         reraise: bool
             重新抛出服务端异常，而不是返回字典
-
+        names: List[str]
+            前几步的方法列表
         """
         self._module = module
         self._connection = connection
         self._ref_id = ref_id
         self._reraise = reraise
-        self._names = []
-        self._lock = threading.Lock()
+        self._names = names
 
     def __del__(self):
         self._connection = None
+        self._names = None
 
     def __getattr__(self, name):
-        # 注意：调试时，由于被调试工具调用，会改列表
-        with self._lock:
-            # 同一对象在asyncio.gather中使用会混乱，请用独立对象
-            self._names.append(name)
-            return self
+        # 注意：每次都生成新对象
+        return RpcClient(self._module, self._connection, self._ref_id, self._reraise, self._names + [name])
 
     async def __call__(self, *args, **kwargs):
-        with self._lock:
-            name = '.'.join(self._names)
-            # 用完后得重置，否则第二次用时不正确了
-            self._names = []
-
+        name = '.'.join(self._names)
         # print("__call__", name)
         # 排序，参数顺序统一后，排序生成key便不会浪费了
         kwargs = dict(sorted(kwargs.items()))
@@ -82,10 +78,7 @@ class _RpcClient:
                     # 直接反回错误字典，不会报异常
                     return rsp
             if ref_id != 0:
-                client = _RpcClient(self._module, self._connection, ref_id, self._reraise)
-                # TODO 等待更合适的写法
-                client._names = [rsp['name']]
-                return client
+                return RpcClient(self._module, self._connection, ref_id, self._reraise, [rsp['name']])
             return rsp['data']
         except Exception as e:
             # 服务端异常，直接抛出
@@ -107,20 +100,12 @@ class _RpcClient:
 
     @property
     def __format__(self, format_spe: str = ""):
-        # 这里=""不能省
+        # 这里""不能省
         return self.__getattr__('__format__')
-
-    @property
-    def __repr__(self):
-        return self.__getattr__('__repr__')
 
     @property
     def __sizeof__(self):
         return self.__getattr__('__sizeof__')
-
-    @property
-    def __str__(self):
-        return self.__getattr__('__str__')
 
     def __next__(self):
         return self.__getattr__("__next__")
@@ -140,28 +125,6 @@ class _RpcClient:
         # TODO 取巧办法，等更好方案
         # ksrpc.server.demo::async_counter.__anext__
         return self
-
-
-class RpcProxy(_RpcClient):
-    """每次调用都生成一个`RpcClient`对象，占用资源略多于`RpcClient`
-
-    Notes
-    --------
-    `__getattr__`后就已经是一个独立的`RpcClient`对象，可以在`asyncio.gather`中并行使用
-
-    """
-
-    def __getattr__(self, name):
-        # 第一个方法调用用来生成新RpcClient对象，用来解决不能并发的问题
-        return _RpcClient(self._module, self._connection, self._ref_id).__getattr__(name)
-
-    async def __call__(self, *args, **kwargs):
-        return await _RpcClient(self._module, self._connection, self._ref_id)()
-
-    @property
-    def __doc__(self):
-        # 比较特殊
-        return self.__getattr__('__doc__')
 
 
 async def rpc_iterator(generator):

@@ -69,7 +69,7 @@ python -m ksrpc.run_app
 ```python
 import asyncio
 
-from ksrpc.client import RpcProxy
+from ksrpc.client import RpcClient
 from ksrpc.connections.http import HttpConnection
 
 # 动态URL
@@ -79,10 +79,10 @@ PASSWORD = 'password123'
 
 
 async def async_main():
-    async with HttpConnection(URL, username=USERNAME, password=PASSWORD) as conn:
-        demo = RpcProxy('ksrpc.server.demo', conn)
+   async with HttpConnection(URL, username=USERNAME, password=PASSWORD) as conn:
+      demo = RpcClient('ksrpc.server.demo', conn)
 
-        print(await demo.test())
+      print(await demo.test())
 
 
 asyncio.run(async_main())

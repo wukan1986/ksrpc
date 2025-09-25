@@ -1,9 +1,9 @@
 # 创建客户连接
-from ksrpc.client import RpcProxy
+from ksrpc.client import RpcClient
 from ksrpc.connections.http import HttpConnection
 
 conn = HttpConnection('http://127.0.0.1:8000/api/file')
-client = RpcProxy('tushare', conn)
+client = RpcClient('tushare', conn)
 
 # import tushare as ts
 #

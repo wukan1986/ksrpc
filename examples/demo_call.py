@@ -4,35 +4,40 @@
 import asyncio
 
 from examples.config import USERNAME, PASSWORD, URL_HTTP, URL_WS  # noqa
-from ksrpc.client import RpcProxy, rpc_iterator
+from ksrpc.client import RpcClient, rpc_iterator
 from ksrpc.connections.http import HttpConnection
 
 
 async def async_main():
     async with HttpConnection(URL_HTTP, username=USERNAME, password=PASSWORD) as conn:
-        server = RpcProxy('ksrpc.server', conn)
+        server = RpcClient('ksrpc.server', conn)
         print(await server.demo.test())  # ksrpc.server.demo.test()
         print(await server())  # ksrpc.server
         print(await server.__file__())  # ksrpc.server.__file__
 
-        server = RpcProxy('ksrpc.server', conn)
+        server = RpcClient('ksrpc.server', conn)
+        demo = server.demo
+        print(await demo.test())
+        print(await demo.test())
+
+        server = RpcClient('ksrpc.server', conn)
         print(await server.demo.CLASS.D.C.__getitem__(2))  # ksrpc.server.demo.CLASS.D.C[2]
         print(await server.demo.CLASS.D.C[2])  # ksrpc.server.demo.CLASS.D.C[2]
 
         # 提醒：账号只给可信用户，最好只在docker中部署
-        config = RpcProxy('ksrpc.config', conn)
+        config = RpcClient('ksrpc.config', conn)
         print(await config.USER_CREDENTIALS())  # ksrpc.config.USER_CREDENTIALS
 
-        sys = RpcProxy('sys', conn)
+        sys = RpcClient('sys', conn)
         print(await sys.path.insert(0, "/kan"))  # sys.path.insert(0, "/kan")
         print(await sys.path())  # sys.path
         print(await sys.modules.keys())  # sys.modules.keys()
 
         # 提醒：账号只给可信用户，最好只在docker中部署
-        os = RpcProxy("os", conn)
+        os = RpcClient("os", conn)
         await os.system('calc')  # os.system('calc') # 打开Windows服务器上的计算器
 
-        builtins = RpcProxy('builtins', conn)
+        builtins = RpcClient('builtins', conn)
         print(await builtins.globals())
         print(await builtins.locals())
         await builtins.eval("__import__('os').system('calc')")  # 单行。不支持import
@@ -46,12 +51,12 @@ globals()["greet"] = greet
         """)
         print(await builtins.eval("greet('World')"))  # 调用上一步保存在globals中的方法
 
-        math = RpcProxy('math', conn)
+        math = RpcClient('math', conn)
         print(await math.pi())  # math.pi
         print(await math.pi.__round__(4))  # round(math.pi, 4)
         # print(await math.__getattr__('__call__')())  # math()  # 非法，但服务端报错与本地报错一致
 
-        demo = RpcProxy('ksrpc.server.demo', conn)
+        demo = RpcClient('ksrpc.server.demo', conn)
         print(await demo.create_1d_array.__doc__())  # ksrpc.server.demo.create_1d_array.__doc__
         print(await demo.__doc__.__len__())  # len(ksrpc.server.demo.__doc__)
         print(await demo.p.__format__("p"))  # format(ksrpc.server.demo.p, "p")
@@ -59,11 +64,11 @@ globals()["greet"] = greet
         print(await demo.p.__format__.__func__.__name__())  # ksrpc.server.demo.p.__format__.__func__.__name__
 
         gen = await demo.sync_counter()  # gen = sync_counter()
-        # 为何要两层
+        # TODO 为何要两层括号？
         print(await gen.__next__()())  # print(next(gen))
         print(await gen.__next__()())  # print(next(gen))
 
-        demo = RpcProxy('ksrpc.server.demo', conn, reraise=True)
+        demo = RpcClient('ksrpc.server.demo', conn, reraise=True)
 
         async for it in rpc_iterator(demo.async_counter()):
             print(it)

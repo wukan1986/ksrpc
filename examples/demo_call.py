@@ -51,7 +51,7 @@ globals()["greet"] = greet
         print(await math.__dict__.__getitem__("pi"))  # getattr(math, 'pi')
         print(await math.__dict__["pi"])  # 提供的语法糖, 本质是math.__dict__.__getitem__("pi")
         print(await math.pi.__round__(4))  # round(math.pi, 4)
-        print(await math.__getattr__('__call__')())  # math()  # 非法，但与本地报错一致
+        # print(await math.__getattr__('__call__')())  # math()  # 非法，但服务端报错与本地报错一致
 
         demo = RpcProxy('ksrpc.server.demo', conn)
         print(await demo.create_1d_array.__doc__())  # ksrpc.server.demo.create_1d_array.__doc__
@@ -63,15 +63,9 @@ globals()["greet"] = greet
         print(await demo.p.__format__.__func__())  # ksrpc.server.demo.p.__format__.__func__
         print(await demo.p.__format__.__func__.__name__())  # ksrpc.server.demo.p.__format__.__func__.__name__
 
-        # gen = await demo.sync_counter()  # gen = sync_counter()
-        # print(await gen.__next__())  # print(next(gen))
-        # print(await gen.__next__())  # print(next(gen))
-        # print(await gen.__next__())  # print(next(gen))
-        # print(await gen.__next__())  # print(next(gen))
-        # print(await gen.__next__())  # print(next(gen))
-
-        # async for gen in await demo.async_counter():
-        #     print(await gen)
+        gen = await demo.sync_counter()  # gen = sync_counter()
+        print(await gen.__next__()())  # print(next(gen))
+        print(await gen.__next__()())  # print(next(gen))
 
         # 注意：如果语句过于复杂，建议在服务器上放一个文件，直接调用模块中封装好的函数。
         # 如果服务器放文件不容易，可以用exec+eval

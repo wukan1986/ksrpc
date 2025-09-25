@@ -49,24 +49,20 @@ async def async_call(module, name, args, kwargs, ref_id):
         # 转成字符串，后面可能于做cache的key
         logger.info(f'{module}::{name}\t{args}\t{kwargs}'[:300])
 
-        if name.endswith("__next__"):
+        if name.endswith(("__next__", "__anext__")):
             # 不管模块了，直接引用全局变量中的对象
             try:
-                output = globals()[ref_id].__next__()
-            except StopIteration:
+                ref = globals()[ref_id]
+                # 兼容同步和异步
+                if hasattr(ref, "__anext__"):
+                    output = await ref.__anext__()
+                else:
+                    output = ref.__next__()
+            except (StopIteration, StopAsyncIteration):
                 # 迭代完成，移出
                 globals().pop(ref_id, None)
-                raise
-            except KeyError:
-                raise StopIteration()
-        elif name.endswith("__anext__"):
-            # 不管模块了，直接引用全局变量中的对象
-            try:
-                output = await globals()[ref_id].__anext__()
-            except StopAsyncIteration:
-                # 迭代完成，移出
-                globals().pop(ref_id, None)
-                raise
+                # StopIteration强制转换成异步
+                raise StopAsyncIteration()
             except KeyError:
                 raise StopAsyncIteration()
         else:

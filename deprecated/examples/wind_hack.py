@@ -1,12 +1,11 @@
 # 创建客户连接
-from ksrpc.client import RpcClient
-from ksrpc.connections.http import HttpConnection
 from ksrpc.hack.WindPy import hack
 
+from ksrpc.client import RpcProxy
+from ksrpc.connections.http import HttpConnection
+
 conn = HttpConnection('http://127.0.0.1:8000/api/file')
-client = RpcClient('WindPy', conn)
-client.cache_get = True
-client.cache_expire = 86400
+client = RpcProxy('WindPy', conn)
 
 # 对原版库进行定制处理，需要已经安装了原版库
 hack(client)

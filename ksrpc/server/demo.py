@@ -24,6 +24,10 @@ def div(a, b):
     return a / b
 
 
+def add(a, b):
+    return a + b
+
+
 def test():
     import pandas as pd
     df = pd.DataFrame({'A': [1, 2, 3, 4, 5]})

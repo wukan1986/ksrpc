@@ -39,11 +39,15 @@ async def websocket_handler(request: web.Request) -> web.StreamResponse:
     await ws.prepare(request)
 
     buffer = bytearray()
+    buf = bytearray()
     async for msg in ws:
         if msg.type is web.WSMsgType.BINARY:
-            buffer.extend(zlib.decompress(msg.data))
+            buf.extend(msg.data)
         elif msg.type == web.WSMsgType.TEXT:
-            if msg.data == "EOF":
+            if msg.data == "\r\n":
+                buffer.extend(zlib.decompress(buf))
+                buf.clear()
+            elif msg.data == "EOF":
                 data = await switch_call(**pickle.loads(buffer))
                 buffer.clear()
                 await send_in_chunks(ws, pickle.dumps(data), print)
@@ -100,7 +104,7 @@ async def url_check_middleware(request, handler):
     t1 = time.time()
     t2 = float(request.match_info.get("time", "0"))
     if abs(t1 - t2) > 15:
-        print("HTTPForbidden:", t1, t2, t1 - t2)
+        print("HTTPForbidden:", request.url, f"|{t1}-{t2}| = |{t1 - t2}| > 15")
         return web.HTTPForbidden()
 
     return await handler(request)

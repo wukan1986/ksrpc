@@ -10,14 +10,18 @@ from ksrpc.connections.websocket import WebSocketConnection  # noqa
 
 
 async def async_main():
+    from ksrpc.server.demo import create_1d_array
+    a = create_1d_array(5)
+    print(a)
+
     async with HttpConnection(URL_HTTP, username=USERNAME, password=PASSWORD) as conn:
         demo = RpcClient('ksrpc.server.demo', conn)
-        ret = await demo.create_1d_array(10)
+        ret = await demo.add(a, 1)
         print(ret)
 
     async with WebSocketConnection(URL_WS, username=USERNAME, password=PASSWORD) as conn:
         demo = RpcClient('ksrpc.server.demo', conn)
-        ret = await demo.create_1d_array(10)
+        ret = await demo.add(a, 2)
         print(ret)
 
 

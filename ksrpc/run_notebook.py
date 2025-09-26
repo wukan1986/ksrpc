@@ -84,7 +84,7 @@ def main(commands: Dict[str, Any], idle_timeout: int = 60 * 10, clear_count: int
     except KeyboardInterrupt:
         print("主进程已中断")
     except Exception as e:
-        print("主进程错误: ", e, file=sys.stderr)
+        print("主进程错误: ", repr(e), file=sys.stderr)
     finally:
         print("结束服务")
 

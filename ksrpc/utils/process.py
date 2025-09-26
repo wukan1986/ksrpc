@@ -77,7 +77,7 @@ def run_command(cmds, callback, *args, **kwargs):
             print(cmds, "已中断")
             break
         except Exception as e:
-            print(cmds, "运行失败", e, file=sys.stderr)
+            print(cmds, "运行失败", repr(e), file=sys.stderr)
         finally:
             print(cmds, "已结束")
             t = time.perf_counter() - start_time

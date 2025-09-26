@@ -22,9 +22,7 @@ async def handle(request: web.Request) -> web.StreamResponse:
             buffer.extend(zlib.decompress(buf))
             buf.clear()
 
-    d = pickle.loads(buffer)
-
-    data = await switch_call(**d)
+    data = await switch_call(**pickle.loads(buffer))
     buffer.clear()
 
     body = pickle.dumps(data)

@@ -77,13 +77,13 @@ async def async_call(module, name, args, kwargs, ref_id):
                     output = await ref.__anext__()
                 else:
                     output = ref.__next__()
-            except (StopIteration, StopAsyncIteration):
+            except (StopIteration, StopAsyncIteration) as e:
                 # 迭代完成，移出
                 globals().pop(ref_id, None)
                 # StopIteration强制转换成异步
-                raise StopAsyncIteration()
-            except KeyError:
-                raise StopAsyncIteration()
+                raise StopAsyncIteration() from e
+            except KeyError as e:
+                raise StopAsyncIteration() from e
         else:
             if name.endswith("__func__"):  # isinstance(func, types.FunctionType) # 不行
                 # print(ksrpc.server.demo.p.__format__.__func__)

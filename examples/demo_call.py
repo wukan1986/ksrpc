@@ -82,7 +82,19 @@ globals()["greet"] = greet
             print(it)
 
         # 注意：如果语句过于复杂，建议在服务器上放一个文件，直接调用模块中封装好的函数。
-        # 如果服务器放文件不容易，可以用exec+eval
+        # 如果服务器放文件不容易，可以用exec+eval，例如：外部调用子类的父方法
+        demo = RpcClient('ksrpc.server.demo', conn)
+        await demo.child_obj.some_method()  # 输出: 这是子类重写后的方法。
+
+        builtins = RpcClient('builtins', conn)
+        await builtins.exec("""
+from ksrpc.server.demo import Parent, child_obj
+
+Parent.some_method(child_obj)
+        """)  # Parent.some_method(child_obj)  # 输出: 这是父类的原始方法
+        await demo.Parent.some_method(demo.child_obj) # 这种写法本来不正确，现在支持了.可以方便函数传参
+
+
 
 
 asyncio.run(async_main())

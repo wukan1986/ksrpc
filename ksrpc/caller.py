@@ -7,6 +7,7 @@ from importlib import import_module
 
 from loguru import logger
 
+from ksrpc.client import RpcClient
 from ksrpc.config import CALL_IN_NEW_PROCESS
 from ksrpc.utils.async_ import async_wrapper
 
@@ -16,10 +17,11 @@ logger.add(sys.stderr,
            level="INFO", colorize=True)
 
 
-def get_func(module, name):
+def get_func(module, names):
+    """根据模块和函数名列表，得到函数"""
     # ksrpc.server.demo.CLASS.B.__getitem__(3)，这种格式只能确信第一个是模块，最后一个是方法，其他都不确定
     m = import_module(module)
-    for n in name.split('.'):
+    for n in names:
         if len(n) == 0:
             continue
         if n == "__call__":
@@ -36,6 +38,13 @@ def get_func(module, name):
     return m
 
 
+def get_property(obj):
+    """如果是特殊的RpcClient，得到对应的属性"""
+    if isinstance(obj, RpcClient):
+        return get_func(obj._module, obj._names)
+    return obj
+
+
 async def async_call(module, name, args, kwargs, ref_id):
     """简版异步API调用。没有各种额外功能"""
     # 返回的数据包
@@ -50,10 +59,13 @@ async def async_call(module, name, args, kwargs, ref_id):
         # 转成字符串，后面可能于做cache的key
         logger.info(f'{module}::{name}\t{args}\t{kwargs}'[:300])
 
+        # 特别处理，对RpcClient进行转换
+        args = [get_property(a) for a in args]
+        kwargs = {k: get_property(v) for k, v in kwargs}
+
         # ksrpc.server.demo::async_counter 这里产生的generator，ref_id传到了RpcClient
         # ksrpc.server.demo::async_counter.__aiter__.__anext__ 居然这里将错就错，用上了上次的对象 TODO 这里以后一定要改
-
-        func = get_func(module, name)
+        func = get_func(module, name.split('.'))
 
         if name.endswith(("__next__", "__anext__")):
             # 不管模块了，直接引用全局变量中的对象

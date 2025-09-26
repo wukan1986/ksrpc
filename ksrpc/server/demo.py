@@ -113,8 +113,34 @@ def sync_counter():
         yield n
         n += 1
 
+
 async def async_counter():
     n = 1
     while n <= 3:
         yield n
         n += 1
+
+
+class Parent:
+
+    def __init__(self):
+        self.name = "Parent"
+
+    def some_method(self):
+        print("这是父类的原始方法。", self.name)
+
+
+class Child(Parent):
+
+    def __init__(self):
+        self.name = "Child"
+
+    def some_method(self):  # 重写了父类的方法
+        print("这是子类重写后的方法。", self.name)
+
+    def call_parent_method(self):  # 一个专门调用父类方法的“通道”
+        # 使用super()来调用父类被覆盖的方法
+        super().some_method()
+
+
+child_obj = Child()

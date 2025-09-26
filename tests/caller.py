@@ -7,6 +7,6 @@ print(ksrpc.server.demo.CLASS.D.C.__getitem__(3))
 
 from ksrpc.caller import get_func
 
-print(get_func('ksrpc', 'server.demo.CLASS.D.C.__getitem__'))
-print(get_func('ksrpc.server', 'demo.CLASS.D.C.__getitem__'))
-print(get_func('ksrpc.server.demo', 'CLASS.D.C.__getitem__'))
+print(get_func('ksrpc', 'server.demo.CLASS.D.C.__getitem__'.split(".")))
+print(get_func('ksrpc.server', 'demo.CLASS.D.C.__getitem__'.split(".")))
+print(get_func('ksrpc.server.demo', 'CLASS.D.C.__getitem__'.split(".")))

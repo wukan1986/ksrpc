@@ -122,6 +122,16 @@ class RpcClient:
         # ksrpc.server.demo::async_counter.__anext__
         return self
 
+    def __getstate__(self):
+        return {'module': self._module, 'names': self._names}
+
+    def __setstate__(self, state):
+        self._module = state['module']
+        self._names = state['names']
+
+    def __repr__(self):
+        return f'<RpcClient[{self._module}::{".".join(self._names)}] at 0x{id(self):016X}>'
+
 
 async def rpc_iterator(generator):
     """封装远程的迭代器。远程的异步和同步迭代器，都统一成异步

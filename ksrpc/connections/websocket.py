@@ -11,9 +11,6 @@ from ksrpc.utils.chunks import send_in_chunks
 from ksrpc.utils.tqdm import update_progress, muted_print
 
 
-
-
-
 class WebSocketConnection(BaseConnection):
     """WebSocket支持长连接
     1. 比HTTP协议开销较小，延迟较低

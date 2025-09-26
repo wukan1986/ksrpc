@@ -94,6 +94,8 @@ Parent.some_method(child_obj)
         """)  # Parent.some_method(child_obj)  # 输出: 这是父类的原始方法
         await demo.Parent.some_method(demo.child_obj)  # 这种写法本来不正确，现在支持了.可以方便函数传参
 
+        print(await demo.create_1d_array(target_mb=1))
+
         await demo.div(1, 0)
 
 

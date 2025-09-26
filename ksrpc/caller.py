@@ -114,7 +114,7 @@ async def async_call(module, name, args, kwargs, ref_id):
         d['status'] = 500  # status.HTTP_500_INTERNAL_SERVER_ERROR
         d['type'] = type(e).__name__
         d['data'] = e  # 是否有无法序列化的异常?
-        traceback.print_exc()
+        d['traceback'] = traceback.format_exc()
 
     return d
 

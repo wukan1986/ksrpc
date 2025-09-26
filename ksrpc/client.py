@@ -1,3 +1,4 @@
+import sys
 from typing import List
 
 from loguru import logger
@@ -73,6 +74,10 @@ class RpcClient:
                 is_server_raise = True
                 if self._reraise:
                     # 报异常，可用于迭代器等。这是服务端异常，不用走连接重置
+                    print("Server Side Traceback",
+                          "=====================",
+                          rsp['traceback'], sep="\n", file=sys.stdout)
+                    # 抛出异常
                     raise rsp['data']
                 else:
                     # 直接反回错误字典，不会报异常

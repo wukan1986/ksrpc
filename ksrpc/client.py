@@ -67,28 +67,34 @@ class RpcClient:
         # 排序，参数顺序统一后，排序生成key便不会浪费了
         kwargs = dict(sorted(kwargs.items()))
         is_server_raise = False
+        data = None
         try:
             rsp = await self._connection.call(self._module, name, args, kwargs, self._ref_id)
             ref_id = rsp['ref_id']
+            data = rsp['data']
             if rsp['status'] != 200:
+                # 报异常，可用于迭代器等。这是服务端异常，不用走连接重置
                 is_server_raise = True
                 if self._reraise:
-                    # 报异常，可用于迭代器等。这是服务端异常，不用走连接重置
-                    print("Server Side Traceback",
-                          "=====================",
-                          rsp['traceback'], sep="\n", file=sys.stdout)
+                    # 迭代器异常可以不打印，显示太多了
+                    if not isinstance(data, (StopAsyncIteration, StopIteration)):
+                        print("Server Side Traceback",
+                              "=====================",
+                              rsp['traceback'], sep="\n", file=sys.stdout)
                     # 抛出异常
-                    raise rsp['data']
+                    raise data
                 else:
                     # 直接反回错误字典，不会报异常
                     return rsp
             if ref_id != 0:
                 return RpcClient(self._module, self._connection, ref_id, self._reraise, [rsp['name']])
-            return rsp['data']
+            return data
         except Exception as e:
             # 服务端异常，直接抛出
             if is_server_raise:
-                logger.warning(f'{self._module}::{name}, server error, {repr(e)}')
+                # 迭代器异常可以不打印，显示太多了
+                if not isinstance(data, (StopAsyncIteration, StopIteration)):
+                    logger.warning(f'{self._module}::{name}, server error, {repr(e)}')
                 raise
             # 本地异常，需重置
             await self._connection.reset()  # 重置

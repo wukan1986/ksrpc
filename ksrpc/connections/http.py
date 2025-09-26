@@ -8,7 +8,6 @@ import dill as pickle
 
 from ksrpc.connections import BaseConnection
 from ksrpc.utils.chunks import data_sender
-from ksrpc.utils.key_ import make_key
 from ksrpc.utils.tqdm import update_progress, muted_print
 
 
@@ -106,14 +105,13 @@ class HttpConnection(BaseConnection):
         await self.connect()
 
         d = dict(module=module, name=name, args=args, kwargs=kwargs, ref_id=ref_id)
-        key = make_key(module, name, args, kwargs, ref_id)
 
         data = pickle.dumps(d)
         headers = {}
 
         response = await self._client.post(
             # key服务端目前没有检查，以后可能用到
-            self._url.format(time=time.time(), key=key),
+            self._url.format(time=time.time()),
             data=data_sender(data, muted_print),
             headers=headers,
             # proxy="http://192.168.31.33:9000",

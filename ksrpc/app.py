@@ -9,7 +9,6 @@ from aiohttp import web
 from ksrpc.caller import switch_call
 from ksrpc.config import USER_CREDENTIALS, HOST, PORT, PATH_HTTP, PATH_WS
 from ksrpc.utils.chunks import send_in_chunks, data_sender
-from ksrpc.utils.key_ import make_key
 
 
 async def handle(request: web.Request) -> web.StreamResponse:
@@ -24,17 +23,12 @@ async def handle(request: web.Request) -> web.StreamResponse:
             buf.clear()
 
     d = pickle.loads(buffer)
-    key = make_key(**d)
-
-    # TOOD 检查key的功能暂时屏蔽
-    # if request.match_info.get("key", "") != key:
-    #     return web.HTTPForbidden()
 
     data = await switch_call(**d)
     buffer.clear()
 
     body = pickle.dumps(data)
-    headers = {'Content-Disposition': f"{key}.pkl.chunked.zip"}
+    headers = {'Content-Disposition': f"{id(request)}.pkl.chunked.zip"}
 
     del data
     return web.Response(body=data_sender(body, print), headers=headers)

@@ -30,26 +30,6 @@ Keep Simple RPC。免注册远程过程调用
 4. `async`和`sync`的互转导致系统非常混乱，清理只留`async`。但所有不改代码的`hack`功能作废
 5. pip install ksrpc>=0.6.0
 
-## 工作原理
-
-1. 创建`Web`服务，接收请求后，调用服务器中的`Python`库，将结果二进制封装后返回
-2. 客户端将API调用封装，然后向`Web`服务器请求，等待返回
-3. 返回结果解包成`Python`对象
-4. 反代时`frp`需要公网有服务器进行转发。当然你也可以使用其他组网工具，如`easytier`等
-
-内网反代参考[examples_frp](https://github.com/wukan1986/ksrpc/tree/main/examples_frp)
-
-## 传输方式
-
-1. 先整体`zlib`压缩，然后分`chunk`传输
-    - 由于整体压缩，所以可以用第三方软件直接解压
-    - 浏览器和其他工具能直接识别'Content-Encoding': 'deflate'并解压
-2. 先分`chunk`，每个`chunk`都分别使用`zlib`压缩再传输
-    - 分块压缩，只能分块解压。第三方工具失效
-    - 将大文件压缩耗时分拆了，速度显著提升
-
-本项目的`HTTP`和`WebSocket`都使用了方案二，先分`chunk`后压缩
-
 ## 安装
 
 ```bash
@@ -90,9 +70,7 @@ async def async_main():
 asyncio.run(async_main())
 ```
 
-## 规则
-
-基本规则如下
+## 远程调用规则
 
 ```python
 await 一个模块.零到多个模块或方法或属性.一个方法或属性(参数)
@@ -103,6 +81,7 @@ await 一个模块.零到多个模块或方法或属性.一个方法或属性(�
 3. 而`[]`本质是`.__getitem__(item)`,内部会调整成`.__getattr__("__getitem__").__call__(item)`，所以也会触发远程调用
 
 建议先写原始代码测试通过，然后改成魔术方法版测试通过，最后才是远程异步版。例如：
+
 ```python
 from ksrpc.server import demo
 
@@ -110,7 +89,8 @@ print(len(demo.__file__))  # 1. 在服务端或本地测试是否通过
 print(demo.__file__.__len__())  # 2. 翻译成魔术方法版。看是否正常
 
 demo = RpcClient('ksrpc.server.demo', conn)
-print(await demo.__file__.__len__())  # 3. 改成远程异步版
+print(await demo.__file__.__len__())  # 3. 改成远程异步版。网络中传输的是`int`
+print((await demo.__file__()).__len__())  # 得到结果是一样得，但网络中传输的是`str`，然后本地算的`len()`
 
 print(demo.__doc__)  # 取的其实是RpcClient的__doc__
 print(await demo.__getattr__('__doc__')())  # 取的远程ksrpc.server.demo.__doc__
@@ -123,6 +103,26 @@ print(await demo.__getattr__('__doc__')())  # 取的远程ksrpc.server.demo.__do
 ```bash
 python -m ksrpc.run_app - -config. / config.py
 ```
+
+## 工作原理
+
+1. 创建`Web`服务，接收请求后，调用服务器中的`Python`库，将结果二进制封装后返回
+2. 客户端将API调用封装，然后向`Web`服务器请求，等待返回
+3. 返回结果解包成`Python`对象
+4. 反代时`frp`需要公网有服务器进行转发。当然你也可以使用其他组网工具，如`easytier`等
+
+内网反代参考[examples_frp](https://github.com/wukan1986/ksrpc/tree/main/examples_frp)
+
+## 传输方式
+
+1. 先整体`zlib`压缩，然后分`chunk`传输
+    - 由于整体压缩，所以可以用第三方软件直接解压
+    - 浏览器和其他工具能直接识别'Content-Encoding': 'deflate'并解压
+2. 先分`chunk`，每个`chunk`都分别使用`zlib`压缩再传输
+    - 分块压缩，只能分块解压。第三方工具失效
+    - 将大文件压缩耗时分拆了，速度显著提升
+
+本项目的`HTTP`和`WebSocket`都使用了方案二，先分`chunk`后压缩
 
 ## 参考项目
 

@@ -29,7 +29,6 @@ class RpcClient:
                  module: str,
                  connection: BaseConnection,
                  ref_id: id = 0,
-                 reraise: bool = True,
                  names: List[str] = []
                  ):
         """初始化
@@ -42,15 +41,12 @@ class RpcClient:
             连接对象
         ref_id: int
             服务端的对象id。用于迭代器，生成器等
-        reraise: bool
-            重新抛出服务端异常，而不是返回字典
         names: List[str]
             前几步的方法列表
         """
         self._module = module
         self._connection = connection
         self._ref_id = ref_id
-        self._reraise = reraise
         self._names = names
 
     def __del__(self):
@@ -59,7 +55,7 @@ class RpcClient:
 
     def __getattr__(self, name):
         # 注意：每次都生成新对象
-        return RpcClient(self._module, self._connection, self._ref_id, self._reraise, self._names + [name])
+        return RpcClient(self._module, self._connection, self._ref_id, self._names + [name])
 
     async def __call__(self, *args, **kwargs):
         name = '.'.join(self._names)
@@ -75,19 +71,15 @@ class RpcClient:
             if rsp['status'] != 200:
                 # 报异常，可用于迭代器等。这是服务端异常，不用走连接重置
                 is_server_raise = True
-                if self._reraise:
-                    # 迭代器异常可以不打印，显示太多了
-                    if not isinstance(data, (StopAsyncIteration, StopIteration)):
-                        print("Server Side Traceback",
-                              "=====================",
-                              rsp['traceback'], sep="\n", file=sys.stdout)
-                    # 抛出异常
-                    raise data
-                else:
-                    # 直接反回错误字典，不会报异常
-                    return rsp
+                # 迭代器异常可以不打印，显示太多了
+                if not isinstance(data, (StopAsyncIteration, StopIteration)):
+                    print("Server Side Traceback",
+                          "=====================",
+                          rsp['traceback'], sep="\n", file=sys.stdout)
+                # 抛出异常
+                raise data
             if ref_id != 0:
-                return RpcClient(self._module, self._connection, ref_id, self._reraise, [rsp['name']])
+                return RpcClient(self._module, self._connection, ref_id, [rsp['name']])
             return data
         except Exception as e:
             # 服务端异常，直接抛出

@@ -73,7 +73,7 @@ globals()["greet"] = greet
         print(await gen.__next__()())  # print(next(gen))
         print(await gen.__next__()())  # print(next(gen))
 
-        demo = RpcClient('ksrpc.server.demo', conn, reraise=True)
+        demo = RpcClient('ksrpc.server.demo', conn)
 
         async for it in rpc_iterator(demo.async_counter()):
             print(it)

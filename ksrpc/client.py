@@ -82,16 +82,16 @@ class RpcClient:
                 return RpcClient(self._module, self._connection, ref_id, [rsp['name']])
             return data
         except Exception as e:
-            # 服务端异常，直接抛出
             if is_server_raise:
                 # 迭代器异常可以不打印，显示太多了
                 if not isinstance(data, (StopAsyncIteration, StopIteration)):
                     logger.warning(f'{self._module}::{name}, server error, {repr(e)}')
                 raise
-            # 本地异常，需重置
-            await self._connection.reset()  # 重置
-            logger.warning(f'{self._module}::{name}, local error, {repr(e)}')
-            raise
+            else:
+                # 本地异常，需重置
+                await self._connection.reset()  # 重置
+                logger.warning(f'{self._module}::{name}, local error, {repr(e)}')
+                raise
 
     def __getitem__(self, item):
         # 语法糖，让RpcClient支持[]

@@ -1,5 +1,6 @@
 import inspect
 import sys
+import traceback
 import types
 from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
@@ -61,7 +62,7 @@ async def async_call(module, name, args, kwargs, ref_id):
 
         # 特别处理，对RpcClient进行转换
         args = [get_property(a) for a in args]
-        kwargs = {k: get_property(v) for k, v in kwargs}
+        kwargs = {k: get_property(v) for k, v in kwargs.items()}
 
         # ksrpc.server.demo::async_counter 这里产生的generator，ref_id传到了RpcClient
         # ksrpc.server.demo::async_counter.__aiter__.__anext__ 居然这里将错就错，用上了上次的对象 TODO 这里以后一定要改
@@ -113,6 +114,7 @@ async def async_call(module, name, args, kwargs, ref_id):
         d['status'] = 500  # status.HTTP_500_INTERNAL_SERVER_ERROR
         d['type'] = type(e).__name__
         d['data'] = e  # 是否有无法序列化的异常?
+        traceback.print_exc()
 
     return d
 

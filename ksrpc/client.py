@@ -10,13 +10,7 @@ __all__ = ['RpcClient', 'rpc_iterator']
 
 class RpcClient:
     """
-    RpcClient根据调用生成网络请求。
-    不建议用户直接使用，请用RpcProxy
-
-    Warnings
-    --------
-    先调用一到多个`__getattr__`，然后`__call__`收集`__getattr__`的结果。
-    并行时`__getattr__`的调用先后不可控，所以不能在`asyncio.gather`中使用
+    RpcClient根据调用生成网络请求
 
     Notes
     -----
@@ -96,10 +90,6 @@ class RpcClient:
     def __getitem__(self, item):
         # 语法糖，让RpcClient支持[]
         return self.__getattr__("__getitem__")(item)
-
-    # @property
-    # def __doc__(self):
-    #     return self.__getattr__('__doc__')
 
     @property
     def __format__(self, format_spe: str = ""):

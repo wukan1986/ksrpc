@@ -89,26 +89,10 @@ class Point:
 
 
 # 使用示例
-p = Point(3.14159, 2.71828)
-
-
-def test_array():
-    arr = create_1d_array()
-    return arr[:100]
-
+point = Point(3.14159, 2.71828)
 
 PASSWORD = 123456
 LIST = [1, 2, 3, 4, 5]
-
-
-class A:
-    class B:
-        C = [11, 22, 33, 44, 55]
-
-    D = B
-
-
-CLASS = A
 
 
 def sync_counter():

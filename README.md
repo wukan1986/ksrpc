@@ -90,18 +90,18 @@ print(demo.__file__.__len__())  # 2. 翻译成魔术方法版。看是否正常
 
 demo = RpcClient('ksrpc.server.demo', conn)
 print(await demo.__file__.__len__())  # 3. 改成远程异步版。网络中传输的是`int`
-print((await demo.__file__()).__len__())  # 得到结果是一样得，但网络中传输的是`str`，然后本地算的`len()`
+print((await demo.__file__()).__len__())  # 得到结果一样，但网络中传输的是`str`，然后本地算的`len()`
 
 print(demo.__doc__)  # 取的其实是RpcClient的__doc__
 print(await demo.__getattr__('__doc__')())  # 取的远程ksrpc.server.demo.__doc__
 ```
 
-更多调用方式参考[examples/demo_call.py](https://github.com/wukan1986/ksrpc/blob/main/examples/demo_call.py)
+更多调用方式参考[examples](https://github.com/wukan1986/ksrpc/blob/main/examples)
 
 ## 配置
 
 ```bash
-python -m ksrpc.run_app - -config. / config.py
+python -m ksrpc.run_app - -config  ./config.py
 ```
 
 ## 工作原理

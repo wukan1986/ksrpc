@@ -22,6 +22,8 @@ def get_func(module, names):
     """根据模块和函数名列表，得到函数"""
     # ksrpc.server.demo.CLASS.B.__getitem__(3)，这种格式只能确信第一个是模块，最后一个是方法，其他都不确定
     m = import_module(module)
+    # m.__package__ # ksrpc
+    # m.__name__ # ksrpc.config
     for n in names:
         if len(n) == 0:
             continue
@@ -68,6 +70,7 @@ async def async_call(module, name, args, kwargs, ref_id):
         # ksrpc.server.demo::async_counter.__aiter__.__anext__ 居然这里将错就错，用上了上次的对象 TODO 这里以后一定要改
         func = get_func(module, name.split('.'))
 
+
         if name.endswith(("__next__", "__anext__")):
             # 不管模块了，直接引用全局变量中的对象
             try:
@@ -85,10 +88,8 @@ async def async_call(module, name, args, kwargs, ref_id):
             except KeyError as e:
                 raise StopAsyncIteration() from e
         else:
-            if name.endswith("__func__"):  # isinstance(func, types.FunctionType) # 不行
+            if name.endswith(("__func__", "__class__")):
                 # print(ksrpc.server.demo.p.__format__.__func__)
-                output = func
-            elif isinstance(func, type):
                 # print(ksrpc.server.demo.p.__class__)
                 output = func
             # 可以调用的属性

@@ -8,9 +8,8 @@ pip install playwright
 3. 修改`xxx.ipynb`为你的Notebook中名字
 
 # 批处理示例
-call d:\Users\Kan\miniconda3\Scripts\activate.bat D:\Users\Kan\miniconda3\envs\py311
-python D:\Users\Kan\Documents\GitHub\examples\joinquant_playwright.py
-python -c "import time;print('+++++'),time.sleep(5),print('=====')"
+uv run python D:\Users\Kan\Documents\GitHub\examples\joinquant_playwright.py
+uv run python -c "import time;print('+++++'),time.sleep(5),print('=====')"
 taskkill /f /im chrome.exe
 pause
 
@@ -35,7 +34,7 @@ def run(playwright: Playwright) -> None:
         page = context.new_page()
     else:
         # 执行完成后不会关闭浏览器
-        command = f'"{CHROME_PATH}" --remote-debugging-port=9222'
+        command = f'"{CHROME_PATH}" --remote-debugging-port=9222'  # chrome版本太新可能因为安全问题默认用户配置无法开启调试接口
         subprocess.Popen(command, shell=True)
         time.sleep(2)
 

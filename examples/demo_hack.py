@@ -17,6 +17,9 @@ async def async_main():
         print(await config.USER_CREDENTIALS())  # ksrpc.config.USER_CREDENTIALS
 
         builtins = RpcClient('builtins', conn)
+        ksrpc = await builtins.__import__('ksrpc')
+        print(ksrpc.config.USER_CREDENTIALS)  # ksrpc.config.USER_CREDENTIALS
+
         print(await builtins.globals())
         print(await builtins.locals())
 

@@ -36,8 +36,10 @@ def get_func(module, names):
             if n in ("__iter__", "__aiter__", '__next__', '__anext__'):
                 # 需要特别处理
                 continue
-            else:
+            elif isinstance(m, types.ModuleType):
                 m = import_module(f"{m.__name__}.{n}")
+            else:
+                raise Exception(m.__name__)
     return m
 
 
@@ -69,7 +71,6 @@ async def async_call(module, name, args, kwargs, ref_id):
         # ksrpc.server.demo::async_counter 这里产生的generator，ref_id传到了RpcClient
         # ksrpc.server.demo::async_counter.__aiter__.__anext__ 居然这里将错就错，用上了上次的对象 TODO 这里以后一定要改
         func = get_func(module, name.split('.'))
-
 
         if name.endswith(("__next__", "__anext__")):
             # 不管模块了，直接引用全局变量中的对象

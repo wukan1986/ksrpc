@@ -10,7 +10,7 @@ from loguru import logger
 
 from ksrpc.client import RpcClient
 from ksrpc.config import CALL_IN_NEW_PROCESS
-from ksrpc.utils.async_ import async_wrapper
+from ksrpc.utils.async_ import async_to_sync
 
 logger.remove()
 logger.add(sys.stderr,
@@ -18,69 +18,26 @@ logger.add(sys.stderr,
            level="INFO", colorize=True)
 
 
-def get_func(module, names):
+async def get_calls(module, calls, ref_id):
     """根据模块和函数名列表，得到函数"""
-    # ksrpc.server.demo.CLASS.B.__getitem__(3)，这种格式只能确信第一个是模块，最后一个是方法，其他都不确定
-    m = import_module(module)
-    # m.__package__ # ksrpc
-    # m.__name__ # ksrpc.config
-    for n in names:
-        if len(n) == 0:
+    out = import_module(module)
+    for c in calls:
+        if len(c.name) == 0:
             continue
-        if n == "__call__":
-            # 默认 __call__ 是传不到服务端的，除非用户主动发起 __getattr__('__call__')
-            continue
-        elif hasattr(m, n):
-            m = getattr(m, n)
+        if hasattr(out, c.name):
+            out = getattr(out, c.name)
         else:
-            if n in ("__iter__", "__aiter__", '__next__', '__anext__'):
-                # 需要特别处理
-                continue
-            elif isinstance(m, types.ModuleType):
-                m = import_module(f"{m.__name__}.{n}")
-            else:
-                raise Exception(m.__name__)
-    return m
+            if inspect.ismodule(out):
+                out = import_module(f"{out.__name__}.{c.name}")
 
-
-def get_property(obj):
-    """如果是特殊的RpcClient，得到对应的属性"""
-    if isinstance(obj, RpcClient):
-        return get_func(obj._module, obj._names)
-    return obj
-
-
-async def async_call(module, name, args, kwargs, ref_id):
-    """简版异步API调用。没有各种额外功能"""
-    # 返回的数据包
-    d = dict(status=200,  # status.HTTP_200_OK,
-             datetime=datetime.now().isoformat(),  # 加查询时间，缓存中也许可以判断是否过期
-             module=module,
-             name=name,
-             args=args,
-             kwargs=kwargs,
-             ref_id=0)
-    try:
-        # 转成字符串，后面可能于做cache的key
-        logger.info(f'{module}::{name}\t{args}\t{kwargs}'[:300])
-
-        # 特别处理，对RpcClient进行转换
-        args = [get_property(a) for a in args]
-        kwargs = {k: get_property(v) for k, v in kwargs.items()}
-
-        # ksrpc.server.demo::async_counter 这里产生的generator，ref_id传到了RpcClient
-        # ksrpc.server.demo::async_counter.__aiter__.__anext__ 居然这里将错就错，用上了上次的对象 TODO 这里以后一定要改
-        func = get_func(module, name.split('.'))
-
-        if name.endswith(("__next__", "__anext__")):
-            # 不管模块了，直接引用全局变量中的对象
+        if c.name in ('__next__', '__anext__'):
             try:
                 ref = globals()[ref_id]
                 # 兼容同步和异步
                 if hasattr(ref, "__anext__"):
-                    output = await ref.__anext__()
+                    out = await ref.__anext__()
                 else:
-                    output = ref.__next__()
+                    out = ref.__next__()
             except (StopIteration, StopAsyncIteration) as e:
                 # 迭代完成，移出
                 globals().pop(ref_id, None)
@@ -88,20 +45,43 @@ async def async_call(module, name, args, kwargs, ref_id):
                 raise StopAsyncIteration() from e
             except KeyError as e:
                 raise StopAsyncIteration() from e
-        else:
-            if name.endswith(("__func__", "__class__")):
-                # print(ksrpc.server.demo.p.__format__.__func__)
-                # print(ksrpc.server.demo.p.__class__)
-                output = func
-            # 可以调用的属性
-            elif callable(func) or name.endswith("__call__"):
-                # __call__不合语法，但与本地报错效果一致了
-                if inspect.iscoroutinefunction(func):
-                    output = await func(*args, **kwargs)
+            return out
+
+        if c.args is not None:
+            # 特别处理，对RpcClient进行转换
+            args = [await get_property(a, ref_id) for a in c.args]
+            kwargs = {k: await get_property(v, ref_id) for k, v in c.kwargs.items()}
+            if callable(out) or c.name.endswith("__call__"):
+                if inspect.iscoroutinefunction(out):
+                    out = await out(*args, **kwargs)
                 else:
-                    output = func(*args, **kwargs)
-            else:
-                output = func
+                    out = out(*args, **kwargs)
+
+    return out
+
+
+async def get_property(obj, ref_id):
+    """如果是特殊的RpcClient，得到对应的属性"""
+    if isinstance(obj, RpcClient):
+        return await get_calls(obj._module, obj._calls, ref_id)
+    return obj
+
+
+async def async_call(module, calls, ref_id):
+    """简版异步API调用。没有各种额外功能"""
+    # 返回的数据包
+    d = dict(status=200,  # status.HTTP_200_OK,
+             datetime=datetime.now().isoformat(),  # 加查询时间，缓存中也许可以判断是否过期
+             module=module,
+             calls=calls,
+             ref_id=0)
+    try:
+        # 转成字符串，后面可能于做cache的key
+        logger.info(f'{module}:{calls}'[:300])
+
+        # ksrpc.server.demo::async_counter 这里产生的generator，ref_id传到了RpcClient
+        # ksrpc.server.demo::async_counter.__aiter__.__anext__ 居然这里将错就错，用上了上次的对象 TODO 这里以后一定要改
+        output = await get_calls(module, calls, ref_id)
 
         if isinstance(output, (types.GeneratorType, types.AsyncGeneratorType)):
             # 处理生成器。需要传引用ref_id,提供给__next__使用
@@ -121,7 +101,7 @@ async def async_call(module, name, args, kwargs, ref_id):
     return d
 
 
-async def process_call(module, name, args, kwargs, ref_id):
+async def process_call(module, calls, ref_id):
     """进程版API调用。结束后进程退出自动释放内存
 
     Notes
@@ -131,12 +111,12 @@ async def process_call(module, name, args, kwargs, ref_id):
 
     """
     with ProcessPoolExecutor(max_workers=1) as executor:
-        future = executor.submit(async_wrapper, async_call, module, name, args, kwargs, ref_id)
+        future = executor.submit(async_to_sync, async_call, module, calls, ref_id)
         return future.result()
 
 
-async def switch_call(module, name, args, kwargs, ref_id):
+async def switch_call(module, calls, ref_id):
     if CALL_IN_NEW_PROCESS:
-        return await process_call(module, name, args, kwargs, ref_id)
+        return await process_call(module, calls, ref_id)
     else:
-        return await async_call(module, name, args, kwargs, ref_id)
+        return await async_call(module, calls, ref_id)

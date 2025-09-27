@@ -31,10 +31,10 @@ def main(config=None):
         import_module_from_path("ksrpc.config", config)
 
     from ksrpc.app import start_server
-    from ksrpc.utils.async_ import async_wrapper
+    from ksrpc.utils.async_ import async_to_sync
 
     try:
-        async_wrapper(start_server)
+        async_to_sync(start_server)
     except KeyboardInterrupt:
         pass
 

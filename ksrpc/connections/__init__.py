@@ -12,5 +12,5 @@ class BaseConnection:
     async def reset(self):
         ...
 
-    async def call(self, module, name, args, kwargs, ref_id):
+    async def call(self, module, calls, ref_id):
         ...

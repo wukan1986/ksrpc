@@ -73,12 +73,25 @@ asyncio.run(async_main())
 ## 远程调用规则
 
 ```python
+# eager模式
 await 一个模块.零到多个模块或方法或属性.一个方法或属性(参数)
+# lazy模式
+await 一个模块.零到多个模块或方法或属性.一个方法或属性(参数).一个方法或属性(参数).collect_async()
 ```
 
-1. 对象后`.`英文句号后接的`字符串`，如果存在会直接返回，反之调用`__getattr__`。利用它收集完整的方法链条
-2. 函数后接`()`就会触发远程调用`__call__`，利用它向服务端发起请求。它返回结果后任何操作都是本地
-3. 而`[]`本质是`.__getitem__(item)`,内部会调整成`.__getattr__("__getitem__").__call__(item)`，所以也会触发远程调用
+### eager模式
+
+1. 语句后接`()`就会触发远程调用
+2. `.`后的函数用来收集调用链
+3. `[]`本质是`.__getitem__(item)`,内部会调整成`.__getattr__("__getitem__").__call__(item)`，会立即触发远程调用
+4. 大部分情况用户代码只在最后出现`()`或`[]`，`eager`模式已经够用
+
+### lazy模式
+
+1. 语句后接`collect_async()`就会触发远程调用
+2. `.`后的函数用来收集调用链，`()`用来收集参数
+3. `[]`本质同`eager`模式，但触发要等`collect_async()`
+4. 只要语句中间出现`()`或`[]`，`lazy`模式才能处理
 
 建议先写原始代码测试通过，然后改成魔术方法版测试通过，最后才是远程异步版。例如：
 
@@ -88,12 +101,14 @@ from ksrpc.server import demo
 print(len(demo.__file__))  # 1. 在服务端或本地测试是否通过
 print(demo.__file__.__len__())  # 2. 翻译成魔术方法版。看是否正常
 
-demo = RpcClient('ksrpc.server.demo', conn)
-print(await demo.__file__.__len__())  # 3. 改成远程异步版。网络中传输的是`int`
-print((await demo.__file__()).__len__())  # 得到结果一样，但网络中传输的是`str`，然后本地算的`len()`
+demo1 = RpcClient('ksrpc.server.demo', conn)
+demo2 = RpcClient('ksrpc.server.demo', conn, lazy=True)
+print(await demo1.__file__.__len__())  # 3. 改成远程异步版。网络中传输的是`int`
+print((await demo1.__file__()).__len__())  # 得到结果一样，但网络中传输的是`str`，然后本地算的`len()`
+print(await demo2.__file__.__len__().collect_async())  # lazy模式，collect_async()前的代码都会在服务端计算
 
-print(demo.__doc__)  # 取的其实是RpcClient的__doc__
-print(await demo.__getattr__('__doc__')())  # 取的远程ksrpc.server.demo.__doc__
+print(demo1.__doc__)  # 取的其实是RpcClient的__doc__
+print(await demo1.__getattr__('__doc__')())  # 取的远程ksrpc.server.demo.__doc__
 ```
 
 更多调用方式参考[examples](https://github.com/wukan1986/ksrpc/blob/main/examples)

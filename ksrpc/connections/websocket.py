@@ -52,10 +52,10 @@ class WebSocketConnection(BaseConnection):
             await self._ws.close()
             self._ws = None
 
-    async def call(self, module, name, args, kwargs, ref_id):
+    async def call(self, module, calls, ref_id):
         await self.connect()
 
-        d = dict(module=module, name=name, args=args, kwargs=kwargs, ref_id=ref_id)
+        d = dict(module=module, calls=calls, ref_id=ref_id)
 
         # gather时会出错，只能用lock保证一次只能一个请求和响应
         async with self._lock:

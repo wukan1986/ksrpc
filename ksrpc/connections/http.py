@@ -63,6 +63,13 @@ class HttpConnection(BaseConnection):
         self._lock = asyncio.Lock()
         self._timeout = aiohttp.ClientTimeout(total=60)
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self._client:
+            self._client.__exit__(exc_type, exc_val, exc_tb)
+
     async def __aenter__(self):
         """异步async with"""
         return self
@@ -86,25 +93,21 @@ class HttpConnection(BaseConnection):
             await self._client.close()
             self._client = None
 
-    async def call(self, module, name, args, kwargs, ref_id):
+    async def call(self, module, calls, ref_id):
         """调用函数
 
         Parameters
         ----------
         module: str
             多层模块名
-        name:str
-            多层模块名+最后一个函数名
-        args: tuple
-            函数位置参数
-        kwargs: dict
-            函数命名参数
+        calls: list
+            调用列表
         ref_id
 
         """
         await self.connect()
 
-        d = dict(module=module, name=name, args=args, kwargs=kwargs, ref_id=ref_id)
+        d = dict(module=module, calls=calls, ref_id=ref_id)
 
         data = pickle.dumps(d)
         headers = {}

@@ -46,6 +46,10 @@ globals()["greet"] = greet
 """)
         print(await builtins.eval("greet('World')"))  # 调用上一步保存在globals中的方法
 
+        # 更复杂的写法要开启lazy模式
+        builtins = RpcClient('builtins', conn, lazy=True)
+        print(await builtins.globals()['__name__'].collect_async())
+
         # 修改导入库路径
         sys = RpcClient('sys', conn)
         print(await sys.path.insert(0, "/kan"))  # sys.path.insert(0, "/kan")

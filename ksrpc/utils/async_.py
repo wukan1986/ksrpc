@@ -16,7 +16,7 @@ def async_to_sync(func, *args, **kwargs):
             finally:
                 loop.close()
     else:
-        # TODO 已经有loop时没法跑，等处理
+        # TODO 已经有loop时没运行，是否有其他解决方法？
         try:
             return running_loop.run_until_complete(func(*args, **kwargs))
         finally:

@@ -124,10 +124,10 @@ class RpcClient:
         return self.__getattr__("__getitem__")(item)
 
     def __next__(self):
-        return self.__getattr__("__next__")
+        return self.__getattr__("__next__")()
 
     async def __anext__(self):
-        return self.__getattr__("__anext__")
+        return self.__getattr__("__anext__")()
 
     def __iter__(self):
         # 本项目全是异步，理论上本句不会被调用
@@ -174,8 +174,15 @@ async def rpc_iterator(generator):
     ```
 
     """
-    async for it in await generator.collect_async():
-        try:
-            yield await it.collect_async()
-        except (StopAsyncIteration, StopIteration):
-            break
+    if isinstance(generator, RpcClient):
+        async for it in await generator.collect_async():
+            try:
+                yield await it.collect_async()
+            except (StopAsyncIteration, StopIteration):
+                break
+    else:
+        async for it in await generator:
+            try:
+                yield await it
+            except (StopAsyncIteration, StopIteration):
+                break

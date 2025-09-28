@@ -1,3 +1,4 @@
+import builtins
 import inspect
 import sys
 import traceback
@@ -8,7 +9,7 @@ from importlib import import_module
 
 from loguru import logger
 
-from ksrpc.client import RpcClient
+from ksrpc.client import RpcClient, _Self
 from ksrpc.config import CALL_IN_NEW_PROCESS
 from ksrpc.utils.async_ import async_to_sync
 
@@ -18,17 +19,27 @@ logger.add(sys.stderr,
            level="INFO", colorize=True)
 
 
+def replace_self(self, value):
+    return value if isinstance(self, _Self) else self
+
+
 async def get_calls(module, calls, ref_id):
     """根据模块和函数名列表，得到函数"""
     out = import_module(module)
     for c in calls:
+        update = False
         if len(c.name) == 0:
             continue
         if hasattr(out, c.name):
             out = getattr(out, c.name)
-        else:
-            if inspect.ismodule(out):
-                out = import_module(f"{out.__name__}.{c.name}")
+            update = True
+        elif inspect.ismodule(out):
+            out = import_module(f"{out.__name__}.{c.name}")
+            update = True
+            continue
+        elif hasattr(builtins, c.name):
+            func = getattr(builtins, c.name)
+            update = False
 
         if c.name in ('__next__', '__anext__'):
             try:
@@ -45,12 +56,26 @@ async def get_calls(module, calls, ref_id):
                 raise StopAsyncIteration() from e
             except KeyError as e:
                 raise StopAsyncIteration() from e
+            update = True
             return out
 
         if c.args is not None:
             # 特别处理，对RpcClient进行转换
-            args = [await get_property(a, ref_id) for a in c.args]
-            kwargs = {k: await get_property(v, ref_id) for k, v in c.kwargs.items()}
+            c.args = [await get_property(a, ref_id) for a in c.args]
+            c.kwargs = {k: await get_property(v, ref_id) for k, v in c.kwargs.items()}
+            #
+            if len(c.args) > 0 and not update:
+                # 检查是否有_Self，开始替换
+                args = [replace_self(a, out) for a in c.args]
+                kwargs = {k: replace_self(v, out) for k, v in c.kwargs}
+                if (c.args != args) or (c.kwargs != kwargs):
+                    # 特殊转换代码，如int()功能
+                    logger.info(f'{c}: {c.name}({out}...)')
+                    out = func
+            else:
+                args = c.args
+                kwargs = c.kwargs
+
             if callable(out) or c.name.endswith("__call__"):
                 if inspect.iscoroutinefunction(out):
                     out = await out(*args, **kwargs)

@@ -13,8 +13,8 @@ async def async_main():
         print(await jqresearch.api.get_price(security='000001.XSHE'))
 
         # 需要先上传jqresearch_query.py
-        query = RpcClient('jqresearch_query', conn)
-        print(await query.get_fundamentals_valuation(date='2025-09-26'))
+        query = RpcClient('jqresearch_query', conn, lazy=True)
+        print(await query.get_fundamentals_valuation(date='2025-09-26').collect_async())
 
 
 asyncio.run(async_main())

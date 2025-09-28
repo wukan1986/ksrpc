@@ -5,7 +5,17 @@ from loguru import logger
 
 from ksrpc.connections import BaseConnection
 
-__all__ = ['RpcClient', 'rpc_iterator']
+__all__ = ['RpcClient', 'rpc_iterator', "Self"]
+
+
+# 跨python版本导致反序列化失败，所以自己定义一个
+# from typing_extensions import Self
+class _Self:
+    def __repr__(self):
+        return "Self"
+
+
+Self = _Self()
 
 
 class RpcCall:

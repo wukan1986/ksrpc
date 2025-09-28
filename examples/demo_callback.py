@@ -34,9 +34,12 @@ async def async_main():
         print(list(await builtins.filter(is_even, numbers)))  # 延迟计算都是在本地计算
         print(await builtins.sorted(fruits, key=length))  # 返回普通结果的都是在服务器计算
 
-        functools = RpcClient('functools', conn)
+        functools = RpcClient('functools', conn, lazy=True)
 
-        print(await functools.reduce(lambda x, y: print("这是在服务端运行的函数 lambda") or (x * y), numbers))  # 支持lambda表达式
+        print(await functools.reduce(
+            lambda x, y: print("这是在服务端运行的函数 lambda") or (x * y),
+            numbers
+        ).collect_async())  # 支持lambda表达式
 
 
 asyncio.run(async_main())

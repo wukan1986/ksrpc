@@ -22,8 +22,8 @@ async def async_main():
 
     # 观察WebSocket大文件上传与下载是否正常
     async with WebSocketConnection(URL_WS, username=USERNAME, password=PASSWORD) as conn:
-        demo = RpcClient('ksrpc.server.demo', conn)
-        ret = await demo.add(a, 2)
+        demo = RpcClient('ksrpc.server.demo', conn, lazy=True)
+        ret = await demo.add(a, 2).collect_async()
         print(ret)
 
 

@@ -26,7 +26,7 @@ Keep Simple RPC。免注册远程过程调用
 ### 第二代
 
 1. 考虑到大家只关注内网反代，所以决定用更专业的反代工具，如：`frp`等
-2. 删减功能，只留`API`调用+`Baisc`认证。
+2. 删减功能，只留`API`调用+`Baisc`认证+`导入规则列表`
 3. 某平台中的`FastAPI`所创建的服务只要访问，`uvicorn`就崩溃，最后决定将客服端和服务端都替换成`aiohttp`
 4. `async`和`sync`的互转导致系统非常混乱，清理只留`async`。但所有不改代码的`hack`功能作废
 5. pip install ksrpc>=0.6.0
@@ -47,7 +47,7 @@ pip install ksrpc -i https://pypi.org/simple --upgrade
 # 直接运行
 python -m ksrpc.run_app
 # 使用配置运行
-python -m ksrpc.run_app - -config  ./config.py
+python -m ksrpc.run_app --config ./config.py
 ```
 
 2. 客户端
@@ -140,7 +140,7 @@ print(await demo1.__getattr__('__doc__')())  # 取的远程ksrpc.server.demo.__d
 ## 工作原理
 
 1. 创建`Web`服务，接收请求后，调用服务器中的`Python`库，将结果二进制封装后返回
-2. 客户端将API调用封装，然后向`Web`服务器请求，等待返回
+2. 客户端将`API`调用封装，然后向`Web`服务器请求，等待返回
 3. 返回结果解包成`Python`对象
 4. 反代时`frp`需要公网有服务器进行转发。当然你也可以使用其他组网工具，如`easytier`等
 
@@ -155,7 +155,7 @@ print(await demo1.__getattr__('__doc__')())  # 取的远程ksrpc.server.demo.__d
     - 分块压缩，只能分块解压。第三方工具失效
     - 将大文件压缩耗时分拆了，速度显著提升
 
-本项目的`HTTP`和`WebSocket`都使用了方案二，先分`chunk`后压缩
+本项目的`HTTP`和`WebSocket`都使用了方案二，先分`chunk`后`zlib`压缩
 
 ## 参考项目
 

@@ -78,8 +78,10 @@ asyncio.run(async_main())
 
 ```python
 # eager模式
+RpcClient(..., lazy=False)
 await 一个模块.零到多个模块或方法或属性.一个方法或属性(参数)
 # lazy模式
+RpcClient(..., lazy=True)
 await 一个模块.零到多个模块或方法或属性.一个方法或属性(参数).一个方法或属性(参数).collect_async()
 ```
 

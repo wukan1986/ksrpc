@@ -6,12 +6,13 @@ Keep Simple RPC。免注册远程过程调用
 
 ## 安全
 
-注意：第二代只有`Baisc`认证，其它功能无任何限制，甚至可以执行`rm -rf /`。所以强烈建议
+注意：第二代只有`Baisc认证`和`导入规则列表`，其它功能无任何限制，甚至可以执行`rm -rf /`。所以强烈建议
 
 1. 账号只给少量可信之人
 2. 只部署在docker中
 3. 服务不用时最好停止，或定时任务启停
 4. 不要使用默认端口、默认账号、默认URL路径等
+5. 导入规则列表最后一条建议`"*": False`
 
 ## 第二代 vs 第一代
 
@@ -43,7 +44,10 @@ pip install ksrpc -i https://pypi.org/simple --upgrade
 1. 服务端
 
 ```bash
+# 直接运行
 python -m ksrpc.run_app
+# 使用配置运行
+python -m ksrpc.run_app - -config  ./config.py
 ```
 
 2. 客户端
@@ -102,8 +106,9 @@ await 一个模块.零到多个模块或方法或属性.一个方法或属性(�
 
 所以专门提供了一种特殊语法`.func(Self)`，它能成功运行依赖于两个条件：
 
-1. `builtins`中已经定义了`func`函数
-2. `from ksrpc.client import Self`，然后传入`Self`参数
+1. `from ksrpc.client import Self`，然后传入`Self`参数
+2. `builtins`中已经定义了`func`函数
+3. `config.py`中`IMPORT_RULES`已经设置了`"builtins": True`，或没有设置`builtins`, 但设置了`"*": True`
 
 前面两句可以简化成
 
@@ -131,12 +136,6 @@ print(await demo1.__getattr__('__doc__')())  # 取的远程ksrpc.server.demo.__d
 ```
 
 更多调用方式参考[examples](https://github.com/wukan1986/ksrpc/blob/main/examples)
-
-## 配置
-
-```bash
-python -m ksrpc.run_app - -config  ./config.py
-```
 
 ## 工作原理
 

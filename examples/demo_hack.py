@@ -54,7 +54,10 @@ globals()["greet"] = greet
         sys = RpcClient('sys', conn)
         print(await sys.path.insert(0, "/kan"))  # sys.path.insert(0, "/kan")
         print(await sys.path())  # sys.path
-        # print(await sys.modules.keys())  # sys.modules.keys() # 可能会出现无法序列化的对象
+
+        # 通过其他库绕一下，也能取到sys，除非IMPORT_RULES中 "sys": False
+        collections = RpcClient('collections', conn, lazy=True)
+        print(await collections._sys.path.collect_async())
 
 
 asyncio.run(async_main())

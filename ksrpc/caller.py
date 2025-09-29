@@ -1,4 +1,5 @@
 import builtins
+import fnmatch
 import inspect
 import sys
 import traceback
@@ -10,7 +11,7 @@ from importlib import import_module
 from loguru import logger
 
 from ksrpc.client import RpcClient, _Self
-from ksrpc.config import CALL_IN_NEW_PROCESS
+from ksrpc.config import CALL_IN_NEW_PROCESS, IMPORT_RULES
 from ksrpc.utils.async_ import async_to_sync
 
 logger.remove()
@@ -19,27 +20,57 @@ logger.add(sys.stderr,
            level="INFO", colorize=True)
 
 
+async def get_property(obj, ref_id):
+    """如果是特殊的RpcClient，得到对应的属性"""
+    if isinstance(obj, RpcClient):
+        return await get_calls(obj._module, obj._calls, ref_id)
+    return obj
+
+
 def replace_self(self, value):
+    """Self替换"""
     return value if isinstance(self, _Self) else self
+
+
+def is_import_allowed(module_name, rules):
+    for pattern, allowed in rules.items():
+        if fnmatch.fnmatch(module_name, pattern):
+            return allowed
+    return False
+
+
+def import_module_allowed(module):
+    m = import_module(module)
+    assert is_import_allowed(m.__name__, IMPORT_RULES), f"import {m.__name__} not allowed"
+    return m
 
 
 async def get_calls(module, calls, ref_id):
     """根据模块和函数名列表，得到函数"""
-    out = import_module(module)
+
+    out = import_module_allowed(module)
     for c in calls:
         update = False
         if len(c.name) == 0:
             continue
-        if hasattr(out, c.name):
-            out = getattr(out, c.name)
-            update = True
-        elif inspect.ismodule(out):
-            out = import_module(f"{out.__name__}.{c.name}")
-            update = True
-            continue
-        elif hasattr(builtins, c.name):
-            func = getattr(builtins, c.name)
-            update = False
+
+        if inspect.ismodule(out):
+            try:
+                out = import_module_allowed(f"{out.__name__}.{c.name}")
+                update = True
+            except ModuleNotFoundError:
+                update = False
+
+        if not update:
+            if hasattr(out, c.name):
+                out = getattr(out, c.name)
+                update = True
+            elif hasattr(builtins, c.name):
+                # 需要在config.py IMPORT_RULES中开放builtins导入权限
+                _builtins = import_module_allowed(builtins.__name__)
+                # 这个功能有一定的危险性
+                func = getattr(_builtins, c.name)
+                update = False
 
         if c.name in ('__next__', '__anext__'):
             try:
@@ -66,6 +97,7 @@ async def get_calls(module, calls, ref_id):
             #
             if len(c.args) > 0 and not update:
                 # 检查是否有_Self，开始替换
+
                 args = [replace_self(a, out) for a in c.args]
                 kwargs = {k: replace_self(v, out) for k, v in c.kwargs}
                 if (c.args != args) or (c.kwargs != kwargs):
@@ -83,13 +115,6 @@ async def get_calls(module, calls, ref_id):
                     out = out(*args, **kwargs)
 
     return out
-
-
-async def get_property(obj, ref_id):
-    """如果是特殊的RpcClient，得到对应的属性"""
-    if isinstance(obj, RpcClient):
-        return await get_calls(obj._module, obj._calls, ref_id)
-    return obj
 
 
 async def async_call(module, calls, ref_id):

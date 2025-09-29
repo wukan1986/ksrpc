@@ -1,7 +1,7 @@
 import os
 
 """
-Web服务配置。不建议使用默认值
+TODO Web服务配置。不建议直接使用默认值
 """
 HOST = "0.0.0.0"
 PORT = 8080
@@ -9,12 +9,36 @@ PATH_HTTP = "/api/v1/{time}"  # HTTP服务向外提供路径。{time}表示时�
 PATH_WS = "/ws/v1/{time}"  # WebSocket服务向外提供路径。{time}表示时间动态URL，与服务器误差15秒内才能访问
 
 """
-TODO Basic认证。一定要修改账号，不要使用默认值
+TODO Basic认证。一定不要使用默认值
 """
 USER_CREDENTIALS = {
     "用户名": "密码",
     "admin": "password123",
     "user": "secret",
+}
+
+"""
+TODO 导入规则。按顺序检查规则，遇到匹配直接返回
+
+向外部提供服务时，如“ksrpc.server.demo”,建议
+"ksrpc*": True,
+"*": False,
+
+向内部提供服务时，可直接
+"*": True
+
+注意：以下是有区别的
+ksrpc.* # 所有子模块
+ksrpc* # 当前模块和子模块
+
+"""
+IMPORT_RULES = {
+    "ksrpc.server.demo": True,
+    "ksrpc.server.*": False,
+
+    "builtins": True,  # Self语法支持须允许。注意：open/exec/eval等风险大
+    "*": True,  # 全部允许。支持分步导入，如：先导入`ksrpc.server`再导入`demo`
+    # "*": False,  # 全部拒绝。拒绝分步导入，如：必需直接导入`ksrpc.server.demo`
 }
 
 """

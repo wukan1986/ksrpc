@@ -7,8 +7,13 @@ from ksrpc.connections.http import HttpConnection
 
 async def async_main():
     async with HttpConnection(URL_HTTP, username=USERNAME, password=PASSWORD) as conn:
+        # 同时存在demo属性和demo模块
         server = RpcClient('ksrpc.server', conn, lazy=True)
-        demo = server.demo
+        print(await server.demo.collect_async())  # 取到是属性
+
+        demo = RpcClient('ksrpc.server.demo', conn, lazy=True)
+        print(await demo.collect_async())  # 取到的是模块
+
         print(await demo.test().collect_async())
         print(await demo.test().__len__().collect_async())
         print(await demo.div(demo.create_1d_array(target_mb=1), 0.01).collect_async())

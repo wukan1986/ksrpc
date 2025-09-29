@@ -51,27 +51,29 @@ async def get_calls(module, calls, ref_id):
     out = import_module_allowed(module)
     for c in calls:
         update = False
+        func = None
         if len(c.name) == 0:
             continue
 
-        if inspect.ismodule(out):
+        # 先查属性，再查模块，最后查builtins
+        if hasattr(out, c.name):
+            out = getattr(out, c.name)
+            update = True
+        elif inspect.ismodule(out):
             try:
                 out = import_module_allowed(f"{out.__name__}.{c.name}")
                 update = True
             except ModuleNotFoundError:
                 update = False
 
-        if not update:
-            if hasattr(out, c.name):
-                out = getattr(out, c.name)
-                update = True
-            elif hasattr(builtins, c.name):
-                # 需要在config.py IMPORT_RULES中开放builtins导入权限
-                _builtins = import_module_allowed(builtins.__name__)
-                # 这个功能有一定的危险性
-                func = getattr(_builtins, c.name)
-                update = False
+        if not update and hasattr(builtins, c.name):
+            # 需要在config.py IMPORT_RULES中开放builtins导入权限
+            import_module_allowed(builtins.__name__)
+            # 这个功能有一定的危险性
+            func = getattr(builtins, c.name)
+            update = True
 
+        # 迭代器方法
         if c.name in ('__next__', '__anext__'):
             try:
                 ref = globals()[ref_id]
@@ -90,14 +92,15 @@ async def get_calls(module, calls, ref_id):
             update = True
             return out
 
+        assert update, f"getattr(,{c.name}) failed"
+
         if c.args is not None:
             # 特别处理，对RpcClient进行转换
             c.args = [await get_property(a, ref_id) for a in c.args]
             c.kwargs = {k: await get_property(v, ref_id) for k, v in c.kwargs.items()}
             #
-            if len(c.args) > 0 and not update:
+            if len(c.args) > 0 and func:
                 # 检查是否有_Self，开始替换
-
                 args = [replace_self(a, out) for a in c.args]
                 kwargs = {k: replace_self(v, out) for k, v in c.kwargs}
                 if (c.args != args) or (c.kwargs != kwargs):
@@ -113,6 +116,9 @@ async def get_calls(module, calls, ref_id):
                     out = await out(*args, **kwargs)
                 else:
                     out = out(*args, **kwargs)
+        else:
+            # 获取的是属性，可直接返回
+            pass
 
     return out
 

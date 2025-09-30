@@ -126,8 +126,13 @@ class RpcClient:
                 raise
 
     def collect_async(self):
-        # 异步获取结果
+        """异步获取结果"""
         return self.___call___()
+
+    def generate_stub(self):
+        """生成对应模块的存根文件"""
+        # output_file_path没有实际用途
+        return self.__getattr__("generate_stub")(output_file_path=self._module)
 
     def __getitem__(self, item):
         # 语法糖，让RpcClient支持[]

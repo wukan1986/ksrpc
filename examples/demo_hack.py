@@ -64,5 +64,10 @@ globals()["greet"] = greet
         source = await demo.__file__.open(Self, 'r', encoding='utf-8').read().collect_async()
         print(source)
 
+        # 利用RpcClient远程取属性实现的查看源代码
+        builtins = RpcClient('builtins', conn, lazy=True)
+        source = await builtins.open(demo.__file__, 'r', encoding='utf-8').read().collect_async()
+        print(source)
+
 
 asyncio.run(async_main())

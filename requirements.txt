@@ -3,4 +3,4 @@ aiohttp
 loguru
 psutil
 dill>=0.3.4
-AST-Stubgen
+mypy

@@ -132,7 +132,7 @@ class RpcClient:
     def generate_stub(self):
         """生成对应模块的存根文件"""
         # output_file_path没有实际用途
-        return self.__getattr__("generate_stub")(output_file_path=self._module)
+        return self.__getattr__("generate_stub")(module=self._module)
 
     def __getitem__(self, item):
         # 语法糖，让RpcClient支持[]

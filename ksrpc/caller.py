@@ -8,12 +8,12 @@ from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
 from importlib import import_module
 
-from Ast_Stubgen.stubgen import generate_stub
 from loguru import logger
 
 from ksrpc.client import RpcClient, _Self
 from ksrpc.config import CALL_IN_NEW_PROCESS, IMPORT_RULES
 from ksrpc.utils.async_ import async_to_sync
+from ksrpc.utils.stubs import generate_stub
 
 logger.remove()
 logger.add(sys.stderr,
@@ -63,7 +63,7 @@ async def get_calls(module, calls, ref_id):
         elif inspect.ismodule(out):
             if c.name == "generate_stub":
                 # 添加的额外函数，用于生成存根文件
-                c.kwargs.update({"source_file_path": out.__file__, "text_only": True})
+                c.kwargs['file'] = out.__file__
                 logger.info('generate_stub: {} {}', c.args, c.kwargs)
                 out = generate_stub
                 update = True

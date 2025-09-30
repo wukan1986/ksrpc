@@ -6,7 +6,7 @@
 import asyncio
 
 from examples.config import USERNAME, PASSWORD, URL_HTTP, URL_WS  # noqa
-from ksrpc.client import RpcClient
+from ksrpc.client import RpcClient, Self
 from ksrpc.connections.http import HttpConnection
 
 
@@ -58,6 +58,11 @@ globals()["greet"] = greet
         # 通过其他库绕一下，也能取到sys，除非IMPORT_RULES中 "sys": False
         collections = RpcClient('collections', conn, lazy=True)
         print(await collections._sys.path.collect_async())
+
+        # 利用Self查看源代码
+        demo = RpcClient('ksrpc.server.demo', conn, lazy=True)
+        source = await demo.__file__.open(Self, 'r', encoding='utf-8').read().collect_async()
+        print(source)
 
 
 asyncio.run(async_main())

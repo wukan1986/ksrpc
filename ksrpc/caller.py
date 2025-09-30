@@ -110,7 +110,7 @@ async def get_calls(module, calls, ref_id):
             if len(c.args) > 0 and func:
                 # 检查是否有_Self，开始替换
                 args = [replace_self(a, out) for a in c.args]
-                kwargs = {k: replace_self(v, out) for k, v in c.kwargs}
+                kwargs = {k: replace_self(v, out) for k, v in c.kwargs.items()}
                 if (c.args != args) or (c.kwargs != kwargs):
                     # 特殊转换代码，如int()功能
                     logger.info(f'{c}: {c.name}({out}...)')

@@ -8,6 +8,7 @@ import dill as pickle
 
 from ksrpc.connections import BaseConnection
 from ksrpc.utils.chunks import data_sender
+from ksrpc.utils.misc import format_number
 from ksrpc.utils.tqdm import update_progress, muted_print
 
 
@@ -28,6 +29,7 @@ async def process_response(response):
     if response.status != 200:
         raise Exception(f'{response.status}, {await response.text()}')
 
+    t1 = time.perf_counter()
     file = sys.stderr
     print(f'接收数据: [', end='', file=file)
     buffer = bytearray()
@@ -44,8 +46,8 @@ async def process_response(response):
             buf.clear()
             i += 1
             update_progress(i, print, file=file)
-
-    print(f'] 解压完成 ({size:,}/{len(buffer):,} bytes)', file=file)
+    t2 = time.perf_counter()
+    print(f'] 解压完成 ({format_number(size)}B/{format_number(len(buffer))}B) {t2 - t1:.2f}s {format_number(size / (t2 - t1))}B/s', file=file)
     rsp = pickle.loads(buffer)
     buffer.clear()
     return rsp

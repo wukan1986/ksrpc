@@ -8,6 +8,7 @@ import dill as pickle
 
 from ksrpc.connections import BaseConnection
 from ksrpc.utils.chunks import send_in_chunks
+from ksrpc.utils.misc import format_number
 from ksrpc.utils.tqdm import update_progress, muted_print
 
 
@@ -61,6 +62,7 @@ class WebSocketConnection(BaseConnection):
         async with self._lock:
             await send_in_chunks(self._ws, pickle.dumps(d), muted_print)
 
+            t1 = time.perf_counter()
             file = sys.stderr
             print(f'接收数据: [', end='', file=file)
             buffer = bytearray()
@@ -78,7 +80,8 @@ class WebSocketConnection(BaseConnection):
                         i += 1
                         update_progress(i, print, file=file)
                     elif msg.data == "EOF":
-                        print(f'] 解压完成 ({size:,}/{len(buffer):,} bytes)', file=file)
+                        t2 = time.perf_counter()
+                        print(f'] 解压完成 ({format_number(size)}B/{format_number(len(buffer))}B) {t2 - t1:.2f}s {format_number(size / (t2 - t1))}B/s', file=file)
                         rsp = pickle.loads(buffer)
                         buffer.clear()
                         return rsp

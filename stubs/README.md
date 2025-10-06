@@ -20,7 +20,19 @@ uv run stubgen -p ksrpc -o ./stubs # 全包生成
 uv run stubgen -p uuid -o ./stubs
 ```
 
-将`uuid.pyi`文件中的部分函数代码复制到`client.piy`文件的`RpcClient`类下，并添加`self`,
+将`uuid.pyi`文件中的部分函数代码复制到`client.piy`文件的`RpcClient`类下，并添加`self`，例如：
+
+```python
+class RpcClient:
+    def collect_async(self): ...
+    def generate_stub(self): ...
+    def __iter__(self): ...
+    def __aiter__(self): ...
+
+    # 以下从uuid.pyi中复制过来的，然后加了self
+    def uuid4(self): ...
+    def uuid5(self, namespace, name): ...
+```
 
 最重要一步!!!在`client.pyi`同文件夹建一个`__init__.pyi`，否则`IDE`自动补全无法生效
 
@@ -30,6 +42,18 @@ uv run stubgen -p uuid -o ./stubs
 或
 `File->Settings->Project->Project Structure`进行`Sources`设置
 
-## 服务器上无法执行`stubgen`命令
+## VSCode设置
 
-本项目提供了`generate_stub`，将输出保存。再人工调整。参考`demo_stubs.py`文件
+1. 创建 `.vscode/settings.json`文件
+2. 添加以下内容
+```json
+{
+    "python.analysis.stubPath": "stubs"
+}
+```
+
+## 如果服务器上无权限执行`stubgen`命令怎么办？
+
+本项目提供了`generate_stub`函数，可自行将输出保存。再人工调整。参考`demo_stubs.py`文件
+
+它还有一大好处是可用于探索远程模块所支持的函数

@@ -139,6 +139,10 @@ print(await demo1.__getattr__('__doc__')())  # 取的远程ksrpc.server.demo.__d
 
 更多调用方式参考[examples](https://github.com/wukan1986/ksrpc/blob/main/examples)
 
+## pyi存根文件
+
+可以查询远程所支持的函数，可以支持`IDE`自动补全，更多细节参考[stubs](https://github.com/wukan1986/ksrpc/blob/main/stubs)
+
 ## 工作原理
 
 1. 创建`Web`服务，接收请求后，调用服务器中的`Python`库，将结果二进制封装后返回

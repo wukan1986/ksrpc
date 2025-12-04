@@ -73,6 +73,7 @@ class HttpConnection(BaseConnection):
         async_to_sync(self.reset)
         if self._client:
             self._client.__exit__(exc_type, exc_val, exc_tb)
+            self._client = None
 
     async def __aenter__(self):
         """异步async with"""
@@ -84,11 +85,12 @@ class HttpConnection(BaseConnection):
         async with self._lock:
             if self._client:
                 await self._client.__aexit__(exc_type, exc_val, exc_tb)
+                self._client = None
 
     def __del__(self):
-        # 如何知道是async with还是普通创建？
         if self._client:
             async_to_sync(self._client.close)
+            self._client = None
 
     async def connect(self):
         async with self._lock:

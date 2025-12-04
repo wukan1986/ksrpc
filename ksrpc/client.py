@@ -120,7 +120,7 @@ class RpcClient:
                 # 抛出异常
                 raise data
             if ref_id != 0:
-                return RpcClient(self._module, self._connection, ref_id, rsp['calls'], None, self._lazy)
+                return RpcClient(self._module, self._connection, ref_id, rsp['calls'], None, self._lazy, self._to_sync)
             return data
         except Exception as e:
             if is_server_raise:

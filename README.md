@@ -28,7 +28,7 @@ Keep Simple RPC。免注册远程过程调用
 1. 考虑到大家只关注内网反代，所以决定用更专业的反代工具，如：`frp`等
 2. 删减功能，只留`API`调用+`Baisc`认证+`导入规则列表`
 3. 某平台中的`FastAPI`所创建的服务只要访问，`uvicorn`就崩溃，最后决定将客服端和服务端都替换成`aiohttp`
-4. `async`和`sync`的互转导致系统非常混乱，清理只留`async`。但所有不改代码的`hack`功能作废
+4. `async`和`sync`的互转导致系统非常混乱，清理只留`async`。客户端可以使用`to_sync=True`以同步方式调用
 5. pip install ksrpc>=0.6.0
 
 ## 安装
@@ -93,14 +93,14 @@ nest_asyncio.apply()
 
 
 def sync_main():
-   with HttpConnection(URL, username=USERNAME, password=PASSWORD) as conn:
-      demo = RpcClient('ksrpc.server.demo', conn, to_sync=True)
-      print(demo.test())
+    with HttpConnection(URL, username=USERNAME, password=PASSWORD) as conn:
+        demo = RpcClient('ksrpc.server.demo', conn, to_sync=True)
+        print(demo.test())
 
-   conn = WebSocketConnection(URL, username=USERNAME, password=PASSWORD)
-   demo = RpcClient('ksrpc.server.demo', conn, to_sync=True)
-   print(demo.test())
-   print(demo.test())
+    conn = WebSocketConnection(URL, username=USERNAME, password=PASSWORD)
+    demo = RpcClient('ksrpc.server.demo', conn, to_sync=True)
+    print(demo.test())
+    print(demo.test())
 
 
 sync_main()

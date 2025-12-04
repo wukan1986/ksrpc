@@ -24,7 +24,7 @@ Parent.some_method(child_obj)
 
     async with HttpConnection(URL_HTTP, username=USERNAME, password=PASSWORD) as conn:
         demo = RpcClient('ksrpc.server.demo', conn, lazy=True)
-        await demo.child_obj.some_method().collect_async()  # 输出: 这是子类重写后的方法。
+        await demo.child_obj.some_method().collect()  # 输出: 这是子类重写后的方法。
 
         builtins = RpcClient('builtins', conn, lazy=True)
 
@@ -33,10 +33,10 @@ Parent.some_method(child_obj)
 from ksrpc.server.demo import Parent, child_obj
 
 Parent.some_method(child_obj)
-        """).collect_async()
+        """).collect()
 
         # 这种写法本来不正确，现在支持了，可以查询服务器中的属性，方便传参
-        await demo.Parent.some_method(demo.child_obj).collect_async()
+        await demo.Parent.some_method(demo.child_obj).collect()
 
 
 asyncio.run(async_main())

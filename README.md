@@ -50,13 +50,14 @@ python -m ksrpc.run_app
 python -m ksrpc.run_app --config ./config.py
 ```
 
-2. 客户端
+2. 异步客户端（推荐）
 
 ```python
 import asyncio
 
 from ksrpc.client import RpcClient
-from ksrpc.connections.http import HttpConnection
+from ksrpc.connections.http import HttpConnection  # noqa
+from ksrpc.connections.websocket import WebSocketConnection  # noqa
 
 # 动态URL
 URL = 'http://127.0.0.1:8080/api/v1/{time}'
@@ -67,11 +68,42 @@ PASSWORD = 'password123'
 async def async_main():
     async with HttpConnection(URL, username=USERNAME, password=PASSWORD) as conn:
         demo = RpcClient('ksrpc.server.demo', conn)
-
         print(await demo.test())
 
 
 asyncio.run(async_main())
+```
+
+3. 同步客户端
+
+```python
+import nest_asyncio
+
+from ksrpc.client import RpcClient
+from ksrpc.connections.http import HttpConnection  # noqa
+from ksrpc.connections.websocket import WebSocketConnection  # noqa
+
+# 动态URL
+URL = 'http://127.0.0.1:8080/api/v1/{time}'
+USERNAME = 'admin'
+PASSWORD = 'password123'
+
+# 必用，否则同步模式只能调用第一次，第二次会报 RuntimeError: Event loop is closed
+nest_asyncio.apply()
+
+
+def sync_main():
+   with HttpConnection(URL, username=USERNAME, password=PASSWORD) as conn:
+      demo = RpcClient('ksrpc.server.demo', conn, to_sync=True)
+      print(demo.test())
+
+   conn = WebSocketConnection(URL, username=USERNAME, password=PASSWORD)
+   demo = RpcClient('ksrpc.server.demo', conn, to_sync=True)
+   print(demo.test())
+   print(demo.test())
+
+
+sync_main()
 ```
 
 ## 远程调用规则
@@ -82,7 +114,7 @@ RpcClient(..., lazy=False)
 await 一个模块.零到多个模块或方法或属性.一个方法或属性(参数)
 # lazy模式
 RpcClient(..., lazy=True)
-await 一个模块.零到多个模块或方法或属性.一个方法或属性(参数).一个方法或属性(参数).collect_async()
+await 一个模块.零到多个模块或方法或属性.一个方法或属性(参数).一个方法或属性(参数).collect()
 ```
 
 ### eager模式
@@ -94,9 +126,9 @@ await 一个模块.零到多个模块或方法或属性.一个方法或属性(�
 
 ### lazy模式
 
-1. 语句后接`collect_async()`就会触发远程调用
+1. 语句后接`collect()`就会触发远程调用
 2. `.`后的函数用来收集调用链，`()`用来收集参数
-3. `[]`本质同`eager`模式，但触发要等`collect_async()`
+3. `[]`本质同`eager`模式，但触发要等`collect()`
 4. 只要语句中间出现`()`或`[]`，`lazy`模式才能处理
 
 ### lazy模式特别语法
@@ -130,8 +162,8 @@ demo1 = RpcClient('ksrpc.server.demo', conn)
 demo2 = RpcClient('ksrpc.server.demo', conn, lazy=True)
 print(await demo1.__file__.__len__())  # 3. 改成远程异步版。网络中传输的是`int`
 print((await demo1.__file__()).__len__())  # 得到结果一样，但网络中传输的是`str`，然后本地算的`len()`
-print(await demo2.__file__.__len__().collect_async())  # lazy模式，collect_async()前的代码都会在服务端计算
-print(await demo2.__file__.len(Self).collect_async())  # lazy模式下的Self扩展写法
+print(await demo2.__file__.__len__().collect())  # lazy模式，collect_async()前的代码都会在服务端计算
+print(await demo2.__file__.len(Self).collect())  # lazy模式下的Self扩展写法
 
 print(demo1.__doc__)  # 取的其实是RpcClient的__doc__
 print(await demo1.__getattr__('__doc__')())  # 取的远程ksrpc.server.demo.__doc__

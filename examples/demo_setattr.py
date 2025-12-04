@@ -23,18 +23,18 @@ async def async_main():
 
     async with HttpConnection(URL_HTTP, username=USERNAME, password=PASSWORD) as conn:
         math = RpcClient('math', conn, lazy=True)
-        print(await math.pi.collect_async())  # math.pi
-        print(await math.pi.__round__(4).collect_async())  # round(math.pi, 4)
+        print(await math.pi.collect())  # math.pi
+        print(await math.pi.__round__(4).collect())  # round(math.pi, 4)
 
         demo = RpcClient('ksrpc.server.demo', conn, lazy=True)
         print(demo.__doc__)  # 取的其实是RpcClient的__doc__
-        print(await demo.__getattr__('__doc__').collect_async())  # 取的远程ksrpc.server.demo.__doc__
+        print(await demo.__getattr__('__doc__').collect())  # 取的远程ksrpc.server.demo.__doc__
 
         print(await demo.__getattr__('__setattr__')(
             'PASSWORD',
-            await demo.PASSWORD.collect_async() + 1
-        ).collect_async())  # 修改demo.PASSWORD
-        print(await demo.PASSWORD.collect_async())  # 只要server不重启就一直是新值
+            await demo.PASSWORD.collect() + 1
+        ).collect())  # 修改demo.PASSWORD
+        print(await demo.PASSWORD.collect())  # 只要server不重启就一直是新值
 
 
 asyncio.run(async_main())

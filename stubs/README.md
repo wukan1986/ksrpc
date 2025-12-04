@@ -25,12 +25,16 @@ uv run stubgen -p uuid -o ./stubs
 ```python
 class RpcClient:
     def collect_async(self): ...
+
     def generate_stub(self): ...
+
     def __iter__(self): ...
+
     def __aiter__(self): ...
 
     # 以下从uuid.pyi中复制过来的，然后加了self
     def uuid4(self): ...
+
     def uuid5(self, namespace, name): ...
 ```
 
@@ -46,14 +50,17 @@ class RpcClient:
 
 1. 创建 `.vscode/settings.json`文件
 2. 添加以下内容
+
 ```json
 {
-    "python.analysis.stubPath": "stubs"
+  "python.analysis.stubPath": "stubs"
 }
 ```
 
 ## 如果服务器上无权限执行`stubgen`命令怎么办？
 
 本项目提供了`generate_stub`函数，可自行将输出保存。再人工调整。参考`demo_stubs.py`文件
+
+服务器上安装请使用`pip install ksrpc[stub]`
 
 它还有一大好处是可用于探索远程模块所支持的函数

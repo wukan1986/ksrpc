@@ -7,6 +7,8 @@ from ksrpc.connections import BaseConnection
 
 __all__ = ['RpcClient', 'rpc_iterator', "Self"]
 
+from ksrpc.utils.async_ import async_to_sync
+
 
 # 跨python版本导致反序列化失败，所以自己定义一个
 # from typing_extensions import Self
@@ -52,6 +54,7 @@ class RpcClient:
                  calls: List[RpcCall] = [],
                  last_call: RpcCall = None,
                  lazy: bool = False,
+                 to_sync: bool = False,
                  ):
         """初始化
 
@@ -68,6 +71,8 @@ class RpcClient:
         lazy: bool
             - True - lazy: 遇到`()`不触发远程，而是到最后一步`collect_async()`。可以编写更复杂的语句
             - False - eager: 遇到`()`立即触发远程，所以`()`后的语句都是本地操作
+        to_sync: bool
+            是否同步模式调用。同步模式通常需要配合`nest_asyncio.apply()`一起使用
         """
         self._module = module
         self._connection = connection
@@ -75,6 +80,7 @@ class RpcClient:
         self._calls = calls
         self._last_call = last_call
         self._lazy = lazy
+        self._to_sync = to_sync
 
     def __del__(self):
         self._connection = None
@@ -83,7 +89,7 @@ class RpcClient:
     def __getattr__(self, name):
         # 注意：每次都生成新对象
         last_call = RpcCall(name, None, None)
-        return RpcClient(self._module, self._connection, self._ref_id, self._calls + [last_call], last_call, self._lazy)
+        return RpcClient(self._module, self._connection, self._ref_id, self._calls + [last_call], last_call, self._lazy, self._to_sync)
 
     def __call__(self, *args, **kwargs):
         self._last_call.args = args
@@ -91,7 +97,10 @@ class RpcClient:
         if self._lazy:
             return self
         else:
-            return self.___call___()
+            if self._to_sync:
+                return async_to_sync(self.___call___)
+            else:
+                return self.___call___()
 
     async def ___call___(self):
         is_server_raise = False
@@ -125,12 +134,21 @@ class RpcClient:
                 logger.warning(f'{self._module}:{self._calls}, local error, {repr(e)}')
                 raise
 
-    def collect_async(self):
+    def collect(self):
         """异步获取结果"""
-        return self.___call___()
+        if self._to_sync:
+            return async_to_sync(self.___call___)
+        else:
+            return self.___call___()
 
     def generate_stub(self):
-        """生成对应模块的存根文件"""
+        """生成对应模块的存根文件
+
+        Notes
+        -----
+        服务端需要`pip install mypy`
+
+        """
         # output_file_path没有实际用途
         return self.__getattr__("generate_stub")(module=self._module)
 
@@ -178,8 +196,7 @@ async def rpc_iterator(generator):
     Examples
     --------
     ```python
-    # 一定要抛出异常，否则
-    demo = RpcProxy('ksrpc.server.demo', conn, reraise=True)
+    demo = RpcClient('ksrpc.server.demo', conn)
 
     async for it in rpc_iterator(demo.async_counter()):
         print(it)
@@ -190,9 +207,9 @@ async def rpc_iterator(generator):
 
     """
     if isinstance(generator, RpcClient):
-        async for it in await generator.collect_async():
+        async for it in await generator.collect():
             try:
-                yield await it.collect_async()
+                yield await it.collect()
             except (StopAsyncIteration, StopIteration):
                 break
     else:

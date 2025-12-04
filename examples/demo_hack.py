@@ -17,8 +17,8 @@ async def async_main():
         print(await config.USER_CREDENTIALS())  # ksrpc.config.USER_CREDENTIALS
 
         builtins = RpcClient('builtins', conn)
-        ksrpc = await builtins.__import__('ksrpc')
-        print(ksrpc.config.USER_CREDENTIALS)  # ksrpc.config.USER_CREDENTIALS
+        # ksrpc = await builtins.__import__('ksrpc')
+        # print(ksrpc.config.USER_CREDENTIALS)  # ksrpc.config.USER_CREDENTIALS
 
         print(await builtins.globals())
         print(await builtins.locals())
@@ -48,7 +48,7 @@ globals()["greet"] = greet
 
         # 更复杂的写法要开启lazy模式
         builtins = RpcClient('builtins', conn, lazy=True)
-        print(await builtins.globals()['__name__'].collect_async())
+        print(await builtins.globals()['__name__'].collect())
 
         # 修改导入库路径
         sys = RpcClient('sys', conn)
@@ -57,16 +57,16 @@ globals()["greet"] = greet
 
         # 通过其他库绕一下，也能取到sys，除非IMPORT_RULES中 "sys": False
         collections = RpcClient('collections', conn, lazy=True)
-        print(await collections._sys.path.collect_async())
+        print(await collections._sys.path.collect())
 
         # 利用Self查看源代码
         demo = RpcClient('ksrpc.server.demo', conn, lazy=True)
-        source = await demo.__file__.open(Self, 'r', encoding='utf-8').read().collect_async()
+        source = await demo.__file__.open(Self, 'r', encoding='utf-8').read().collect()
         print(source)
 
         # 利用RpcClient远程取属性实现的查看源代码
         builtins = RpcClient('builtins', conn, lazy=True)
-        source = await builtins.open(demo.__file__, 'r', encoding='utf-8').read().collect_async()
+        source = await builtins.open(demo.__file__, 'r', encoding='utf-8').read().collect()
         print(source)
 
 

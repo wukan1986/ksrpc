@@ -4,3 +4,4 @@ loguru
 psutil
 dill>=0.3.4
 mypy
+nest_asyncio

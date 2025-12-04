@@ -7,6 +7,7 @@ import aiohttp
 import dill as pickle
 
 from ksrpc.connections import BaseConnection
+from ksrpc.utils.async_ import async_to_sync
 from ksrpc.utils.chunks import send_in_chunks
 from ksrpc.utils.misc import format_number
 from ksrpc.utils.tqdm import update_progress, muted_print
@@ -21,9 +22,17 @@ class WebSocketConnection(BaseConnection):
     def __init__(self, url, username=None, password=None):
         super().__init__(url, username, password)
         self._ws = None
+        self._client = None
         self._lock = asyncio.Lock()
         self._timeout = aiohttp.ClientTimeout(total=60)
-        self._session = aiohttp.ClientSession(auth=self._auth, timeout=self._timeout)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type=None, exc_val=None, exc_tb=None):
+        async_to_sync(self.reset)
+        if self._client:
+            self._client.__exit__(exc_type, exc_val, exc_tb)
 
     async def __aenter__(self):
         """异步async with"""
@@ -31,27 +40,37 @@ class WebSocketConnection(BaseConnection):
 
     async def __aexit__(self, exc_type=None, exc_value=None, traceback=None):
         """异步async with"""
+        await self.reset()
         async with self._lock:
             if self._ws:
                 await self._ws.__aexit__(exc_type, exc_value, traceback)
-            if self._session:
-                await self._session.__aexit__(exc_type, exc_value, traceback)
+            if self._client:
+                await self._client.__aexit__(exc_type, exc_value, traceback)
+
+    def __del__(self):
+        # 如何知道是async with还是普通创建？
+        if self._client:
+            async_to_sync(self._client.close)
 
     async def connect(self):
         async with self._lock:
             if self._ws is not None:
                 return
-            self._ws = await self._session.ws_connect(
+            if self._client is None:
+                self._client = aiohttp.ClientSession(auth=self._auth, timeout=self._timeout)
+            self._ws = await self._client.ws_connect(
                 self._url.format(time=time.time()),
                 # proxy="http://192.168.31.33:9000",
             ).__aenter__()
 
     async def reset(self):
         async with self._lock:
-            if self._ws is None:
-                return
-            await self._ws.close()
-            self._ws = None
+            if self._client:
+                await self._client.close()
+                self._client = None
+            if self._ws:
+                await self._ws.close()
+                self._ws = None
 
     async def call(self, module, calls, ref_id):
         await self.connect()

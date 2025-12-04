@@ -1,3 +1,7 @@
+"""
+服务端需要 pip install mypy
+或 pip install ksrpc[stub]
+"""
 import asyncio
 
 from examples.config import USERNAME, PASSWORD, URL_HTTP, URL_WS  # noqa
@@ -13,7 +17,7 @@ async def async_main():
         print(output)
 
         demo = RpcClient('uuid', conn, lazy=True)
-        output = await demo.generate_stub().collect_async()
+        output = await demo.generate_stub().collect()
         print(output)
         # with open("uuid.pyi", 'w') as f:
         #     f.write(output)

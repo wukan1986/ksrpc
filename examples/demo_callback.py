@@ -39,7 +39,7 @@ async def async_main():
         print(await functools.reduce(
             lambda x, y: print("这是在服务端运行的函数 lambda") or (x * y),
             numbers
-        ).collect_async())  # 支持lambda表达式
+        ).collect())  # 支持lambda表达式
 
 
 asyncio.run(async_main())

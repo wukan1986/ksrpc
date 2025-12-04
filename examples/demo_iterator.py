@@ -20,11 +20,11 @@ async def async_main():
         async for it in rpc_iterator(demo.sync_counter()):
             print(it)
 
-        gen = await demo.async_counter().collect_async()
-        print(await next(gen).collect_async())
-        print(await gen.__next__().collect_async())
+        gen = await demo.async_counter().collect()
+        print(await next(gen).collect())
+        print(await gen.__next__().collect())
         # TODO 为何__anext__要这么写？能简化吗?
-        print(await (await gen.__anext__()).collect_async())
+        print(await (await gen.__anext__()).collect())
 
     async with HttpConnection(URL_HTTP, username=USERNAME, password=PASSWORD) as conn:
         demo = RpcClient('ksrpc.server.demo', conn)

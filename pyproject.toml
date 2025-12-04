@@ -20,6 +20,11 @@ dependencies = [
     "loguru",
     "psutil",
     "dill>=0.3.4",
+    "nest_asyncio",
+]
+
+[project.optional-dependencies]
+stub = [
     "mypy",
 ]
 

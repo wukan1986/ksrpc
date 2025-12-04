@@ -7,6 +7,7 @@ import aiohttp
 import dill as pickle
 
 from ksrpc.connections import BaseConnection
+from ksrpc.utils.async_ import async_to_sync
 from ksrpc.utils.chunks import data_sender
 from ksrpc.utils.misc import format_number
 from ksrpc.utils.tqdm import update_progress, muted_print
@@ -68,7 +69,8 @@ class HttpConnection(BaseConnection):
     def __enter__(self):
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type=None, exc_val=None, exc_tb=None):
+        async_to_sync(self.reset)
         if self._client:
             self._client.__exit__(exc_type, exc_val, exc_tb)
 
@@ -78,22 +80,26 @@ class HttpConnection(BaseConnection):
 
     async def __aexit__(self, exc_type=None, exc_val=None, exc_tb=None):
         """异步async with"""
+        await self.reset()
         async with self._lock:
             if self._client:
                 await self._client.__aexit__(exc_type, exc_val, exc_tb)
 
+    def __del__(self):
+        # 如何知道是async with还是普通创建？
+        if self._client:
+            async_to_sync(self._client.close)
+
     async def connect(self):
         async with self._lock:
-            if self._client is not None:
-                return
-            self._client = aiohttp.ClientSession(auth=self._auth, timeout=self._timeout)
+            if self._client is None:
+                self._client = aiohttp.ClientSession(auth=self._auth, timeout=self._timeout)
 
     async def reset(self):
         async with self._lock:
-            if self._client is None:
-                return
-            await self._client.close()
-            self._client = None
+            if self._client:
+                await self._client.close()
+                self._client = None
 
     async def call(self, module, calls, ref_id):
         """调用函数

@@ -18,9 +18,9 @@ async def async_main():
     async with HttpConnection(URL_HTTP, username=USERNAME, password=PASSWORD) as conn:
         # gather中要换成RpcProxy
         demo = RpcClient('ksrpc.server.demo', conn, lazy=True)
-        ret = await asyncio.gather(demo.sync_say_hi("AA").collect_async(),
-                                   demo.async_say_hi("BB").collect_async(),
-                                   demo.sync_say_hi("CC").collect_async())
+        ret = await asyncio.gather(demo.sync_say_hi("AA").collect(),
+                                   demo.async_say_hi("BB").collect(),
+                                   demo.sync_say_hi("CC").collect())
         print(ret)
 
 

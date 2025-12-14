@@ -59,3 +59,19 @@
 7. 然后回到 内网服务器(B)，修改`frpc.toml`中的`serverAddr = "123.123.123.123"`和`serverPort = 45678`
 8. 启动`ksrpc_frpc.ipynb`，查看连接是否成功
 9. 修改 个人电脑(C) 编辑`demo_http.py`中地址为`127.0.0.1`,端口为`remotePort = 7001`
+
+# 除了frp，还有哪些工具可以实现内网穿透功能？
+
+## wstunnel
+
+https://github.com/erebe/wstunnel
+
+```bash
+# 公网服务器，防火墙开启7000-7001端口
+./wstunnel server ws://0.0.0.0:7000
+
+# 内网服务器
+./wstunnel client -R tcp://0.0.0.0:7001:127.0.0.1:8080 ws://公网地址:7000
+```
+
+上面所用的端口与frp完全等价，用户访问`http://公网地址:7001`即可。

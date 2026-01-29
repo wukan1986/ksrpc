@@ -1,10 +1,18 @@
+"""
+DNS SRV模式，配置方便，Lucky软件中，直接配置即可
+
+但，SRV模式，DNS缓存中记录的地址可能已经过期，需要多次获取，而302重定向没有这个问题
+
+302重定向最大的问题是webhook配置不容易
+
+"""
 from urllib.parse import urlparse
 
 import requests
 
-response = requests.get("https://www.baidu.com", allow_redirects=True)
+response = requests.get("https://www.baidu.com", allow_redirects=False)
 # 获取最终的 URL（可能经过重定向）
-final_url = response.url
+final_url = response.next.url
 parsed_url = urlparse(final_url)
 port = parsed_url.port or (443 if parsed_url.scheme == 'https' else 80)
 print(parsed_url.hostname, port)

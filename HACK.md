@@ -56,3 +56,22 @@ except:
 
 pipmain(['install', '--target', '/home/user/mylib', 'pandas'])
 ```
+
+## 完整示例
+```python
+from pip import main as pipmain
+pipmain(['install', '--target', '/home/jovyan/work/mylib', 'ksrpc', '-i', "https://mirrors.aliyun.com/pypi/simple"])
+
+
+import collections
+collections._sys.path.append('/home/jovyan/work/mylib')
+
+_os = collections._sys.modules['os']
+
+
+env = _os.environ
+env['PYTHONPATH'] = '/home/jovyan/work/mylib:$PYTHONPATH'
+
+_os.system("chmod 777 frpc")
+
+```

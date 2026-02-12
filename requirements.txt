@@ -1,4 +1,4 @@
-pandas
+pandas<3.0
 aiohttp
 loguru
 psutil

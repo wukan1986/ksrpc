@@ -1,4 +1,5 @@
-import os
+import os as _os  # noqa
+import sys as _sys  # noqa
 
 """
 TODO Web服务配置。不建议直接使用默认值
@@ -48,5 +49,5 @@ TODO 在新进程中调用开关，可以手工设置为True/False
 启动新进程会消耗一点时间，但相对网络传输大数据可以忽略不计
 获得的好处是新进程会自动退出释放内存减少崩溃，适合在云服务器中运行
 """
-CALL_IN_NEW_PROCESS = hasattr(os, 'fork')
+CALL_IN_NEW_PROCESS = hasattr(_os, 'fork')
 print(f"CALL_IN_NEW_PROCESS = {CALL_IN_NEW_PROCESS}")

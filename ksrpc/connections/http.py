@@ -2,6 +2,7 @@ import asyncio
 import sys
 import time
 import zlib
+from datetime import datetime
 
 import aiohttp
 import dill as pickle
@@ -32,7 +33,7 @@ async def process_response(response):
 
     t1 = time.perf_counter()
     file = sys.stderr
-    print(f'接收数据: [', end='', file=file)
+    print(f'{datetime.now()} 接收数据: [', end='', file=file)
     buffer = bytearray()
     buf = bytearray()
     i = -1

@@ -1,6 +1,7 @@
 # 发送端分块
 import sys
 import zlib
+from datetime import datetime
 from io import BytesIO
 
 from ksrpc.utils.misc import format_number
@@ -9,7 +10,7 @@ from ksrpc.utils.tqdm import update_progress
 
 async def data_sender(data, print, chunk_size=1024 * 128):
     file = sys.stderr
-    print(f'加载数据: ({format_number(len(data))}B) [', end='', file=file)
+    print(f'{datetime.now()} 加载数据: ({format_number(len(data))}B) [', end='', file=file)
     data = BytesIO(data)
     chunk = data.read(chunk_size)
     i = -1
@@ -29,7 +30,7 @@ async def send_in_chunks(ws, data, print, chunk_size=1024 * 128):  # 32KB
     # 64KB时，某宽发出的大数据无法zlib解压，所以改成了32KB
     # 将数据分块发送
     file = sys.stderr
-    print(f'发送数据: ({format_number(len(data))}B) [', end='', file=file)
+    print(f'{datetime.now()} 发送数据: ({format_number(len(data))}B) [', end='', file=file)
 
     j = -1
     size = 0

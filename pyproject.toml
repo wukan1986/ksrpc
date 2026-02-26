@@ -21,6 +21,7 @@ dependencies = [
     "psutil",
     "dill>=0.3.4",
     "nest_asyncio",
+    "gunicorn",
 ]
 
 [project.optional-dependencies]

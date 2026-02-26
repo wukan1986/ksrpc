@@ -6,7 +6,7 @@ import zlib
 import dill as pickle
 from aiohttp import web
 
-from ksrpc.caller import switch_call
+from ksrpc.caller import switch_call, async_call  # noqa
 from ksrpc.config import USER_CREDENTIALS, HOST, PORT, PATH_HTTP, PATH_WS
 from ksrpc.utils.chunks import send_in_chunks, data_sender
 
@@ -22,7 +22,7 @@ async def handle(request: web.Request) -> web.StreamResponse:
             buffer.extend(zlib.decompress(buf))
             buf.clear()
 
-    data = await switch_call(**pickle.loads(buffer))
+    data = await async_call(**pickle.loads(buffer))
     buffer.clear()
 
     body = pickle.dumps(data)
@@ -48,7 +48,7 @@ async def websocket_handler(request: web.Request) -> web.StreamResponse:
                 buffer.extend(zlib.decompress(buf))
                 buf.clear()
             elif msg.data == "EOF":
-                data = await switch_call(**pickle.loads(buffer))
+                data = await async_call(**pickle.loads(buffer))
                 buffer.clear()
                 await send_in_chunks(ws, pickle.dumps(data), print)
                 del data

@@ -74,4 +74,15 @@ env['PYTHONPATH'] = '/home/jovyan/work/mylib:$PYTHONPATH'
 
 _os.system("chmod 777 frpc")
 
+
+
+import sys
+
+for n, m in sys.modules.items():
+    for k in dir(m):
+        if k == 'sys':
+            print(n, k)
+
+
 ```
+

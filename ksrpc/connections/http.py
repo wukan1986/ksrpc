@@ -89,9 +89,9 @@ class HttpConnection(BaseConnection):
                 self._client = None
 
     def __del__(self):
-        if self._client:
+        if self._client and async_to_sync:
             async_to_sync(self._client.close)
-            self._client = None
+        self._client = None
 
     async def connect(self):
         async with self._lock:

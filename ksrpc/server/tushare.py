@@ -4,15 +4,12 @@ TuShare服务转发
 2. 客户端替换了pro, 服务端将请求转到pro
 
 """
+import os
 
 import tushare as ts
 
-from ..config import TUSHARE_TOKEN
-
-ts.set_token(TUSHARE_TOKEN)
-# 用完后清空，防止被客户端获取
-del TUSHARE_TOKEN
-pro = ts.pro_api()
+# set TUSHARE_TOKEN=23a25f9298a9d6849a1127b8c5f1d3b468f9d3012ed72& python -m ksrpc.run_app
+pro = ts.pro_api(token=os.getenv("TUSHARE_TOKEN", ""), timeout=30)
 
 __path__ = []
 __all__ = []

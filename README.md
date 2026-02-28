@@ -46,8 +46,9 @@ pip install ksrpc -i https://pypi.org/simple --upgrade
 ```bash
 # 直接运行
 python -m ksrpc.run_app
-# 使用配置运行
-python -m ksrpc.run_app --config ./config.py
+# 使用配置运行，注意&前不要有空格
+set CONFIG=config.py& python -m ksrpc.run_app # windows
+CONFIG=config.py python -m ksrpc.run_app # linux
 ```
 
 2. 异步客户端（推荐）

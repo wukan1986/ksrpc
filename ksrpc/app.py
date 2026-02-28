@@ -103,8 +103,8 @@ async def url_check_middleware(request, handler):
     # URL动态变化，防止重放攻击
     t1 = time.time()
     t2 = float(request.match_info.get("time", "0"))
-    if abs(t1 - t2) > 15:
-        print("HTTPForbidden:", request.url, f"|{t1}-{t2}| = |{t1 - t2}| > 15")
+    if abs(t1 - t2) > 30:
+        print("HTTPForbidden:", request.url, f"|{t1}-{t2}| = |{t1 - t2}| > 30")
         return web.HTTPForbidden()
 
     return await handler(request)

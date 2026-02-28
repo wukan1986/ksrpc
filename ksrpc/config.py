@@ -51,3 +51,4 @@ TODO 在新进程中调用开关，可以手工设置为True/False
 """
 CALL_IN_NEW_PROCESS = hasattr(_os, 'fork')
 print(f"CALL_IN_NEW_PROCESS = {CALL_IN_NEW_PROCESS}")
+print(__file__)

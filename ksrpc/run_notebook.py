@@ -93,7 +93,7 @@ if __name__ == '__main__':
     commands = {
         # "ksrpc": ["python", "-u", "-m", "ksrpc.run_app"],
         # "frpc": ["./frpc", "-c", "./frpc.toml"],
-        "ksrpc": ["uv", "run", "python", "-u", "-m", "ksrpc.run_app", "--config", r"./config.py"],
+        "ksrpc": ["uv", "run", "python", "-u", "-m", "ksrpc.run_app"],
         "ksrpc": ["python", "-u", "-m", "gunicorn", "ksrpc.run_gunicorn:web_app", "--bind", "0.0.0.0:8080", "--worker-class", "aiohttp.GunicornWebWorker"],
     }
     main(commands, idle_timeout=300, clear_count=35)

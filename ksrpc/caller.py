@@ -1,7 +1,11 @@
 import builtins
 import fnmatch
+import hashlib
 import inspect
+import pathlib
+import pickle
 import sys
+import time
 import traceback
 import types
 from concurrent.futures import ProcessPoolExecutor
@@ -11,9 +15,12 @@ from importlib import import_module
 from loguru import logger
 
 from ksrpc.client import RpcClient, _Self
-from ksrpc.config import CALL_IN_NEW_PROCESS, IMPORT_RULES
+from ksrpc.config import IMPORT_RULES, CACHE_TIMEOUT, CACHE_ENABLE
 from ksrpc.utils.async_ import async_to_sync
 
+# 需要有创建文件的权限，
+CACHE = pathlib.Path("cache")
+CACHE.mkdir(parents=True, exist_ok=True)
 
 logger.remove()
 logger.add(sys.stderr,
@@ -48,7 +55,8 @@ def import_module_allowed(module):
 
 async def get_calls(module, calls, ref_id):
     """根据模块和函数名列表，得到函数"""
-
+    # ksrpc.server.demo::async_counter 这里产生的generator，ref_id传到了RpcClient
+    # ksrpc.server.demo::async_counter.__aiter__.__anext__ 居然这里将错就错，用上了上次的对象 TODO 这里以后一定要改
     out = import_module_allowed(module)
     for c in calls:
         update = False
@@ -132,6 +140,24 @@ async def get_calls(module, calls, ref_id):
     return out
 
 
+def call_chian(module, calls):
+    """调用链条，可用与权限判断"""
+    return '.'.join([module] + [c.name for c in calls])
+
+
+def chian_timeout(chian, timeouts):
+    for pattern, timeout in timeouts.items():
+        if fnmatch.fnmatch(chian, pattern):
+            return timeout
+    return 0
+
+
+def generate_key(module, calls) -> str:
+    """生成唯一key, 用于缓存ID"""
+    pickled = pickle.dumps((module, calls))
+    return hashlib.md5(pickled).hexdigest()
+
+
 async def async_call(module, calls, ref_id):
     """简版异步API调用。没有各种额外功能"""
     # 返回的数据包
@@ -141,12 +167,23 @@ async def async_call(module, calls, ref_id):
              calls=calls,
              ref_id=0)
     try:
-        # 转成字符串，后面可能于做cache的key
-        logger.info(f'{module}:{calls}'[:300])
+        if CACHE_ENABLE:
+            # 缓存ID与超时
+            path = CACHE / generate_key(module, calls)
+            cache_timeout = chian_timeout(call_chian(module, calls), CACHE_TIMEOUT)
 
-        # ksrpc.server.demo::async_counter 这里产生的generator，ref_id传到了RpcClient
-        # ksrpc.server.demo::async_counter.__aiter__.__anext__ 居然这里将错就错，用上了上次的对象 TODO 这里以后一定要改
-        output = await get_calls(module, calls, ref_id)
+            if path.exists() and time.time() - path.stat().st_mtime < cache_timeout:
+                logger.info(f'load {module}:{calls}'[:300])
+                with path.open("rb") as f:
+                    output = pickle.load(f)
+            else:
+                logger.info(f'dump {module}:{calls}'[:300])
+                output = await get_calls(module, calls, ref_id)
+                with path.open("wb") as f:
+                    pickle.dump(output, f)
+        else:
+            logger.info(f'call {module}:{calls}'[:300])
+            output = await get_calls(module, calls, ref_id)
 
         if isinstance(output, (types.GeneratorType, types.AsyncGeneratorType)):
             # 处理生成器。需要传引用ref_id,提供给__next__使用
@@ -181,6 +218,17 @@ async def process_call(module, calls, ref_id):
 
 
 async def switch_call(module, calls, ref_id):
+    """
+    TODO 在新进程中调用开关，可以手工设置为True/False
+
+    启动新进程会消耗一点时间，但相对网络传输大数据可以忽略不计
+    获得的好处是新进程会自动退出释放内存减少崩溃，适合在云服务器中运行
+    """
+    import os
+
+    CALL_IN_NEW_PROCESS = hasattr(os, 'fork')
+    print(f"CALL_IN_NEW_PROCESS = {CALL_IN_NEW_PROCESS}")
+
     if CALL_IN_NEW_PROCESS:
         return await process_call(module, calls, ref_id)
     else:

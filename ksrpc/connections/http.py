@@ -1,4 +1,5 @@
 import asyncio
+import os
 import sys
 import time
 import zlib
@@ -12,6 +13,9 @@ from ksrpc.utils.async_ import async_to_sync
 from ksrpc.utils.chunks import data_sender
 from ksrpc.utils.misc import format_number
 from ksrpc.utils.tqdm import update_progress, muted_print
+
+# 通过环境变量PRINT=0可以屏蔽打印下载进度条
+_print = print if os.getenv("PRINT", "1") == '1' else muted_print
 
 
 async def process_response(response):
@@ -33,7 +37,7 @@ async def process_response(response):
 
     t1 = time.perf_counter()
     file = sys.stderr
-    print(f'{datetime.now()} 接收数据: [', end='', file=file)
+    _print(f'{datetime.now()} 接收数据: [', end='', file=file)
     buffer = bytearray()
     buf = bytearray()
     i = -1
@@ -47,9 +51,9 @@ async def process_response(response):
             buffer.extend(zlib.decompress(buf))
             buf.clear()
             i += 1
-            update_progress(i, print, file=file)
+            update_progress(i, _print, file=file)
     t2 = time.perf_counter()
-    print(f'] 解压完成 ({format_number(size)}B/{format_number(len(buffer))}B) {t2 - t1:.2f}s {format_number(size / (t2 - t1))}B/s', file=file)
+    _print(f'] 解压完成 ({format_number(size)}B/{format_number(len(buffer))}B) {t2 - t1:.2f}s {format_number(size / (t2 - t1))}B/s', file=file)
     rsp = pickle.loads(buffer)
     buffer.clear()
     return rsp

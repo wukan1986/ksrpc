@@ -172,6 +172,11 @@ print(await demo1.__getattr__('__doc__')())  # 取的远程ksrpc.server.demo.__d
 
 更多调用方式参考[examples](https://github.com/wukan1986/ksrpc/blob/main/examples)
 
+## 环境变量
+
+PRINT=0 屏蔽下载进度条(client/server都有效)
+CONFIG=config.py 指定配置文件路径（server端有效）
+
 ## pyi存根文件
 
 可以查询远程所支持的函数，可以支持`IDE`自动补全，更多细节参考[stubs](https://github.com/wukan1986/ksrpc/blob/main/stubs)

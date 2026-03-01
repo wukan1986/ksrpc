@@ -1,0 +1,14 @@
+name: Sync Upstream
+
+on:
+  schedule:
+    - cron: "0 22 * * *"
+  workflow_dispatch:
+
+jobs:
+  sync:
+    uses: ./.github/workflows/fork-sync.reusable.yml
+    with:
+      target_branch: main
+      upstream_repo: wukan1986/ksrpc
+      upstream_branch: main

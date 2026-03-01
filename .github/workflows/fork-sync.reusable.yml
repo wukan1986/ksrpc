@@ -1,0 +1,73 @@
+name: Reusable Sync Fork
+
+on:
+  workflow_call:
+    inputs:
+      target_branch:
+        description: Target branch in this repository
+        required: false
+        type: string
+        default: main
+      upstream_repo:
+        description: Upstream repository in owner/name format
+        required: false
+        type: string
+        default: wukan1986/ksrpc
+      upstream_branch:
+        description: Branch in upstream repository
+        required: false
+        type: string
+        default: main
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout target branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.target_branch }}
+          fetch-depth: 0
+
+      - name: Configure git user
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Configure upstream remote
+        run: |
+          if git remote get-url upstream >/dev/null 2>&1; then
+            git remote set-url upstream "https://github.com/${{ inputs.upstream_repo }}.git"
+          else
+            git remote add upstream "https://github.com/${{ inputs.upstream_repo }}.git"
+          fi
+
+      - name: Fetch upstream branch
+        run: git fetch upstream "${{ inputs.upstream_branch }}"
+
+      - name: Compare HEAD with upstream
+        id: compare
+        run: |
+          local_sha="$(git rev-parse HEAD)"
+          upstream_sha="$(git rev-parse "upstream/${{ inputs.upstream_branch }}")"
+          echo "local_sha=${local_sha}" >> "$GITHUB_OUTPUT"
+          echo "upstream_sha=${upstream_sha}" >> "$GITHUB_OUTPUT"
+
+          if [ "${local_sha}" = "${upstream_sha}" ]; then
+            echo "needs_sync=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "needs_sync=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Fast-forward and push
+        if: steps.compare.outputs.needs_sync == 'true'
+        run: |
+          git merge --ff-only "upstream/${{ inputs.upstream_branch }}"
+          git push origin "HEAD:${{ inputs.target_branch }}"
+
+      - name: Skip sync when already up to date
+        if: steps.compare.outputs.needs_sync != 'true'
+        run: echo "No sync needed."

@@ -174,7 +174,7 @@ print(await demo1.__getattr__('__doc__')())  # 取的远程ksrpc.server.demo.__d
 
 ## 环境变量
 
-PRINT=0 屏蔽下载进度条(client/server都有效)
+PRINT=0 屏蔽下载进度条(client端有效)
 CONFIG=config.py 指定配置文件路径（server端有效）
 
 ## pyi存根文件

@@ -15,12 +15,13 @@ from importlib import import_module
 from loguru import logger
 
 from ksrpc.client import RpcClient, _Self
-from ksrpc.config import IMPORT_RULES, CACHE_TIMEOUT, CACHE_ENABLE
+from ksrpc.config import IMPORT_RULES, CACHE_ENABLE, CACHE_PATH, CACHE_TIMEOUT
 from ksrpc.utils.async_ import async_to_sync
 
-# 需要有创建文件的权限，
-CACHE = pathlib.Path("cache")
-CACHE.mkdir(parents=True, exist_ok=True)
+CACHE = pathlib.Path(CACHE_PATH)
+if CACHE_ENABLE:
+    # 需要有创建文件夹的权限
+    CACHE.mkdir(parents=True, exist_ok=True)
 
 logger.remove()
 logger.add(sys.stderr,

@@ -47,8 +47,11 @@ IMPORT_RULES = {
     # "*": False,  # 全部拒绝。拒绝分步导入，如：必需直接导入`ksrpc.server.demo`
 }
 
-# 本地缓存超时功能，用户需要根据需求自己改动
+# 本地缓存超时功能，单位秒，用户需要根据需求自己改动
+# 没有提供缓存自动删除功能，你可以考虑crontab -e编辑cron任务，例如凌晨4点执行。注意使用绝对路径
+# 0 4 * * * rm -rf /path/to/cache/*
 CACHE_ENABLE = False
+CACHE_PATH = "cache"
 CACHE_TIMEOUT = {
     "ksrpc.server.tushare.daily": 30,
     "ksrpc.server.tushare.*": 60,

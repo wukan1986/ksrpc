@@ -49,6 +49,7 @@ python -m ksrpc.run_app
 # 使用配置运行，注意&前不要有空格
 set CONFIG=config.py& python -m ksrpc.run_app # windows
 CONFIG=config.py python -m ksrpc.run_app # linux
+CONFIG=config.py gunicorn ksrpc.run_gunicorn:web_app --bind 0.0.0.0:8080 --worker-class aiohttp.GunicornWebWorker # linux
 ```
 
 2. 异步客户端（推荐）

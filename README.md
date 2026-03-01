@@ -164,7 +164,7 @@ demo1 = RpcClient('ksrpc.server.demo', conn)
 demo2 = RpcClient('ksrpc.server.demo', conn, lazy=True)
 print(await demo1.__file__.__len__())  # 3. 改成远程异步版。网络中传输的是`int`
 print((await demo1.__file__()).__len__())  # 得到结果一样，但网络中传输的是`str`，然后本地算的`len()`
-print(await demo2.__file__.__len__().collect())  # lazy模式，collect_async()前的代码都会在服务端计算
+print(await demo2.__file__.__len__().collect())  # lazy模式，collect()前的代码都会在服务端计算
 print(await demo2.__file__.len(Self).collect())  # lazy模式下的Self扩展写法
 
 print(demo1.__doc__)  # 取的其实是RpcClient的__doc__
@@ -187,7 +187,7 @@ CONFIG=config.py 指定配置文件路径（server端有效）
 1. 创建`Web`服务，接收请求后，调用服务器中的`Python`库，将结果二进制封装后返回
 2. 客户端将`API`调用封装，然后向`Web`服务器请求，等待返回
 3. 返回结果解包成`Python`对象
-4. 反代时`frp`需要公网有服务器进行转发。当然你也可以使用其他组网工具，如`easytier`等
+4. 反代时`frp`需要有公网服务器(或STUN内网穿透)。当然你也可以使用其他组网工具，如`easytier`、`wstunnel`等
 
 内网反代参考[examples_frp](https://github.com/wukan1986/ksrpc/tree/main/examples_frp)
 

@@ -69,7 +69,7 @@ class RpcClient:
         calls: List[RpcCall]
             前几步的方法列表
         lazy: bool
-            - True - lazy: 遇到`()`不触发远程，而是到最后一步`collect_async()`。可以编写更复杂的语句
+            - True - lazy: 遇到`()`不触发远程，而是到最后一步`collect()`。可以编写更复杂的语句
             - False - eager: 遇到`()`立即触发远程，所以`()`后的语句都是本地操作
         to_sync: bool
             是否同步模式调用。同步模式通常需要配合`nest_asyncio.apply()`一起使用

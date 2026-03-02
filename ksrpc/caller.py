@@ -180,7 +180,7 @@ async def async_call(module, calls, ref_id):
                 diff = cache_timeout
 
             if diff < cache_timeout:
-                logger.info(f'load {diff :.0f}/{cache_timeout} {cache_key} {module}:{calls}'[:300])
+                logger.info(f'load {cache_timeout}/{diff :.0f} {cache_key} {module}:{calls}'[:300])
                 with path.open("rb") as f:
                     output = pickle.load(f)
             else:

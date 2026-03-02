@@ -1,3 +1,6 @@
+"""
+仅技术交流演示，请购买数据授权
+"""
 import nest_asyncio
 
 from ksrpc.client import RpcClient
@@ -17,4 +20,3 @@ pro = RpcClient('ksrpc.server.tushare', conn, to_sync=True)
 df = pro.daily(ts_code='000001.SZ', start_date='20180701', end_date='20180718')
 
 print(df)
-del conn

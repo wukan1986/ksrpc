@@ -8,7 +8,7 @@ import os
 
 import tushare as ts
 
-# set TUSHARE_TOKEN=23a25f9298a9d6849a1127b8c5f1d3b468f9d3012ed72& python -m ksrpc.run_app
+# set TUSHARE_TOKEN=1127b8c5f1d3b468f9d3012ed72& python -m ksrpc.run_app
 pro = ts.pro_api(token=os.getenv("TUSHARE_TOKEN", ""), timeout=30)
 
 __path__ = []

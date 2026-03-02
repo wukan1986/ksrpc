@@ -1,3 +1,6 @@
+"""
+仅技术交流演示，请购买数据授权
+"""
 import nest_asyncio
 
 from ksrpc.client import RpcClient

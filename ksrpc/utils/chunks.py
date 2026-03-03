@@ -7,6 +7,10 @@ from io import BytesIO
 from ksrpc.utils.misc import format_number
 from ksrpc.utils.tqdm import update_progress
 
+# TODO 需要防止zlib压缩后数据出现与边界同样字符串，如果修改，客服端和服务端需要保持一致
+CHUNK_BORDER: str = "\r\r\r Chunk Ver 1 \n\n\n"
+CHUNK_BORDER_BYTES = CHUNK_BORDER.encode("utf-8")
+
 
 async def data_sender(data, print, chunk_size=1024 * 128):
     file = sys.stderr
@@ -16,7 +20,7 @@ async def data_sender(data, print, chunk_size=1024 * 128):
     i = -1
     size = 0
     while chunk:
-        buf = zlib.compress(chunk)
+        buf = zlib.compress(chunk)  # + CHUNK_BORDER_BYTES
         size += len(buf)
         yield buf
         i += 1
@@ -39,7 +43,7 @@ async def send_in_chunks(ws, data, print, chunk_size=1024 * 128):  # 32KB
         buf = zlib.compress(chunk, 6)
         size += len(buf)
         await ws.send_bytes(buf)
-        await ws.send_str("\r\n")
+        await ws.send_str(CHUNK_BORDER)
         j += 1
         update_progress(j, print, file=file)
     # 会快速的显示到此处，但实际数据还在发送中，建议与客户端接收进度一起看

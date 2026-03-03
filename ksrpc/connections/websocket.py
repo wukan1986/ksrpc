@@ -10,7 +10,7 @@ import dill as pickle
 
 from ksrpc.connections import BaseConnection
 from ksrpc.utils.async_ import async_to_sync
-from ksrpc.utils.chunks import send_in_chunks
+from ksrpc.utils.chunks import send_in_chunks, CHUNK_BORDER
 from ksrpc.utils.misc import format_number
 from ksrpc.utils.tqdm import update_progress, muted_print
 
@@ -101,7 +101,7 @@ class WebSocketConnection(BaseConnection):
                 if msg.type is aiohttp.WSMsgType.BINARY:
                     buf.extend(msg.data)
                 elif msg.type == aiohttp.WSMsgType.TEXT:
-                    if msg.data == "\r\n":
+                    if msg.data == CHUNK_BORDER:
                         size += len(buf)
                         buffer.extend(zlib.decompress(buf))
                         buf.clear()

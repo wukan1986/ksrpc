@@ -10,7 +10,7 @@ import dill as pickle
 
 from ksrpc.connections import BaseConnection
 from ksrpc.utils.async_ import async_to_sync
-from ksrpc.utils.chunks import data_sender
+from ksrpc.utils.chunks import data_sender, CHUNK_BORDER_BYTES  # noqa
 from ksrpc.utils.misc import format_number
 from ksrpc.utils.tqdm import update_progress, muted_print
 
@@ -48,6 +48,10 @@ async def process_response(response):
             if len(buf) == 0:
                 continue
             size += len(buf)
+            # for b in buf.split(CHUNK_BORDER_BYTES):
+            #     if len(b) == 0:
+            #         continue
+            #     buffer.extend(zlib.decompress(b))
             buffer.extend(zlib.decompress(buf))
             buf.clear()
             i += 1

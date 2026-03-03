@@ -8,7 +8,7 @@ from aiohttp import web
 
 from ksrpc.caller import switch_call, async_call  # noqa
 from ksrpc.config import USER_CREDENTIALS, HOST, PORT, PATH_HTTP, PATH_WS
-from ksrpc.utils.chunks import send_in_chunks, data_sender
+from ksrpc.utils.chunks import send_in_chunks, data_sender, CHUNK_BORDER, CHUNK_BORDER_BYTES  # noqa
 
 
 async def handle(request: web.Request) -> web.StreamResponse:
@@ -19,6 +19,10 @@ async def handle(request: web.Request) -> web.StreamResponse:
         if end_of_http_chunk:
             if len(buf) == 0:
                 continue
+            # for b in buf.split(CHUNK_BORDER_BYTES):
+            #     if len(b) == 0:
+            #         continue
+            #     buffer.extend(zlib.decompress(b))
             buffer.extend(zlib.decompress(buf))
             buf.clear()
 
@@ -44,7 +48,7 @@ async def websocket_handler(request: web.Request) -> web.StreamResponse:
         if msg.type is web.WSMsgType.BINARY:
             buf.extend(msg.data)
         elif msg.type == web.WSMsgType.TEXT:
-            if msg.data == "\r\n":
+            if msg.data == CHUNK_BORDER:
                 buffer.extend(zlib.decompress(buf))
                 buf.clear()
             elif msg.data == "EOF":

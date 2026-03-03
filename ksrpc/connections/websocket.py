@@ -24,8 +24,9 @@ class WebSocketConnection(BaseConnection):
     2. 同一连接中，请求不能并行。如需并发要分别建立连接
     """
 
-    def __init__(self, url, username=None, password=None):
-        super().__init__(url, username, password)
+    def __init__(self, url, username=None, password=None, connector=None):
+        """可以使用ws://和wss://，但http://和https://也能兼容"""
+        super().__init__(url, username, password, connector)
         self._ws = None
         self._client = None
         self._lock = asyncio.Lock()
@@ -66,10 +67,9 @@ class WebSocketConnection(BaseConnection):
             if self._ws is not None:
                 return
             if self._client is None:
-                self._client = aiohttp.ClientSession(auth=self._auth, timeout=self._timeout)
+                self._client = aiohttp.ClientSession(auth=self._auth, timeout=self._timeout, connector=self._connector)
             self._ws = await self._client.ws_connect(
                 self._url.format(time=time.time()),
-                # proxy="http://192.168.31.33:9000",
             ).__aenter__()
 
     async def reset(self):

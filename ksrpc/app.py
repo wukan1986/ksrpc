@@ -12,19 +12,37 @@ from ksrpc.utils.chunks import send_in_chunks, data_sender, CHUNK_BORDER, CHUNK_
 
 
 async def handle(request: web.Request) -> web.StreamResponse:
+    """post请求，一次性请求，无法传大数据"""
+    buff = await request.read()
+    data = await async_call(**pickle.loads(zlib.decompress(buff)))
+
+    body = pickle.dumps(data)
+    headers = {'Content-Disposition': f"{id(request)}.pkl.chunked.zip"}
+
+    del data
+    return web.Response(body=data_sender(body, print), headers=headers)
+
+
+async def handle_chunk(request: web.Request) -> web.StreamResponse:
+    """307重定向后，chunk传输数据为空，不得不放弃"""
     buffer = bytearray()
     buf = bytearray()
     async for chunk, end_of_http_chunk in request.content.iter_chunks():
         buf.extend(chunk)
         if end_of_http_chunk:
-            if len(buf) == 0:
+            bs = buf.split(CHUNK_BORDER_BYTES)
+            # 没有出现分隔符，直接返回
+            if len(bs) == 1:
                 continue
-            # for b in buf.split(CHUNK_BORDER_BYTES):
-            #     if len(b) == 0:
-            #         continue
-            #     buffer.extend(zlib.decompress(b))
-            buffer.extend(zlib.decompress(buf))
-            buf.clear()
+
+            # 出现了分隔符
+            for j, b in enumerate(bs):
+                if j == len(bs) - 1:
+                    buf.clear()
+                    buf.extend(b)
+                    continue
+
+                buffer.extend(zlib.decompress(b))
 
     data = await async_call(**pickle.loads(buffer))
     buffer.clear()
@@ -37,8 +55,6 @@ async def handle(request: web.Request) -> web.StreamResponse:
 
 
 async def websocket_handler(request: web.Request) -> web.StreamResponse:
-    # print(request.url)
-
     ws = web.WebSocketResponse()
     await ws.prepare(request)
 
@@ -105,8 +121,8 @@ def unauthorized_response():
 @web.middleware
 async def url_check_middleware(request, handler):
     # URL动态变化，防止重放攻击
-    t1 = time.time()
-    t2 = float(request.match_info.get("time", "0"))
+    t1 = float(request.match_info.get("time", "0"))
+    t2 = time.time()
     timeout = 30  # 秒
     if abs(t1 - t2) > timeout:
         return web.HTTPForbidden(text=f"The time difference between server and client is too large, {request.url} - {t2} = |{t1 - t2:.1f}| > {timeout}")
@@ -116,10 +132,12 @@ async def url_check_middleware(request, handler):
 
 def create_app(argv):
     # uv run python -m aiohttp.web -H 0.0.0.0 -P 8080 ksrpc.run_app:sync_app
-    app = web.Application(middlewares=[
-        url_check_middleware,  # 时间检验
-        basic_auth_middleware,  # 注释此行屏蔽Baisc认证
-    ])
+    app = web.Application(
+        client_max_size=1024 ** 2 * 8,  # 8MB
+        middlewares=[
+            url_check_middleware,  # 时间检验
+            basic_auth_middleware,  # 注释此行屏蔽Baisc认证
+        ])
     app.add_routes([
         # TODO 路径按需修改，更安全
         web.post(PATH_HTTP, handle),

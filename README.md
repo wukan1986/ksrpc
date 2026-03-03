@@ -200,8 +200,14 @@ CONFIG=config.py 指定配置文件路径（server端有效）
 2. 先分`chunk`，每个`chunk`都分别使用`zlib`压缩再传输
     - 分块压缩，只能分块解压。第三方工具失效
     - 将大文件压缩耗时分拆了，速度显著提升
+3. 整体`zlib`压缩，直接传输
+    - 请求体大小有限制，无法上传大数据
 
-本项目的`HTTP`和`WebSocket`都使用了方案二，先分`chunk`后`zlib`压缩
+最开始本项目的`HTTP`和`WebSocket`都使用了方案二，先分`chunk`后`zlib`压缩，
+但使用`307`重定向后，发现`aiohttp`库对`http chunk`重定向请求支持不佳，所以`HTTP`的请求使用的是方案三，响应还是方案二
+如果要请求大数据，请使用`WebSocket`
+
+注意：请使用`307`，不要使用`302`。`302`会将`POST`转成`GET`，但本项目中设计的是`HTTP`走`POST`，`WebSocket`走`GET`
 
 ## 参考项目
 

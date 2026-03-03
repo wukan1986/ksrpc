@@ -10,7 +10,7 @@ import dill as pickle
 
 from ksrpc.connections import BaseConnection
 from ksrpc.utils.async_ import async_to_sync
-from ksrpc.utils.chunks import data_sender, CHUNK_BORDER_BYTES  # noqa
+from ksrpc.utils.chunks import data_sender, CHUNK_BORDER_BYTES, ZLIB_COMPRESS_LEVEL  # noqa
 from ksrpc.utils.misc import format_number
 from ksrpc.utils.tqdm import update_progress, muted_print
 
@@ -19,19 +19,7 @@ _print = print if os.getenv("PRINT", "1") == '1' else muted_print
 
 
 async def process_response(response):
-    """处理HTTP响应。根据不同的响应分别处理
-
-    Parameters
-    ----------
-    response: Response
-
-    Returns
-    -------
-    object
-    json
-    csv
-
-    """
+    """处理HTTP响应。根据不同的响应分别处理"""
     if response.status != 200:
         raise Exception(f'{response.status}, {await response.text()}')
 
@@ -45,15 +33,21 @@ async def process_response(response):
     async for chunk, end_of_http_chunk in response.content.iter_chunks():
         buf.extend(chunk)
         if end_of_http_chunk:
-            if len(buf) == 0:
+            bs = buf.split(CHUNK_BORDER_BYTES)
+            # 没有出现分隔符，直接返回
+            if len(bs) == 1:
                 continue
-            size += len(buf)
-            # for b in buf.split(CHUNK_BORDER_BYTES):
-            #     if len(b) == 0:
-            #         continue
-            #     buffer.extend(zlib.decompress(b))
-            buffer.extend(zlib.decompress(buf))
-            buf.clear()
+
+            # 出现了分隔符
+            for j, b in enumerate(bs):
+                if j == len(bs) - 1:
+                    buf.clear()
+                    buf.extend(b)
+                    continue
+
+                size += len(b)
+                buffer.extend(zlib.decompress(b))
+
             i += 1
             update_progress(i, _print, file=file)
     t2 = time.perf_counter()
@@ -69,8 +63,9 @@ class HttpConnection(BaseConnection):
     2. 一个请求一个连接。并发时会自动建立多个连接
     """
 
-    def __init__(self, url: str, username=None, password=None):
-        super().__init__(url, username, password)
+    def __init__(self, url: str, username=None, password=None, connector=None):
+        """可以使用http://和https://"""
+        super().__init__(url, username, password, connector)
         self._client = None
         self._lock = asyncio.Lock()
         self._timeout = aiohttp.ClientTimeout(total=60)
@@ -104,7 +99,7 @@ class HttpConnection(BaseConnection):
     async def connect(self):
         async with self._lock:
             if self._client is None:
-                self._client = aiohttp.ClientSession(auth=self._auth, timeout=self._timeout)
+                self._client = aiohttp.ClientSession(auth=self._auth, timeout=self._timeout, connector=self._connector)
 
     async def reset(self):
         async with self._lock:
@@ -132,11 +127,12 @@ class HttpConnection(BaseConnection):
         headers = {}
 
         response = await self._client.post(
-            # key服务端目前没有检查，以后可能用到
             self._url.format(time=time.time()),
-            data=data_sender(data, muted_print),
+            # 一次性压缩，在大数据时耗时长
+            data=zlib.compress(data, ZLIB_COMPRESS_LEVEL),
+            # TODO 307重定向后服务端获取的数据为0
+            # data=data_sender(data, muted_print),
             headers=headers,
-            # proxy="http://192.168.31.33:9000",
         )
 
         return await process_response(response)

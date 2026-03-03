@@ -8,9 +8,11 @@ from ksrpc.utils.misc import format_number
 from ksrpc.utils.tqdm import update_progress
 
 # TODO 需要防止zlib压缩后数据出现与边界同样字符串，如果修改，客服端和服务端需要保持一致
-CHUNK_BORDER: str = "\r\r\r Chunk Ver 1 \n\n\n"
+CHUNK_BORDER: str = "\r\r\r ChUnKeD \n\n\n"
 CHUNK_BORDER_BYTES = CHUNK_BORDER.encode("utf-8")
-CHUNK_SIZE = 1024 * 128  # 128KB
+CHUNK_SIZE: int = 1024 * 128  # 128KB
+
+ZLIB_COMPRESS_LEVEL: int = 6
 
 
 async def data_sender(data, print, chunk_size=CHUNK_SIZE):
@@ -21,7 +23,7 @@ async def data_sender(data, print, chunk_size=CHUNK_SIZE):
     i = -1
     size = 0
     while chunk:
-        buf = zlib.compress(chunk)  # + CHUNK_BORDER_BYTES
+        buf = zlib.compress(chunk, ZLIB_COMPRESS_LEVEL) + CHUNK_BORDER_BYTES
         size += len(buf)
         yield buf
         i += 1
@@ -41,7 +43,7 @@ async def send_in_chunks(ws, data, print, chunk_size=CHUNK_SIZE):
     size = 0
     for i in range(0, len(data), chunk_size):
         chunk = data[i:i + chunk_size]
-        buf = zlib.compress(chunk, 6)
+        buf = zlib.compress(chunk, ZLIB_COMPRESS_LEVEL)
         size += len(buf)
         await ws.send_bytes(buf)
         await ws.send_str(CHUNK_BORDER)

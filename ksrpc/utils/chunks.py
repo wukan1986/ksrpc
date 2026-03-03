@@ -10,9 +10,10 @@ from ksrpc.utils.tqdm import update_progress
 # TODO 需要防止zlib压缩后数据出现与边界同样字符串，如果修改，客服端和服务端需要保持一致
 CHUNK_BORDER: str = "\r\r\r Chunk Ver 1 \n\n\n"
 CHUNK_BORDER_BYTES = CHUNK_BORDER.encode("utf-8")
+CHUNK_SIZE = 1024 * 128  # 128KB
 
 
-async def data_sender(data, print, chunk_size=1024 * 128):
+async def data_sender(data, print, chunk_size=CHUNK_SIZE):
     file = sys.stderr
     print(f'{datetime.now()} 加载数据: ({format_number(len(data))}B) [', end='', file=file)
     data = BytesIO(data)
@@ -30,7 +31,7 @@ async def data_sender(data, print, chunk_size=1024 * 128):
     print(f'] 压缩完成 ({format_number(size)}B) | 底层异步发送中，请勿立即退出！', file=file)
 
 
-async def send_in_chunks(ws, data, print, chunk_size=1024 * 128):  # 32KB
+async def send_in_chunks(ws, data, print, chunk_size=CHUNK_SIZE):
     # 64KB时，某宽发出的大数据无法zlib解压，所以改成了32KB
     # 将数据分块发送
     file = sys.stderr

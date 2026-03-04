@@ -207,7 +207,29 @@ CONFIG=config.py 指定配置文件路径（server端有效）
 但使用`307`重定向后，发现`aiohttp`库对`http chunk`重定向请求支持不佳，所以`HTTP`的请求使用的是方案三，响应还是方案二
 如果要请求大数据，请使用`WebSocket`
 
-注意：请使用`307`，不要使用`302`。`302`会将`POST`转成`GET`，但本项目中设计的是`HTTP`走`POST`，`WebSocket`走`GET`
+注意：推荐请使用`307`，不要使用`302`。`302`会将`POST`转成`GET`，但本项目中设计的是`HTTP`走`POST`，`WebSocket`走`GET`
+
+## 支持IPv6
+
+支持强制设置IPv4或IPv6
+
+```python
+import socket
+
+import aiohttp
+
+from ksrpc.connections import SmartConnection  # noqa
+from ksrpc.connections.http import HttpConnection  # noqa
+from ksrpc.connections.websocket import WebSocketConnection  # noqa
+
+connector = aiohttp.TCPConnector(family=socket.AF_INET6)  # IPv6
+async with SmartConnection(URL_HTTP, username=USERNAME, password=PASSWORD, connector=connector) as conn:
+   pass
+
+connector = aiohttp.TCPConnector(family=socket.AF_INET)  # IPv4
+async with WebSocketConnection(URL_HTTP, username=USERNAME, password=PASSWORD, connector=connector) as conn:
+   pass
+```
 
 ## 参考项目
 

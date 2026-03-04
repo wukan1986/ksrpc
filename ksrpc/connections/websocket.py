@@ -74,7 +74,7 @@ class WebSocketConnection(BaseConnection):
 
             file = sys.stderr
             for resp in self._ws._response.history:
-                _print(f"{datetime.now()} {resp.status} {resp.method} {resp.url} {resp.real_url}", file=file)
+                _print(f"{datetime.now()} {resp.status} {resp.method} {resp.url} {resp.headers["Location"]}", file=file)
 
     async def reset(self):
         async with self._lock:

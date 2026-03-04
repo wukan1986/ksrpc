@@ -66,9 +66,9 @@ class HttpConnection(BaseConnection):
     2. 一个请求一个连接。并发时会自动建立多个连接
     """
 
-    def __init__(self, url: str, username=None, password=None, connector=None):
+    def __init__(self, url: str, username=None, password=None, connector=None, proxy=None, proxy_auth=None):
         """可以使用http://和https://"""
-        super().__init__(url, username, password, connector)
+        super().__init__(url, username, password, connector, proxy, proxy_auth)
         self._client = None
         self._lock = asyncio.Lock()
         self._timeout = aiohttp.ClientTimeout(total=60)
@@ -102,7 +102,9 @@ class HttpConnection(BaseConnection):
     async def connect(self):
         async with self._lock:
             if self._client is None:
-                self._client = aiohttp.ClientSession(auth=self._auth, timeout=self._timeout, connector=self._connector)
+                self._client = aiohttp.ClientSession(auth=self._auth, timeout=self._timeout,
+                                                     connector=self._connector,
+                                                     proxy=self._proxy, proxy_auth=self._proxy_auth)
 
     async def reset(self):
         async with self._lock:

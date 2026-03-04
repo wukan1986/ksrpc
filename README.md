@@ -224,11 +224,24 @@ from ksrpc.connections.websocket import WebSocketConnection  # noqa
 
 connector = aiohttp.TCPConnector(family=socket.AF_INET6)  # IPv6
 async with SmartConnection(URL_HTTP, username=USERNAME, password=PASSWORD, connector=connector) as conn:
-   pass
+    pass
 
 connector = aiohttp.TCPConnector(family=socket.AF_INET)  # IPv4
 async with WebSocketConnection(URL_HTTP, username=USERNAME, password=PASSWORD, connector=connector) as conn:
-   pass
+    pass
+```
+
+## 支持代理
+
+```python
+import aiohttp
+
+from ksrpc.connections.http import HttpConnection  # noqa
+
+proxy = "http://127.0.0.1:10808"
+proxy_auth = aiohttp.BasicAuth('user', 'pass')
+async with HttpConnection(URL_HTTP, username=USERNAME, password=PASSWORD, proxy=proxy, proxy_auth=None) as conn:
+    pass
 ```
 
 ## 参考项目

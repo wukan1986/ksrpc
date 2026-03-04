@@ -4,9 +4,9 @@ from ksrpc.client import RpcClient
 from ksrpc.connections.http import HttpConnection  # noqa
 from ksrpc.connections.websocket import WebSocketConnection  # noqa
 
-URL_HTTP = 'http://100.100.100.100:7001/api/v1/{time}'
-URL_HTTP = 'http://frp.freefrp.net:7001/api/v1/{time}'
-URL_HTTP = 'http://us.afrp.net:7001/api/v1/{time}'
+URL = 'http://100.100.100.100:7001/api/v1'
+URL = 'http://frp.freefrp.net:7001/api/v1'
+URL = 'http://us.afrp.net:7001/api/v1'
 
 USERNAME = 'admin'
 PASSWORD = 'password123'
@@ -16,7 +16,7 @@ nest_asyncio.apply()
 
 
 def async_main():
-    with HttpConnection(URL_HTTP, username=USERNAME, password=PASSWORD) as conn:
+    with HttpConnection(URL, username=USERNAME, password=PASSWORD) as conn:
         api = RpcClient('jqresearch.api', conn, to_sync=True)
         output = api.generate_stub()
         print(output)

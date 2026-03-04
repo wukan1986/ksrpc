@@ -9,10 +9,7 @@ PORT = 8080
 # IPv6 & IPv4 http://localhost:8080/
 HOST = "[::]"  # IPv6 http://[::1]:8080/
 HOST = "0.0.0.0"  # IPv4 http://127.0.0.1:8080/
-
-# HTTP与WebSocket地址可以相同也可以不同。设置成一样可以减少用户困惑
-PATH_HTTP = "/api/v1/{time}"  # HTTP服务向外提供路径。{time}表示时间动态URL，与服务器误差15秒内才能访问
-PATH_WS = "/api/v1/{time}"  # WebSocket服务向外提供路径。{time}表示时间动态URL，与服务器误差15秒内才能访问
+PATH = "/api/v1"  # 服务向外提供路径。建议使用不常用的地址
 
 """
 TODO Basic认证。一定不要使用默认值

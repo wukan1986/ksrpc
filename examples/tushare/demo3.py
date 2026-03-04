@@ -6,7 +6,7 @@ import nest_asyncio
 from ksrpc.client import RpcClient
 from ksrpc.connections.http import HttpConnection
 
-URL_HTTP = 'http://127.0.0.1:8080/api/v1/{time}'
+URL_HTTP = 'http://127.0.0.1:8080/api/v1/'
 
 USERNAME = 'admin'
 PASSWORD = 'password123'

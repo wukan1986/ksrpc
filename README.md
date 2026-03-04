@@ -62,7 +62,7 @@ from ksrpc.connections.http import HttpConnection  # noqa
 from ksrpc.connections.websocket import WebSocketConnection  # noqa
 
 # 动态URL
-URL = 'http://127.0.0.1:8080/api/v1/{time}'
+URL = 'http://127.0.0.1:8080/api/v1'
 USERNAME = 'admin'
 PASSWORD = 'password123'
 
@@ -86,7 +86,7 @@ from ksrpc.connections.http import HttpConnection  # noqa
 from ksrpc.connections.websocket import WebSocketConnection  # noqa
 
 # 动态URL
-URL = 'http://127.0.0.1:8080/api/v1/{time}'
+URL = 'http://127.0.0.1:8080/api/v1'
 USERNAME = 'admin'
 PASSWORD = 'password123'
 
@@ -223,11 +223,11 @@ from ksrpc.connections.http import HttpConnection  # noqa
 from ksrpc.connections.websocket import WebSocketConnection  # noqa
 
 connector = aiohttp.TCPConnector(family=socket.AF_INET6)  # IPv6
-async with SmartConnection(URL_HTTP, username=USERNAME, password=PASSWORD, connector=connector) as conn:
+async with SmartConnection(URL, username=USERNAME, password=PASSWORD, connector=connector) as conn:
     pass
 
 connector = aiohttp.TCPConnector(family=socket.AF_INET)  # IPv4
-async with WebSocketConnection(URL_HTTP, username=USERNAME, password=PASSWORD, connector=connector) as conn:
+async with WebSocketConnection(URL, username=USERNAME, password=PASSWORD, connector=connector) as conn:
     pass
 ```
 
@@ -240,7 +240,7 @@ from ksrpc.connections.http import HttpConnection  # noqa
 
 proxy = "http://127.0.0.1:10808"
 proxy_auth = aiohttp.BasicAuth('user', 'pass')
-async with HttpConnection(URL_HTTP, username=USERNAME, password=PASSWORD, proxy=proxy, proxy_auth=None) as conn:
+async with HttpConnection(URL, username=USERNAME, password=PASSWORD, proxy=proxy, proxy_auth=None) as conn:
     pass
 ```
 

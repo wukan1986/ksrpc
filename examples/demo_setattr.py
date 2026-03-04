@@ -1,12 +1,12 @@
 import asyncio
 
-from examples.config import USERNAME, PASSWORD, URL_HTTP, URL_WS  # noqa
+from examples.config import USERNAME, PASSWORD, URL  # noqa
 from ksrpc.client import RpcClient
 from ksrpc.connections.http import HttpConnection
 
 
 async def async_main():
-    async with HttpConnection(URL_HTTP, username=USERNAME, password=PASSWORD) as conn:
+    async with HttpConnection(URL, username=USERNAME, password=PASSWORD) as conn:
         math = RpcClient('math', conn)
         print(await math.pi())  # math.pi
         print(await math.pi.__round__(4))  # round(math.pi, 4)
@@ -21,7 +21,7 @@ async def async_main():
         ))  # 修改demo.PASSWORD
         print(await demo.PASSWORD())  # 只要server不重启就一直是新值
 
-    async with HttpConnection(URL_HTTP, username=USERNAME, password=PASSWORD) as conn:
+    async with HttpConnection(URL, username=USERNAME, password=PASSWORD) as conn:
         math = RpcClient('math', conn, lazy=True)
         print(await math.pi.collect())  # math.pi
         print(await math.pi.__round__(4).collect())  # round(math.pi, 4)

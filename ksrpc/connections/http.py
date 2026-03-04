@@ -24,8 +24,8 @@ async def process_response(response):
         raise Exception(f'{response.status}, {await response.text()}')
 
     file = sys.stderr
-    for resp in response.history:
-        _print(f"{datetime.now()} {resp.status} {resp.method} {resp.url} {resp.headers["Location"]}", file=file)
+    # for resp in response.history:
+    #     _print(f"{datetime.now()} {resp.status} {resp.method} {resp.url} {resp.headers["Location"]}", file=file)
 
     t1 = time.perf_counter()
     _print(f'{datetime.now()} 接收数据: [', end='', file=file)
@@ -129,15 +129,32 @@ class HttpConnection(BaseConnection):
         d = dict(module=module, calls=calls, ref_id=ref_id)
 
         data = pickle.dumps(d)
-        headers = {}
+        headers = {"X-Timestamp": str(time.time())}
+        url = self._url.rstrip('/')
+        if len(data) < 1024 * 128:
+            # 小数据包，重定向也没关系
+            response = await self._client.post(
+                f"{url}/http",
+                # 一次性压缩，在大数据时耗时长
+                data=zlib.compress(data, ZLIB_COMPRESS_LEVEL),
+                headers=headers,
+            )
+        else:
+            # 大数据包，为防止数据被传两份，所以先获取重定向地址
+            response = await self._client.post(f"{url}/redirect", headers=headers)
+            if response.status == 200:
+                url = str(response.url).rstrip("/redirect")
 
-        response = await self._client.post(
-            self._url.format(time=time.time()),
-            # 一次性压缩，在大数据时耗时长
-            data=zlib.compress(data, ZLIB_COMPRESS_LEVEL),
-            # TODO 307重定向后服务端获取的数据为0
-            # data=data_sender(data, muted_print),
-            headers=headers,
-        )
+                file = sys.stderr
+                for resp in response.history:
+                    _print(f"{datetime.now()} {resp.status} {resp.method} {resp.url} {resp.headers["Location"]}", file=file)
+
+                # 用新地址请求
+                response = await self._client.post(
+                    f"{url}/chunk",
+                    data=data_sender(data, muted_print),
+                    headers=headers,
+                    allow_redirects=False,
+                )
 
         return await process_response(response)

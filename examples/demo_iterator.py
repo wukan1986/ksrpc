@@ -3,13 +3,13 @@
 """
 import asyncio
 
-from examples.config import USERNAME, PASSWORD, URL_HTTP, URL_WS  # noqa
+from examples.config import USERNAME, PASSWORD, URL  # noqa
 from ksrpc.client import RpcClient, rpc_iterator
 from ksrpc.connections.http import HttpConnection
 
 
 async def async_main():
-    async with HttpConnection(URL_HTTP, username=USERNAME, password=PASSWORD) as conn:
+    async with HttpConnection(URL, username=USERNAME, password=PASSWORD) as conn:
         demo = RpcClient('ksrpc.server.demo', conn, lazy=True)
 
         # 以异步方法调用远程的异步迭代函数
@@ -26,7 +26,7 @@ async def async_main():
         # TODO 为何__anext__要这么写？能简化吗?
         print(await (await gen.__anext__()).collect())
 
-    async with HttpConnection(URL_HTTP, username=USERNAME, password=PASSWORD) as conn:
+    async with HttpConnection(URL, username=USERNAME, password=PASSWORD) as conn:
         demo = RpcClient('ksrpc.server.demo', conn)
 
         # 以异步方法调用远程的异步迭代函数

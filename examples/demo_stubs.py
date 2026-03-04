@@ -4,14 +4,14 @@
 """
 import asyncio
 
-from examples.config import USERNAME, PASSWORD, URL_HTTP, URL_WS  # noqa
+from examples.config import USERNAME, PASSWORD, URL  # noqa
 from ksrpc.client import RpcClient
 from ksrpc.connections.http import HttpConnection
 
 
 async def async_main():
     # 注意：生成的代码需要再人工调整一下
-    async with HttpConnection(URL_HTTP, username=USERNAME, password=PASSWORD) as conn:
+    async with HttpConnection(URL, username=USERNAME, password=PASSWORD) as conn:
         demo = RpcClient('ksrpc', conn)
         output = await demo.generate_stub()
         print(output)

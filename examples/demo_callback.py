@@ -6,13 +6,13 @@
 """
 import asyncio
 
-from examples.config import USERNAME, PASSWORD, URL_HTTP, URL_WS  # noqa
+from examples.config import USERNAME, PASSWORD, URL  # noqa
 from ksrpc.client import RpcClient
 from ksrpc.connections.http import HttpConnection
 
 
 async def async_main():
-    async with HttpConnection(URL_HTTP, username=USERNAME, password=PASSWORD) as conn:
+    async with HttpConnection(URL, username=USERNAME, password=PASSWORD) as conn:
         numbers = [1, 2, 3, 4, 5]
         fruits = ['apple', 'banana', 'cherry', 'date', 'elderberry']
 

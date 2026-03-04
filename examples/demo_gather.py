@@ -1,13 +1,13 @@
 import asyncio
 
-from examples.config import USERNAME, PASSWORD, URL_HTTP, URL_WS  # noqa
+from examples.config import USERNAME, PASSWORD, URL  # noqa
 from ksrpc.client import RpcClient
 from ksrpc.connections.http import HttpConnection
 from ksrpc.connections.websocket import WebSocketConnection
 
 
 async def async_main():
-    async with WebSocketConnection(URL_WS, username=USERNAME, password=PASSWORD) as conn:
+    async with WebSocketConnection(URL, username=USERNAME, password=PASSWORD) as conn:
         # gather中要换成RpcProxy
         demo = RpcClient('ksrpc.server.demo', conn)
         ret = await asyncio.gather(demo.sync_say_hi("AA"),
@@ -15,7 +15,7 @@ async def async_main():
                                    demo.sync_say_hi("CC"))
         print(ret)
 
-    async with HttpConnection(URL_HTTP, username=USERNAME, password=PASSWORD) as conn:
+    async with HttpConnection(URL, username=USERNAME, password=PASSWORD) as conn:
         # gather中要换成RpcProxy
         demo = RpcClient('ksrpc.server.demo', conn, lazy=True)
         ret = await asyncio.gather(demo.sync_say_hi("AA").collect(),

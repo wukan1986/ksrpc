@@ -5,13 +5,13 @@
 """
 import asyncio
 
-from examples.config import USERNAME, PASSWORD, URL_HTTP, URL_WS  # noqa
+from examples.config import USERNAME, PASSWORD, URL  # noqa
 from ksrpc.client import RpcClient, Self
 from ksrpc.connections.http import HttpConnection
 
 
 async def async_main():
-    async with HttpConnection(URL_HTTP, username=USERNAME, password=PASSWORD) as conn:
+    async with HttpConnection(URL, username=USERNAME, password=PASSWORD) as conn:
         # 提醒：账号只给可信用户，最好只在docker中部署
         config = RpcClient('ksrpc.config', conn)
         print(await config.USER_CREDENTIALS())  # ksrpc.config.USER_CREDENTIALS

@@ -1,12 +1,15 @@
 import asyncio
 
-from examples.config import USERNAME, PASSWORD, URL_HTTP, URL_WS  # noqa
+from examples.config import USERNAME, PASSWORD, URL  # noqa
 from ksrpc.client import RpcClient, Self
 from ksrpc.connections.http import HttpConnection
 
 
 async def async_main():
-    async with HttpConnection(URL_HTTP, username=USERNAME, password=PASSWORD) as conn:
+    async with HttpConnection(URL, username=USERNAME, password=PASSWORD) as conn:
+        k = RpcClient('ksrpc', conn, lazy=True)
+        print(await k.__version__.collect())
+
         # 同时存在demo属性和demo模块
         server = RpcClient('ksrpc.server', conn, lazy=True)
         print(await server.demo.collect())  # 取到是属性

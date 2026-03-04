@@ -70,9 +70,9 @@ class WebSocketConnection(BaseConnection):
                 self._client = aiohttp.ClientSession(auth=self._auth, timeout=self._timeout,
                                                      connector=self._connector,
                                                      proxy=self._proxy, proxy_auth=self._proxy_auth)
-            self._ws = await self._client.ws_connect(
-                self._url.format(time=time.time()),
-            ).__aenter__()
+            headers = {"X-Timestamp": str(time.time())}
+            url = self._url.rstrip('/')
+            self._ws = await self._client.ws_connect(f"{url}/ws", headers=headers).__aenter__()
 
             file = sys.stderr
             for resp in self._ws._response.history:

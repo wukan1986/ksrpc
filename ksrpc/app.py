@@ -7,11 +7,16 @@ import dill as pickle
 from aiohttp import web
 
 from ksrpc.caller import switch_call, async_call  # noqa
-from ksrpc.config import USER_CREDENTIALS, HOST, PORT, PATH_HTTP, PATH_WS
+from ksrpc.config import USER_CREDENTIALS, HOST, PORT, PATH
 from ksrpc.utils.chunks import send_in_chunks, data_sender, CHUNK_BORDER, CHUNK_BORDER_BYTES  # noqa
 
 
-async def handle(request: web.Request) -> web.StreamResponse:
+async def handle_redirect(request: web.Request) -> web.StreamResponse:
+    """只是用于重定向"""
+    return web.HTTPOk()
+
+
+async def handle_http(request: web.Request) -> web.StreamResponse:
     """post请求，一次性请求，无法传大数据"""
     buff = await request.read()
     data = await async_call(**pickle.loads(zlib.decompress(buff)))
@@ -119,13 +124,13 @@ def unauthorized_response():
 
 
 @web.middleware
-async def url_check_middleware(request, handler):
+async def timestamp_middleware(request, handler):
     # URL动态变化，防止重放攻击
-    t1 = float(request.match_info.get("time", "0"))
+    t1 = float(request.headers.get('X-Timestamp', "0"))
     t2 = time.time()
     timeout = 30  # 秒
     if abs(t1 - t2) > timeout:
-        return web.HTTPForbidden(text=f"The time difference between server and client is too large, {request.url} - {t2} = |{t1 - t2:.1f}| > {timeout}")
+        return web.HTTPForbidden(text=f"The time difference between server and client is too large, {t1} - {t2} = |{t1 - t2:.1f}| > {timeout}")
 
     return await handler(request)
 
@@ -133,15 +138,17 @@ async def url_check_middleware(request, handler):
 def create_app(argv):
     # uv run python -m aiohttp.web -H 0.0.0.0 -P 8080 ksrpc.run_app:sync_app
     app = web.Application(
-        client_max_size=1024 ** 2 * 8,  # 8MB
         middlewares=[
-            url_check_middleware,  # 时间检验
+            timestamp_middleware,  # 时间检验
             basic_auth_middleware,  # 注释此行屏蔽Baisc认证
         ])
+
+    path = PATH.rstrip('/')
     app.add_routes([
-        # TODO 路径按需修改，更安全
-        web.post(PATH_HTTP, handle),
-        web.get(PATH_WS, websocket_handler),
+        web.post(f"{path}/redirect", handle_redirect),
+        web.post(f"{path}/http", handle_http),
+        web.post(f"{path}/chunk", handle_chunk),
+        web.get(f"{path}/ws", websocket_handler),
     ])
     return app
 

@@ -72,6 +72,10 @@ class WebSocketConnection(BaseConnection):
                 self._url.format(time=time.time()),
             ).__aenter__()
 
+            file = sys.stderr
+            for resp in self._ws._response.history:
+                _print(f"{datetime.now()} {resp.status} {resp.method} {resp.url} {resp.real_url}", file=file)
+
     async def reset(self):
         async with self._lock:
             if self._client:
@@ -90,8 +94,9 @@ class WebSocketConnection(BaseConnection):
         async with self._lock:
             await send_in_chunks(self._ws, pickle.dumps(d), muted_print)
 
-            t1 = time.perf_counter()
             file = sys.stderr
+
+            t1 = time.perf_counter()
             _print(f'{datetime.now()} 接收数据: [', end='', file=file)
             buffer = bytearray()
             buf = bytearray()

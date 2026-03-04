@@ -18,17 +18,17 @@ class BaseConnection:
 
 
 class SmartConnection:
-    def __new__(cls, url: str, *args, **kwargs):
+    def __new__(cls, url: str, username: str = None, password: str = None, connector=None):
         """根据协议，智能选择连接类型"""
         protocol = url.split("://")[0]
 
         if protocol.startswith(("ws", "wss")):
             from ksrpc.connections.websocket import WebSocketConnection
-            return WebSocketConnection(url, *args, **kwargs)
+            return WebSocketConnection(url, username, password, connector)
         elif protocol.startswith(("http", "https")):
             from ksrpc.connections.http import HttpConnection
-            return HttpConnection(url, *args, **kwargs)
+            return HttpConnection(url, username, password, connector)
         else:
             # TODO 无法识别的也先放这
             from ksrpc.connections.http import HttpConnection
-            return HttpConnection(url, *args, **kwargs)
+            return HttpConnection(url, username, password, connector)

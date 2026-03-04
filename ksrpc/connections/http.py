@@ -23,8 +23,11 @@ async def process_response(response):
     if response.status != 200:
         raise Exception(f'{response.status}, {await response.text()}')
 
-    t1 = time.perf_counter()
     file = sys.stderr
+    for resp in response.history:
+        _print(f"{datetime.now()} {resp.status} {resp.method} {resp.url} {resp.real_url}", file=file)
+
+    t1 = time.perf_counter()
     _print(f'{datetime.now()} 接收数据: [', end='', file=file)
     buffer = bytearray()
     buf = bytearray()

@@ -112,6 +112,16 @@ class HttpConnection(BaseConnection):
                 await self._client.close()
                 self._client = None
 
+    def response_update_url(self, response, key):
+        if response.status == 200:
+            url = str(response.url).rstrip(key)
+            self.data.set("url", url)
+        else:
+            self.data.set("url", None)
+        file = sys.stderr
+        for resp in response.history:
+            _print(f"{datetime.now()} {resp.status} {resp.method} {resp.url} {resp.headers["Location"]}", file=file)
+
     async def call(self, module, calls, ref_id):
         """调用函数
 
@@ -130,31 +140,33 @@ class HttpConnection(BaseConnection):
 
         data = pickle.dumps(d)
         headers = {"X-Timestamp": str(time.time())}
-        url = self._url.rstrip('/')
-        if len(data) < 1024 * 128:
-            # 小数据包，重定向也没关系
+
+        url = self.data.get("url")
+        # 小数据包，重定向也没关系,传整体
+        if url is None and len(data) < 1024 * 128:
+            url = self._url.rstrip('/')
             response = await self._client.post(
                 f"{url}/http",
                 # 一次性压缩，在大数据时耗时长
                 data=zlib.compress(data, ZLIB_COMPRESS_LEVEL),
                 headers=headers,
             )
-        else:
-            # 大数据包，为防止数据被传两份，所以先获取重定向地址
+            self.response_update_url(response, "/http")
+            return await process_response(response)
+
+        # 大数据包，为防止数据被传两份，所以先获取重定向地址
+        if url is None:
+            url = self._url.rstrip('/')
             response = await self._client.post(f"{url}/redirect", headers=headers)
-            if response.status == 200:
-                url = str(response.url).rstrip("/redirect")
+            self.response_update_url(response, "/redirect")
 
-                file = sys.stderr
-                for resp in response.history:
-                    _print(f"{datetime.now()} {resp.status} {resp.method} {resp.url} {resp.headers["Location"]}", file=file)
-
-                # 用新地址请求
-                response = await self._client.post(
-                    f"{url}/chunk",
-                    data=data_sender(data, muted_print),
-                    headers=headers,
-                    allow_redirects=False,
-                )
+        # 用新地址请求
+        response = await self._client.post(
+            f"{url}/chunk",
+            data=data_sender(data, muted_print),
+            headers=headers,
+            allow_redirects=False,
+        )
+        self.response_update_url(response, "/chunk")
 
         return await process_response(response)

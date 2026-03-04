@@ -32,3 +32,37 @@ def format_number(speed_bps, units=['', 'K', 'M', 'G']):
     # 构建结果字符串
     result = f"{formatted_speed}{units[index]}"
     return result
+
+
+import time
+
+
+class ExpirableProperty:
+    """可过期的属性"""
+
+    def __init__(self, timeout=60):
+        self.timeout = timeout
+        self._data = {}
+
+    def set(self, name, value):
+        """设置属性"""
+        self._data[name] = {
+            'value': value,
+            'expire_at': time.time() + self.timeout
+        }
+
+    def get(self, name, default=None):
+        """获取属性，如果过期返回默认值"""
+        if name in self._data:
+            item = self._data[name]
+            if time.time() <= item['expire_at']:
+                return item['value']
+            else:
+                del self._data[name]
+        return default
+
+    def __call__(self, timeout=None):
+        """作为装饰器使用"""
+        if timeout is not None:
+            self.timeout = timeout
+        return self

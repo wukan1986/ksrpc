@@ -1,5 +1,7 @@
 import aiohttp
 
+from ksrpc.utils.misc import ExpirableProperty
+
 
 class BaseConnection:
     def __init__(self, url: str, username: str = None, password: str = None, connector=None, proxy=None, proxy_auth=None):
@@ -7,10 +9,13 @@ class BaseConnection:
         self._connector = connector
         self._proxy = proxy
         self._proxy_auth = proxy_auth
-        if username and password:
-            self._auth = aiohttp.BasicAuth(login=username, password=password, encoding="utf-8")
-        else:
-            self._auth = None
+        self._auth = aiohttp.BasicAuth(login=username, password=password, encoding="utf-8") if username and password else None
+        # 变量超时, 目前缓存的是重定向后的url
+        self._expirable = ExpirableProperty(timeout=300)
+
+    @property
+    def data(self):
+        return self._expirable
 
     async def reset(self):
         ...

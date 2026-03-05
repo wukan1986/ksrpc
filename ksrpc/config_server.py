@@ -6,9 +6,9 @@ TODO Web服务配置。不建议直接使用默认值
 """
 # run_app时有效，gunicorn时看--bind
 PORT = 8080
-# IPv6 & IPv4 http://localhost:8080/
 HOST = "[::]"  # IPv6 http://[::1]:8080/
 HOST = "0.0.0.0"  # IPv4 http://127.0.0.1:8080/
+HOST = None  # IPv6 & IPv4 http://localhost:8080/
 PATH = "/api/v1"  # 服务向外提供路径。建议使用不常用的地址
 
 """
@@ -19,6 +19,13 @@ USER_CREDENTIALS = {
     "admin": "password123",
     "user": "secret",
 }
+
+"""
+检查客户端和服务端时间差，单位秒
+太大容易重放攻击，太小请求没传输完就超时了
+小于等于0表示不检查
+"""
+TIMESTAMP_CHECK = 30
 
 """
 TODO 导入规则。按顺序检查规则，遇到匹配直接返回

@@ -9,7 +9,7 @@ import dill as pickle
 from aiohttp import web
 
 from ksrpc.config_client import PRINT_PROGRESS, HTTP_ALLOW_REDIRECTS
-from ksrpc.connections import BaseConnection
+from ksrpc.connections import BaseConnection, make_headers
 from ksrpc.utils.chunks import data_sender, CHUNK_BORDER_BYTES, ZLIB_COMPRESS_LEVEL  # noqa
 from ksrpc.utils.misc import format_number
 from ksrpc.utils.tqdm import update_progress, muted_print
@@ -19,9 +19,6 @@ _print = print if PRINT_PROGRESS > 0 else muted_print
 
 async def process_response(response):
     """处理HTTP响应。根据不同的响应分别处理"""
-    if response.status != 200:
-        raise Exception(f'{response.status}, {await response.text()}, {response.url}')
-
     file = sys.stderr
     # for resp in response.history:
     #     _print(f"{datetime.now()} {resp.status} {resp.method} {resp.url} {resp.headers["Location"]}", file=file)
@@ -111,7 +108,7 @@ class HttpConnection(BaseConnection):
                 await self._client.close()
                 self._client = None
 
-    def response_update_url(self, response, key: str) -> str:
+    async def response_update_url(self, response, key: str) -> str:
         if response.status == 200:
             url = str(response.url)
             for resp in response.history:
@@ -121,6 +118,7 @@ class HttpConnection(BaseConnection):
             print(f"{datetime.now()} {response.status} {response.method} {response.url} {response.headers["Location"]}", file=sys.stderr)
         else:
             url = None
+            raise Exception(f'{response.status}, {await response.text()}, {response.url}')
 
         if url:
             url = url.rstrip(key)
@@ -165,9 +163,8 @@ class HttpConnection(BaseConnection):
                 url = self._url.rstrip('/')
                 # allow_redirects=True支持多层跳转
                 # allow_redirects=False支持一层跳转，速度更快
-                headers = {"X-Timestamp": str(time.time())}
-                response = await self._client.post(f"{url}/redirect", headers=headers, allow_redirects=HTTP_ALLOW_REDIRECTS >= 2)
-                url = self.response_update_url(response, "/redirect")
+                response = await self._client.post(f"{url}/redirect", headers=make_headers(), allow_redirects=HTTP_ALLOW_REDIRECTS >= 2)
+                url = await self.response_update_url(response, "/redirect")
             else:
                 # print("获取了历史URL", url)
                 pass
@@ -178,14 +175,13 @@ class HttpConnection(BaseConnection):
 
         # 用新地址请求
         if url:
-            headers = {"X-Timestamp": str(time.time())}
             response = await self._client.post(
                 f"{url}/chunk",
                 data=data_sender(data, muted_print),
-                headers=headers,
+                headers=make_headers(),
                 allow_redirects=False,
             )
-            self.response_update_url(response, "/chunk")
+            await self.response_update_url(response, "/chunk")
 
             return await process_response(response)
         else:

@@ -1,4 +1,5 @@
 import os
+import time
 from urllib.parse import unquote
 
 import aiohttp
@@ -11,6 +12,13 @@ from ksrpc.utils.misc import ExpirableProperty
 config = os.getenv("CONFIG_CLIENT", "")
 if config:
     import_module_from_path("ksrpc.config_client", config)
+
+
+def make_headers():
+    # TODO 测试大并发时会不会出现时间检查超时问题
+    # TypeError: multidict cannot convert sequence element #0 to a sequence
+    # yield {"X-Timestamp": str(time.time())}
+    return {"X-Timestamp": str(time.time())}
 
 
 class BaseConnection:

@@ -16,7 +16,7 @@ if config:
     import_module_from_path("ksrpc.config_server", config)
 
 from ksrpc.caller import switch_call, async_call  # noqa
-from ksrpc.config_server import USER_CREDENTIALS, HOST, PORT, PATH
+from ksrpc.config_server import USER_CREDENTIALS, HOST, PORT, PATH, TIMESTAMP_CHECK
 from ksrpc.utils.chunks import send_in_chunks, data_sender, CHUNK_BORDER, CHUNK_BORDER_BYTES  # noqa
 
 
@@ -138,12 +138,15 @@ def unauthorized_response():
 
 @web.middleware
 async def timestamp_middleware(request, handler):
+    # 不检查
+    if TIMESTAMP_CHECK <= 0:
+        return await handler(request)
+
     # URL动态变化，防止重放攻击
     t1 = float(request.headers.get('X-Timestamp', "0"))
     t2 = time.time()
-    timeout = 30  # 秒
-    if abs(t1 - t2) > timeout:
-        return web.HTTPForbidden(text=f"The time difference between server and client is too large, {t1} - {t2} = |{t1 - t2:.1f}| > {timeout}")
+    if abs(t1 - t2) > TIMESTAMP_CHECK:
+        return web.HTTPForbidden(text=f"The time difference between server and client is too large, {t1} - {t2} = |{t1 - t2:.1f}| > {TIMESTAMP_CHECK}")
 
     return await handler(request)
 
@@ -173,7 +176,7 @@ async def start_server():
     app = create_app([])
     runner = web.AppRunner(app)
     await runner.setup()
-    site = web.TCPSite(runner, HOST, PORT)  # 可选：指定端口
+    site = web.TCPSite(runner, host=HOST, port=PORT)  # 可选：指定端口
     await site.start()
     print(f"Server started at http://{HOST}:{PORT}")
     # 保持服务器运行，直到被中断

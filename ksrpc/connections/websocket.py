@@ -8,7 +8,7 @@ import aiohttp
 import dill as pickle
 
 from ksrpc.config_client import PRINT_PROGRESS
-from ksrpc.connections import BaseConnection
+from ksrpc.connections import BaseConnection, make_headers
 from ksrpc.utils.chunks import send_in_chunks, CHUNK_BORDER
 from ksrpc.utils.misc import format_number
 from ksrpc.utils.tqdm import update_progress, muted_print
@@ -60,13 +60,14 @@ class WebSocketConnection(BaseConnection):
             self._async_to_sync(self._client.close)
         self._client = None
 
-    def response_update_url(self, response, key: str) -> str:
+    async def response_update_url(self, response, key: str) -> str:
         if response.status == 101:
             url = str(response.url)
             for resp in response.history:
                 print(f"{datetime.now()} {resp.status} {resp.method} {resp.url} {resp.headers["Location"]}", file=sys.stderr)
         else:
             url = None
+            raise Exception(f'{response.status}, {await response.text()}, {response.url}')
 
         if url:
             url = url.rstrip(key)
@@ -90,9 +91,8 @@ class WebSocketConnection(BaseConnection):
                 # print("获取了历史URL", url)
                 pass
 
-            headers = {"X-Timestamp": str(time.time())}
-            self._ws = await self._client.ws_connect(f"{url}/ws", headers=headers).__aenter__()
-            self.response_update_url(self._ws._response, "/ws")
+            self._ws = await self._client.ws_connect(f"{url}/ws", headers=make_headers()).__aenter__()
+            await self.response_update_url(self._ws._response, "/ws")
 
     async def reset(self):
         async with self._lock:

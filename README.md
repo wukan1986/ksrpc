@@ -46,10 +46,10 @@ pip install ksrpc -i https://pypi.org/simple --upgrade
 ```bash
 # 直接运行
 python -m ksrpc.run_app
-# 使用配置运行，注意&前不要有空格
-set CONFIG=config.py& python -m ksrpc.run_app # windows
-CONFIG=config.py python -m ksrpc.run_app # linux
-CONFIG=config.py gunicorn ksrpc.run_gunicorn:web_app --bind 0.0.0.0:8080 --worker-class aiohttp.GunicornWebWorker # linux
+# 使用配置运行，注意&前一定不要有空格
+set CONFIG_SERVER=config_server.py&python -m ksrpc.run_app # windows
+CONFIG_SERVER=config_server.py python -m ksrpc.run_app # linux
+CONFIG_SERVER=config_server.py gunicorn ksrpc.run_gunicorn:web_app --bind 0.0.0.0:8080 --worker-class aiohttp.GunicornWebWorker # linux
 ```
 
 2. 异步客户端（推荐）
@@ -58,8 +58,7 @@ CONFIG=config.py gunicorn ksrpc.run_gunicorn:web_app --bind 0.0.0.0:8080 --worke
 import asyncio
 
 from ksrpc.client import RpcClient
-from ksrpc.connections.http import HttpConnection  # noqa
-from ksrpc.connections.websocket import WebSocketConnection  # noqa
+from ksrpc.connections import SmartConnection
 
 # 动态URL
 URL = 'http://127.0.0.1:8080/api/v1'
@@ -68,9 +67,9 @@ PASSWORD = 'password123'
 
 
 async def async_main():
-    async with HttpConnection(URL, username=USERNAME, password=PASSWORD) as conn:
-        demo = RpcClient('ksrpc.server.demo', conn)
-        print(await demo.test())
+   async with SmartConnection(URL, username=USERNAME, password=PASSWORD) as conn:
+      demo = RpcClient('ksrpc.server.demo', conn)
+      print(await demo.test())
 
 
 asyncio.run(async_main())
@@ -95,17 +94,17 @@ nest_asyncio.apply()
 
 
 def sync_main():
-    with HttpConnection(URL, username=USERNAME, password=PASSWORD) as conn:
-        demo = RpcClient('ksrpc.server.demo', conn, to_sync=True)
-        print(demo.test())
-
-    conn = WebSocketConnection(URL, username=USERNAME, password=PASSWORD)
-    demo = RpcClient('ksrpc.server.demo', conn, to_sync=True)
-    print(demo.test())
-    print(demo.test())
+   with HttpConnection(URL, username=USERNAME, password=PASSWORD) as conn:
+      demo = RpcClient('ksrpc.server.demo', conn, to_sync=True)
+      print(demo.test())
 
 
 sync_main()
+
+conn = WebSocketConnection(URL, username=USERNAME, password=PASSWORD)
+demo = RpcClient('ksrpc.server.demo', conn, to_sync=True)
+print(demo.test())
+print(demo.test())
 ```
 
 ## 远程调用规则

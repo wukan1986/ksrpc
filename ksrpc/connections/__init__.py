@@ -2,11 +2,13 @@ from urllib.parse import unquote
 
 import aiohttp
 
+from ksrpc.utils.async_ import async_to_sync
 from ksrpc.utils.misc import ExpirableProperty
 
 
 class BaseConnection:
     def __init__(self, url: str, username: str = None, password: str = None, connector=None, proxy=None, proxy_auth=None):
+        self._async_to_sync = async_to_sync
         self._url = unquote(url)
         self._connector = connector
         self._proxy = proxy

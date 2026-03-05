@@ -9,7 +9,6 @@ import aiohttp
 import dill as pickle
 
 from ksrpc.connections import BaseConnection
-from ksrpc.utils.async_ import async_to_sync
 from ksrpc.utils.chunks import data_sender, CHUNK_BORDER_BYTES, ZLIB_COMPRESS_LEVEL  # noqa
 from ksrpc.utils.misc import format_number
 from ksrpc.utils.tqdm import update_progress, muted_print
@@ -77,7 +76,7 @@ class HttpConnection(BaseConnection):
         return self
 
     def __exit__(self, exc_type=None, exc_val=None, exc_tb=None):
-        async_to_sync(self.reset)
+        self._async_to_sync(self.reset)
         if self._client:
             self._client.__exit__(exc_type, exc_val, exc_tb)
             self._client = None
@@ -95,8 +94,8 @@ class HttpConnection(BaseConnection):
                 self._client = None
 
     def __del__(self):
-        if self._client and async_to_sync:
-            async_to_sync(self._client.close)
+        if self._client:
+            self._async_to_sync(self._client.close)
         self._client = None
 
     async def connect(self):

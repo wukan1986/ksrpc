@@ -173,11 +173,16 @@ print(await demo1.__getattr__('__doc__')())  # 取的远程ksrpc.server.demo.__d
 
 更多调用方式参考[examples](https://github.com/wukan1986/ksrpc/blob/main/examples)
 
-## 环境变量
+## 环境变量和配置
 
-PRINT=0 屏蔽下载进度条(client端有效)
+1. 服务端`ksrpc/config_server.py`
+    - `CONFIG_SERVER` 通过环境变量指定配置文件路径。例如`CONFIG_SERVER=config_server.py`
 
-CONFIG=config.py 指定配置文件路径（server端有效）
+2. 客户端`ksrpc/config_client.py`
+    - `CONFIG_CLIENT` 通过环境变量指定配置文件路径。例如`CONFIG_CLIENT=config_client.py`
+
+    - `PRINT_PROGRESS=0` 通过环境变量屏蔽下载进度条。可覆盖`CONFIG_CLIENT`中的设置
+    - `HTTP_ALLOW_REDIRECTS=0` 通过环境变量禁用重定向。可覆盖`CONFIG_CLIENT`中的设置
 
 ## pyi存根文件
 
@@ -205,7 +210,8 @@ CONFIG=config.py 指定配置文件路径（server端有效）
     - 请求体大小有限制，无法上传大数据
 
 综合考虑，最终使用的是方案二。
-为防止`HTTP`遇到`30x`重定向时重复传输大数据，所以`HTTP`第一次抓取重定向后地址，第二次才是正真的传输数据
+
+为防止`HTTP`遇到`30x`重定向时重复传输大数据，所以`HTTP`第一次抓取重定向后地址，第二次才是正真的传输数据。可修改`HTTP_ALLOW_REDIRECTS`定制行为
 
 ## 支持IPv6
 

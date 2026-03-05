@@ -1,9 +1,16 @@
+import os
 from urllib.parse import unquote
 
 import aiohttp
 
+from ksrpc.importer import import_module_from_path
 from ksrpc.utils.async_ import async_to_sync
 from ksrpc.utils.misc import ExpirableProperty
+
+# 加载配置文件
+config = os.getenv("CONFIG_CLIENT", "")
+if config:
+    import_module_from_path("ksrpc.config_client", config)
 
 
 class BaseConnection:

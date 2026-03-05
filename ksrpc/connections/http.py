@@ -1,5 +1,4 @@
 import asyncio
-import os
 import sys
 import time
 import zlib
@@ -7,14 +6,15 @@ from datetime import datetime
 
 import aiohttp
 import dill as pickle
+from aiohttp import web
 
+from ksrpc.config_client import PRINT_PROGRESS, HTTP_ALLOW_REDIRECTS
 from ksrpc.connections import BaseConnection
 from ksrpc.utils.chunks import data_sender, CHUNK_BORDER_BYTES, ZLIB_COMPRESS_LEVEL  # noqa
 from ksrpc.utils.misc import format_number
 from ksrpc.utils.tqdm import update_progress, muted_print
 
-# 通过环境变量PRINT=0可以屏蔽打印下载进度条
-_print = print if os.getenv("PRINT", "1") == '1' else muted_print
+_print = print if PRINT_PROGRESS > 0 else muted_print
 
 
 async def process_response(response):
@@ -115,10 +115,10 @@ class HttpConnection(BaseConnection):
         if response.status == 200:
             url = str(response.url)
             for resp in response.history:
-                _print(f"{datetime.now()} {resp.status} {resp.method} {resp.url} {resp.headers["Location"]}", file=sys.stderr)
+                print(f"{datetime.now()} {resp.status} {resp.method} {resp.url} {resp.headers["Location"]}", file=sys.stderr)
         elif response.status in (301, 302, 303, 307, 308):
             url = response.headers['Location']
-            _print(f"{datetime.now()} {response.status} {response.method} {response.url} {response.headers["Location"]}", file=sys.stderr)
+            print(f"{datetime.now()} {response.status} {response.method} {response.url} {response.headers["Location"]}", file=sys.stderr)
         else:
             url = None
 
@@ -161,15 +161,20 @@ class HttpConnection(BaseConnection):
         #     return await process_response(response)
 
         # 大数据包，为防止数据被传两份，所以先获取重定向地址
-        if url is None:
-            url = self._url.rstrip('/')
-            # allow_redirects=True支持多层跳转
-            # allow_redirects=False支持一层跳转，速度更快
-            response = await self._client.post(f"{url}/redirect", headers=headers, allow_redirects=True)
-            url = self.response_update_url(response, "/redirect")
+        if HTTP_ALLOW_REDIRECTS >= 1:
+            if url is None:
+                url = self._url.rstrip('/')
+                # allow_redirects=True支持多层跳转
+                # allow_redirects=False支持一层跳转，速度更快
+                response = await self._client.post(f"{url}/redirect", headers=headers, allow_redirects=HTTP_ALLOW_REDIRECTS >= 2)
+                url = self.response_update_url(response, "/redirect")
+            else:
+                # print("获取了历史URL", url)
+                pass
         else:
-            # print("获取了历史URL", url)
-            pass
+            # 直连
+            if url is None:
+                url = self._url.rstrip('/')
 
         # 用新地址请求
         if url:
@@ -179,6 +184,8 @@ class HttpConnection(BaseConnection):
                 headers=headers,
                 allow_redirects=False,
             )
-        self.response_update_url(response, "/chunk")
+            self.response_update_url(response, "/chunk")
 
-        return await process_response(response)
+            return await process_response(response)
+        else:
+            return web.HTTPForbidden(text=f"url is invalid: {url}")

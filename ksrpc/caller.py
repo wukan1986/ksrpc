@@ -15,7 +15,7 @@ from importlib import import_module
 from loguru import logger
 
 from ksrpc.client import RpcClient, _Self
-from ksrpc.config import IMPORT_RULES, CACHE_ENABLE, CACHE_PATH, CACHE_TIMEOUT
+from ksrpc.config_server import IMPORT_RULES, CACHE_ENABLE, CACHE_PATH, CACHE_TIMEOUT
 from ksrpc.utils.async_ import async_to_sync
 
 CACHE = pathlib.Path(CACHE_PATH)

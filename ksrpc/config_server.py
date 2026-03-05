@@ -57,4 +57,4 @@ CACHE_TIMEOUT = {
     "*": 600,
 }
 
-print(__file__)
+print("__file__:", __file__)

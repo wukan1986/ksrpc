@@ -1,5 +1,4 @@
 import asyncio
-import os
 import sys
 import time
 import zlib
@@ -8,13 +7,13 @@ from datetime import datetime
 import aiohttp
 import dill as pickle
 
+from ksrpc.config_client import PRINT_PROGRESS
 from ksrpc.connections import BaseConnection
 from ksrpc.utils.chunks import send_in_chunks, CHUNK_BORDER
 from ksrpc.utils.misc import format_number
 from ksrpc.utils.tqdm import update_progress, muted_print
 
-# 通过环境变量PRINT=0可以屏蔽打印下载进度条
-_print = print if os.getenv("PRINT", "1") == '1' else muted_print
+_print = print if PRINT_PROGRESS > 0 else muted_print
 
 
 class WebSocketConnection(BaseConnection):
@@ -65,7 +64,7 @@ class WebSocketConnection(BaseConnection):
         if response.status == 101:
             url = str(response.url)
             for resp in response.history:
-                _print(f"{datetime.now()} {resp.status} {resp.method} {resp.url} {resp.headers["Location"]}", file=sys.stderr)
+                print(f"{datetime.now()} {resp.status} {resp.method} {resp.url} {resp.headers["Location"]}", file=sys.stderr)
         else:
             url = None
 

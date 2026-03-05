@@ -8,7 +8,7 @@ import dill as pickle
 from aiohttp import web
 
 from ksrpc.caller import switch_call, async_call  # noqa
-from ksrpc.config import USER_CREDENTIALS, HOST, PORT, PATH
+from ksrpc.config_server import USER_CREDENTIALS, HOST, PORT, PATH
 from ksrpc.utils.chunks import send_in_chunks, data_sender, CHUNK_BORDER, CHUNK_BORDER_BYTES  # noqa
 
 

@@ -14,8 +14,9 @@ def main():
 
 
 if __name__ == '__main__':
-    CONFIG = os.getenv("CONFIG", "")
-    if CONFIG:
-        import_module_from_path("ksrpc.config", CONFIG)
+    # 加载配置文件
+    config = os.getenv("CONFIG_SERVER", "")
+    if config:
+        import_module_from_path("ksrpc.config_server", config)
 
     main()

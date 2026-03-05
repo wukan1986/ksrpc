@@ -33,22 +33,26 @@ async def handle_chunk(request: web.Request) -> web.StreamResponse:
     """307重定向后，chunk传输数据为空，不得不放弃"""
     buffer = bytearray()
     buf = bytearray()
-    async for chunk, end_of_http_chunk in request.content.iter_chunks():
+    async for chunk, end_of_chunk in request.content.iter_chunks():
         buf.extend(chunk)
-        if end_of_http_chunk:
-            bs = buf.split(CHUNK_BORDER_BYTES)
-            # 没有出现分隔符，直接返回
-            if len(bs) == 1:
+
+        bs = buf.split(CHUNK_BORDER_BYTES)
+        # 没有出现分隔符，直接返回
+        if len(bs) == 1:
+            continue
+
+        # 出现了分隔符
+        for j, b in enumerate(bs):
+            if j == len(bs) - 1:
+                buf.clear()
+                buf.extend(b)
                 continue
 
-            # 出现了分隔符
-            for j, b in enumerate(bs):
-                if j == len(bs) - 1:
-                    buf.clear()
-                    buf.extend(b)
-                    continue
+            buffer.extend(zlib.decompress(b))
 
-                buffer.extend(zlib.decompress(b))
+        # print(end_of_chunk)
+        # if end_of_chunk:
+        #     break
 
     data = await async_call(**pickle.loads(buffer))
     buffer.clear()

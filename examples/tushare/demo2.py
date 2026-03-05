@@ -1,6 +1,10 @@
 """
 仅技术交流演示，请购买数据授权
 """
+import os
+
+os.environ["PRINT_PROGRESS"] = "0"
+
 import nest_asyncio
 
 from ksrpc.client import RpcClient

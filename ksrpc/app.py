@@ -1,11 +1,19 @@
 import asyncio
 import base64
+import os
 import time
 import zlib
 from urllib.parse import unquote
 
 import dill as pickle
 from aiohttp import web
+
+from ksrpc.importer import import_module_from_path
+
+# 加载配置文件
+config = os.getenv("CONFIG_SERVER", "")
+if config:
+    import_module_from_path("ksrpc.config_server", config)
 
 from ksrpc.caller import switch_call, async_call  # noqa
 from ksrpc.config_server import USER_CREDENTIALS, HOST, PORT, PATH

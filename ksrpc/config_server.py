@@ -48,7 +48,8 @@ IMPORT_RULES = {
 
 # 本地缓存超时功能，单位秒，用户需要根据需求自己改动
 # 没有提供缓存自动删除功能，你可以考虑crontab -e编辑cron任务，例如凌晨4点执行。注意使用绝对路径
-# 0 4 * * * rm -rf /path/to/cache/*
+# 0 4 * * * rm -rf /path/to/cache/* # 全删
+# 0 4 * * * find /path/to/cache -type f -mmin +60 -delete # 删除1小时前文件
 CACHE_ENABLE = False
 CACHE_PATH = "cache"
 CACHE_TIMEOUT = {

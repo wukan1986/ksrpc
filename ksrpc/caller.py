@@ -168,10 +168,12 @@ async def async_call(module, calls, ref_id):
              calls=calls,
              ref_id=0)
     try:
-        if CACHE_ENABLE:
+        # 获取缓存时间
+        cache_timeout = chian_timeout(call_chian(module, calls), CACHE_TIMEOUT) if CACHE_ENABLE else 0
+
+        if cache_timeout > 0:
             # 缓存ID与超时
             cache_key = generate_key(module, calls)
-            cache_timeout = chian_timeout(call_chian(module, calls), CACHE_TIMEOUT)
             path = CACHE / cache_key
 
             if path.exists():

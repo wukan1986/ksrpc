@@ -2,6 +2,7 @@ import asyncio
 import base64
 import time
 import zlib
+from urllib.parse import unquote
 
 import dill as pickle
 from aiohttp import web
@@ -16,16 +17,16 @@ async def handle_redirect(request: web.Request) -> web.StreamResponse:
     return web.HTTPOk()
 
 
-async def handle_http(request: web.Request) -> web.StreamResponse:
-    """post请求，一次性请求，无法传大数据"""
-    buff = await request.read()
-    data = await async_call(**pickle.loads(zlib.decompress(buff)))
-
-    body = pickle.dumps(data)
-    headers = {'Content-Disposition': f"{id(request)}.pkl.chunked.zip"}
-
-    del data
-    return web.Response(body=data_sender(body, print), headers=headers)
+# async def handle_http(request: web.Request) -> web.StreamResponse:
+#     """post请求，一次性请求，无法传大数据，302重定向丢失数据区"""
+#     buff = await request.read()
+#     data = await async_call(**pickle.loads(zlib.decompress(buff)))
+#
+#     body = pickle.dumps(data)
+#     headers = {'Content-Disposition': f"{id(request)}.pkl.chunked.zip"}
+#
+#     del data
+#     return web.Response(body=data_sender(body, print), headers=headers)
 
 
 async def handle_chunk(request: web.Request) -> web.StreamResponse:
@@ -143,10 +144,13 @@ def create_app(argv):
             basic_auth_middleware,  # 注释此行屏蔽Baisc认证
         ])
 
-    path = PATH.rstrip('/')
+    path = unquote(PATH.rstrip('/'))
+    print("PATH:", path)
     app.add_routes([
+        # web.post(f"{path}/http", handle_http),
+        # web.get(f"{path}/http", handle_http), # 302后丢弃数据区
         web.post(f"{path}/redirect", handle_redirect),
-        web.post(f"{path}/http", handle_http),
+        web.get(f"{path}/redirect", handle_redirect),
         web.post(f"{path}/chunk", handle_chunk),
         web.get(f"{path}/ws", websocket_handler),
     ])

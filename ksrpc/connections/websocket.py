@@ -62,15 +62,19 @@ class WebSocketConnection(BaseConnection):
             async_to_sync(self._client.close)
         self._client = None
 
-    def response_update_url(self, response, key):
+    def response_update_url(self, response, key: str) -> str:
         if response.status == 101:
-            url = str(response.url).rstrip(key)
-            self.data.set("url", url)
+            url = str(response.url)
+            for resp in response.history:
+                _print(f"{datetime.now()} {resp.status} {resp.method} {resp.url} {resp.headers["Location"]}", file=sys.stderr)
         else:
-            self.data.set("url", None)
-        file = sys.stderr
-        for resp in response.history:
-            _print(f"{datetime.now()} {resp.status} {resp.method} {resp.url} {resp.headers["Location"]}", file=file)
+            url = None
+
+        if url:
+            url = url.rstrip(key)
+            self.data.set("url", url)
+
+        return url
 
     async def connect(self):
         async with self._lock:
@@ -85,6 +89,9 @@ class WebSocketConnection(BaseConnection):
             url = self.data.get("url")
             if url is None:
                 url = self._url.rstrip('/')
+            else:
+                # print("获取了历史URL", url)
+                pass
 
             self._ws = await self._client.ws_connect(f"{url}/ws", headers=headers).__aenter__()
             self.response_update_url(self._ws._response, "/ws")

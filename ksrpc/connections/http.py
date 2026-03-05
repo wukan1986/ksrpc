@@ -21,7 +21,7 @@ _print = print if os.getenv("PRINT", "1") == '1' else muted_print
 async def process_response(response):
     """处理HTTP响应。根据不同的响应分别处理"""
     if response.status != 200:
-        raise Exception(f'{response.status}, {await response.text()}')
+        raise Exception(f'{response.status}, {await response.text()}, {response.url}')
 
     file = sys.stderr
     # for resp in response.history:
@@ -112,15 +112,22 @@ class HttpConnection(BaseConnection):
                 await self._client.close()
                 self._client = None
 
-    def response_update_url(self, response, key):
+    def response_update_url(self, response, key: str) -> str:
         if response.status == 200:
-            url = str(response.url).rstrip(key)
-            self.data.set("url", url)
+            url = str(response.url)
+            for resp in response.history:
+                _print(f"{datetime.now()} {resp.status} {resp.method} {resp.url} {resp.headers["Location"]}", file=sys.stderr)
+        elif response.status in (301, 302, 303, 307, 308):
+            url = response.headers['Location']
+            _print(f"{datetime.now()} {response.status} {response.method} {response.url} {response.headers["Location"]}", file=sys.stderr)
         else:
-            self.data.set("url", None)
-        file = sys.stderr
-        for resp in response.history:
-            _print(f"{datetime.now()} {resp.status} {resp.method} {resp.url} {resp.headers["Location"]}", file=file)
+            url = None
+
+        if url:
+            url = url.rstrip(key)
+            self.data.set("url", url)
+
+        return url
 
     async def call(self, module, calls, ref_id):
         """调用函数
@@ -142,31 +149,37 @@ class HttpConnection(BaseConnection):
         headers = {"X-Timestamp": str(time.time())}
 
         url = self.data.get("url")
-        # 小数据包，重定向也没关系,传整体
-        if url is None and len(data) < 1024 * 128:
-            url = self._url.rstrip('/')
-            response = await self._client.post(
-                f"{url}/http",
-                # 一次性压缩，在大数据时耗时长
-                data=zlib.compress(data, ZLIB_COMPRESS_LEVEL),
-                headers=headers,
-            )
-            self.response_update_url(response, "/http")
-            return await process_response(response)
+        # # 小数据包，重定向也没关系,传整体
+        # if url is None and len(data) < 1024 * 128:
+        #     url = self._url.rstrip('/')
+        #     response = await self._client.post(
+        #         f"{url}/http",
+        #         # 一次性压缩，在大数据时耗时长，307正常，302丢失数据区
+        #         data=zlib.compress(data, ZLIB_COMPRESS_LEVEL),
+        #         headers=headers,
+        #     )
+        #     self.response_update_url(response, "/http")
+        #     return await process_response(response)
 
         # 大数据包，为防止数据被传两份，所以先获取重定向地址
         if url is None:
             url = self._url.rstrip('/')
-            response = await self._client.post(f"{url}/redirect", headers=headers)
-            self.response_update_url(response, "/redirect")
+            # allow_redirects=True支持多层跳转
+            # allow_redirects=False支持一层跳转，速度更快
+            response = await self._client.post(f"{url}/redirect", headers=headers, allow_redirects=True)
+            url = self.response_update_url(response, "/redirect")
+        else:
+            # print("获取了历史URL", url)
+            pass
 
         # 用新地址请求
-        response = await self._client.post(
-            f"{url}/chunk",
-            data=data_sender(data, muted_print),
-            headers=headers,
-            allow_redirects=False,
-        )
+        if url:
+            response = await self._client.post(
+                f"{url}/chunk",
+                data=data_sender(data, muted_print),
+                headers=headers,
+                allow_redirects=False,
+            )
         self.response_update_url(response, "/chunk")
 
         return await process_response(response)

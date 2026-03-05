@@ -1,3 +1,5 @@
+from urllib.parse import unquote
+
 import aiohttp
 
 from ksrpc.utils.misc import ExpirableProperty
@@ -5,7 +7,7 @@ from ksrpc.utils.misc import ExpirableProperty
 
 class BaseConnection:
     def __init__(self, url: str, username: str = None, password: str = None, connector=None, proxy=None, proxy_auth=None):
-        self._url = url
+        self._url = unquote(url)
         self._connector = connector
         self._proxy = proxy
         self._proxy_auth = proxy_auth

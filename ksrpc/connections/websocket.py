@@ -82,7 +82,6 @@ class WebSocketConnection(BaseConnection):
                 self._client = aiohttp.ClientSession(auth=self._auth, timeout=self._timeout,
                                                      connector=self._connector,
                                                      proxy=self._proxy, proxy_auth=self._proxy_auth)
-            headers = {"X-Timestamp": str(time.time())}
 
             url = self.data.get("url")
             if url is None:
@@ -91,6 +90,7 @@ class WebSocketConnection(BaseConnection):
                 # print("获取了历史URL", url)
                 pass
 
+            headers = {"X-Timestamp": str(time.time())}
             self._ws = await self._client.ws_connect(f"{url}/ws", headers=headers).__aenter__()
             self.response_update_url(self._ws._response, "/ws")
 

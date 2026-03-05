@@ -145,7 +145,6 @@ class HttpConnection(BaseConnection):
         d = dict(module=module, calls=calls, ref_id=ref_id)
 
         data = pickle.dumps(d)
-        headers = {"X-Timestamp": str(time.time())}
 
         url = self.data.get("url")
         # # 小数据包，重定向也没关系,传整体
@@ -166,6 +165,7 @@ class HttpConnection(BaseConnection):
                 url = self._url.rstrip('/')
                 # allow_redirects=True支持多层跳转
                 # allow_redirects=False支持一层跳转，速度更快
+                headers = {"X-Timestamp": str(time.time())}
                 response = await self._client.post(f"{url}/redirect", headers=headers, allow_redirects=HTTP_ALLOW_REDIRECTS >= 2)
                 url = self.response_update_url(response, "/redirect")
             else:
@@ -178,6 +178,7 @@ class HttpConnection(BaseConnection):
 
         # 用新地址请求
         if url:
+            headers = {"X-Timestamp": str(time.time())}
             response = await self._client.post(
                 f"{url}/chunk",
                 data=data_sender(data, muted_print),

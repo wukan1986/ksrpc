@@ -85,7 +85,7 @@ async def get_calls(module, calls, ref_id):
                     update = False
 
         if not update and hasattr(builtins, c.name):
-            # 需要在config.py IMPORT_RULES中开放builtins导入权限
+            # 需要在config_server.py IMPORT_RULES中开放builtins导入权限
             import_module_allowed(builtins.__name__)
             # 这个功能有一定的危险性
             func = getattr(builtins, c.name)

@@ -183,6 +183,12 @@ class HttpConnection(BaseConnection):
             )
             await self.response_update_url(response, "/chunk")
 
+            if response.status in (301, 302, 303, 307, 308):
+                if HTTP_ALLOW_REDIRECTS == 0:
+                    raise Exception(f'{response.status}, 遇到重定向，请设置环境变量`HTTP_ALLOW_REDIRECTS=1`')
+                if HTTP_ALLOW_REDIRECTS == 1:
+                    raise Exception(f'{response.status}, 多次重定向，请设置环境变量`HTTP_ALLOW_REDIRECTS=2`')
+
             return await process_response(response)
         else:
             return web.HTTPForbidden(text=f"url is invalid: {url}")

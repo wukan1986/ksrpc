@@ -16,7 +16,7 @@ if config:
     import_module_from_path("ksrpc.config_server", config)
 
 from ksrpc.caller import switch_call, async_call  # noqa
-from ksrpc.config_server import USER_CREDENTIALS, HOST, PORT, PATH, TIMESTAMP_CHECK
+from ksrpc.config_server import USER_CREDENTIALS, HOST, PORT, PATH, TIMESTAMP_CHECK, USER_RULES
 from ksrpc.utils.chunks import send_in_chunks, data_sender, CHUNK_BORDER, CHUNK_BORDER_BYTES  # noqa
 
 
@@ -61,8 +61,8 @@ async def handle_chunk(request: web.Request) -> web.StreamResponse:
         # print(end_of_chunk)
         # if end_of_chunk:
         #     break
-
-    data = await async_call(**pickle.loads(buffer))
+    rules = request['rules']
+    data = await async_call(rules, **pickle.loads(buffer))
     buffer.clear()
 
     body = pickle.dumps(data)
@@ -86,7 +86,8 @@ async def websocket_handler(request: web.Request) -> web.StreamResponse:
                 buffer.extend(zlib.decompress(buf))
                 buf.clear()
             elif msg.data == "EOF":
-                data = await async_call(**pickle.loads(buffer))
+                rules = request['rules']
+                data = await async_call(rules, **pickle.loads(buffer))
                 buffer.clear()
                 await send_in_chunks(ws, pickle.dumps(data), print)
                 del data
@@ -125,6 +126,7 @@ async def basic_auth_middleware(request, handler):
 
     # 认证通过，添加用户名到请求对象
     request['user'] = username
+    request['rules'] = USER_RULES.get(username)
     return await handler(request)
 
 

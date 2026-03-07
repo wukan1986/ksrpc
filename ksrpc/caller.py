@@ -15,7 +15,7 @@ from importlib import import_module
 from loguru import logger
 
 from ksrpc.client import RpcClient, _Self
-from ksrpc.config_server import IMPORT_RULES, CACHE_ENABLE, CACHE_PATH, CACHE_TIMEOUT
+from ksrpc.config_server import CACHE_ENABLE, CACHE_PATH, CACHE_TIMEOUT
 from ksrpc.utils.async_ import async_to_sync
 
 CACHE = pathlib.Path(CACHE_PATH)
@@ -48,17 +48,17 @@ def is_import_allowed(module_name, rules):
     return False
 
 
-def import_module_allowed(module):
+def import_module_allowed(module, rules):
     m = import_module(module)
-    assert is_import_allowed(m.__name__, IMPORT_RULES), f"import {m.__name__} not allowed"
+    assert is_import_allowed(m.__name__, rules), f"import {m.__name__} not allowed"
     return m
 
 
-async def get_calls(module, calls, ref_id):
+async def get_calls(rules, module, calls, ref_id):
     """根据模块和函数名列表，得到函数"""
     # ksrpc.server.demo::async_counter 这里产生的generator，ref_id传到了RpcClient
     # ksrpc.server.demo::async_counter.__aiter__.__anext__ 居然这里将错就错，用上了上次的对象 TODO 这里以后一定要改
-    out = import_module_allowed(module)
+    out = import_module_allowed(module, rules)
     for c in calls:
         update = False
         func = None
@@ -79,14 +79,14 @@ async def get_calls(module, calls, ref_id):
                 update = True
             else:
                 try:
-                    out = import_module_allowed(f"{out.__name__}.{c.name}")
+                    out = import_module_allowed(f"{out.__name__}.{c.name}", rules)
                     update = True
                 except ModuleNotFoundError:
                     update = False
 
         if not update and hasattr(builtins, c.name):
             # 需要在config_server.py IMPORT_RULES中开放builtins导入权限
-            import_module_allowed(builtins.__name__)
+            import_module_allowed(builtins.__name__, rules)
             # 这个功能有一定的危险性
             func = getattr(builtins, c.name)
             update = True
@@ -159,7 +159,7 @@ def generate_key(module, calls) -> str:
     return hashlib.md5(pickled).hexdigest()
 
 
-async def async_call(module, calls, ref_id):
+async def async_call(rules, module, calls, ref_id):
     """简版异步API调用。没有各种额外功能"""
     # 返回的数据包
     d = dict(status=200,  # status.HTTP_200_OK,
@@ -187,12 +187,12 @@ async def async_call(module, calls, ref_id):
                     output = pickle.load(f)
             else:
                 logger.info(f'dump {cache_timeout} {cache_key} {module}:{calls}'[:300])
-                output = await get_calls(module, calls, ref_id)
+                output = await get_calls(rules, module, calls, ref_id)
                 with path.open("wb") as f:
                     pickle.dump(output, f)
         else:
             logger.info(f'call {module}:{calls}'[:300])
-            output = await get_calls(module, calls, ref_id)
+            output = await get_calls(rules, module, calls, ref_id)
 
         if isinstance(output, (types.GeneratorType, types.AsyncGeneratorType)):
             # 处理生成器。需要传引用ref_id,提供给__next__使用
@@ -212,7 +212,7 @@ async def async_call(module, calls, ref_id):
     return d
 
 
-async def process_call(module, calls, ref_id):
+async def process_call(rules, module, calls, ref_id):
     """进程版API调用。结束后进程退出自动释放内存
 
     Notes
@@ -222,11 +222,11 @@ async def process_call(module, calls, ref_id):
 
     """
     with ProcessPoolExecutor(max_workers=1) as executor:
-        future = executor.submit(async_to_sync, async_call, module, calls, ref_id)
+        future = executor.submit(async_to_sync, async_call, rules, module, calls, ref_id)
         return future.result()
 
 
-async def switch_call(module, calls, ref_id):
+async def switch_call(rules, module, calls, ref_id):
     """
     TODO 在新进程中调用开关，可以手工设置为True/False
 
@@ -239,6 +239,6 @@ async def switch_call(module, calls, ref_id):
     print(f"CALL_IN_NEW_PROCESS = {CALL_IN_NEW_PROCESS}")
 
     if CALL_IN_NEW_PROCESS:
-        return await process_call(module, calls, ref_id)
+        return await process_call(rules, module, calls, ref_id)
     else:
-        return await async_call(module, calls, ref_id)
+        return await async_call(rules, module, calls, ref_id)

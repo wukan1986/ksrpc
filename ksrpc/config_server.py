@@ -33,7 +33,8 @@ ksrpc.* # 所有子模块
 ksrpc* # 当前模块和子模块
 
 """
-IMPORT_RULES = {
+# 只供`USER_RULES`使用的局部变量，可使用任意不冲突的变量名
+_IMPORT_RULES = {
     "ksrpc.server.demo": True,
     "ksrpc.server.tushare": True,  # 代理，解决登录问题
     "tushare": False,  # 禁止直接调用
@@ -57,9 +58,9 @@ USER_CREDENTIALS = {
 TODO 必须给不同用户分配权限
 """
 USER_RULES = {
-    "用户名": IMPORT_RULES,
-    "admin": IMPORT_RULES,
-    "user": IMPORT_RULES,
+    "用户名": _IMPORT_RULES,
+    "admin": _IMPORT_RULES,
+    "user": _IMPORT_RULES,
 }
 
 # 本地缓存超时功能，单位秒，用户需要根据需求自己改动

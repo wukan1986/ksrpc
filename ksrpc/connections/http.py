@@ -109,7 +109,7 @@ class HttpConnection(BaseConnection):
                 self._client = None
 
     async def response_update_url(self, response, key: str) -> str:
-        if response.status == 200:
+        if response.status in (200, 204):
             url = str(response.url)
             for resp in response.history:
                 print(f"{datetime.now()} {resp.status} {resp.method} {resp.url} {resp.headers["Location"]}", file=sys.stderr)
@@ -163,8 +163,8 @@ class HttpConnection(BaseConnection):
                 url = self._url.rstrip('/')
                 # allow_redirects=True支持多层跳转
                 # allow_redirects=False支持一层跳转，速度更快
-                response = await self._client.post(f"{url}/redirect", headers=make_headers(), allow_redirects=HTTP_ALLOW_REDIRECTS >= 2)
-                url = await self.response_update_url(response, "/redirect")
+                response = await self._client.post(f"{url}/generate_204", headers=make_headers(), allow_redirects=HTTP_ALLOW_REDIRECTS >= 2)
+                url = await self.response_update_url(response, "/generate_204")
             else:
                 # print("获取了历史URL", url)
                 pass

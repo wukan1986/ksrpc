@@ -20,9 +20,9 @@ from ksrpc.config_server import USER_CREDENTIALS, HOST, PORT, PATH, TIMESTAMP_CH
 from ksrpc.utils.chunks import send_in_chunks, data_sender, CHUNK_BORDER, CHUNK_BORDER_BYTES  # noqa
 
 
-async def handle_redirect(request: web.Request) -> web.StreamResponse:
-    """只是用于重定向"""
-    return web.HTTPOk()
+async def handle_generate_204(request: web.Request) -> web.StreamResponse:
+    """网络测试"""
+    return web.HTTPNoContent()
 
 
 # async def handle_http(request: web.Request) -> web.StreamResponse:
@@ -58,9 +58,6 @@ async def handle_chunk(request: web.Request) -> web.StreamResponse:
 
             buffer.extend(zlib.decompress(b))
 
-        # print(end_of_chunk)
-        # if end_of_chunk:
-        #     break
     rules = request['rules']
     data = await async_call(rules, **pickle.loads(buffer))
     buffer.clear()
@@ -166,8 +163,8 @@ def create_app(argv):
     app.add_routes([
         # web.post(f"{path}/http", handle_http),
         # web.get(f"{path}/http", handle_http), # 302后丢弃数据区
-        web.post(f"{path}/redirect", handle_redirect),
-        web.get(f"{path}/redirect", handle_redirect),
+        web.post(f"{path}/generate_204", handle_generate_204),
+        web.get(f"{path}/generate_204", handle_generate_204),
         web.post(f"{path}/chunk", handle_chunk),
         web.get(f"{path}/ws", websocket_handler),
     ])
